@@ -11,12 +11,12 @@ Nature Protocols 2023 (link)
 This documentation will cover the Single cell nanoCut&Tag, Nature Protocols 2023, in deepth to successfully reproduce the step by step bioinformatic workflow described in the paper.
 The pipeline is composed three majors axes, [Set Up](#set-up), [Preprocessing](#preprocessing) and [Downstream Analysis](#downstream-analysis) which will be broken down in sub-units to facilitate the go-through.
 
-# Data Availability
+# Data availability
 All raw and processed files can be found as supplementary files in the [GEO repository](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE198467).
 Seurat .rds object can also be used to start the analysis at the [Downstream Analysis](#downstream-analysis).
 
-# Set Up
-The whole project has been run on a High Performance Computing (HPC) linux cluster under CentOS(check version) with htcondor scheduler.
+# Set up
+The whole project has been run on a High Performance Computing (HPC) linux cluster under CentOS (release:7.9.2009) with htcondor workflow management system.
 If you fancy using MacOS or Windows, please design your set up accordingly.
 
 ## Prepare environment
@@ -53,7 +53,7 @@ cd ~/NatProt
 ~/miniconda3/envs/NatProt/bin/git clone https://github.com/bartosovic-lab/single-cell-nano-cut-tag
 ```
 
-## Install Cellranger
+## Install cellranger
 Cellranger is a bit more complex to fit inside a conda environment and is generally heavy to store.
 On most of the HPCs running bioinformatic pipelines, Cellranger is already installed.
 However if you wish to run the pipeline on a separated workstation, you can follow [10Xgenomics guidelines](https://support.10xgenomics.com/single-cell-atac/software/pipelines/latest/installation).
@@ -75,7 +75,27 @@ If your HPC is running on a different scheduler, you can install different style
 
 ## Modify config.yaml
 
-# Preprocessing
-# Downstream Analysis
+Bash script with user input or hardcoded in the config.yaml file ?
 
+# Preprocessing
+From fastq to Seurat objects for Downstream analysis
+## Demultiplexing
+~/miniconda3/envs/NatProt/bin/snakemake --snakefile ~/single-cell-nano-cut-tag/workflow/Snakefile_demultiplexing.smk --cores 16 --profile htcondor -p
+## Cellranger
+~/miniconda3/envs/NatProt/bin/snakemake --snakefile ~/single-cell-nano-cut-tag/workflow/Snakefile_cellranger.smk --cores 16 --profile htcondor -p
+## Peaks calling
+~/miniconda3/envs/NatProt/bin/snakemake --snakefile ~/single-cell-nano-cut-tag/workflow/Snakefile_peaks_calling.smk --cores 16 --profile htcondor -p
+## Cell picking
+~/miniconda3/envs/NatProt/bin/snakemake --snakefile ~/single-cell-nano-cut-tag/workflow/Snakefile_cell_picking.smk --cores 16 --profile htcondor -p
+## Seurat objects
+~/miniconda3/envs/NatProt/bin/snakemake --snakefile ~/single-cell-nano-cut-tag/workflow/Snakefile_seurat_objects.smk --cores 16 --profile htcondor -p
+## Merge fragments
+~/miniconda3/envs/NatProt/bin/snakemake --snakefile ~/single-cell-nano-cut-tag/workflow/Snakefile_merge_fragments.smk --cores 16 --profile htcondor -p
+## Peak calling merge
+~/miniconda3/envs/NatProt/bin/snakemake --snakefile ~/single-cell-nano-cut-tag/workflow/Snakefile_peaks_calling_merged.smk --cores 16 --profile htcondor -p
+## Seurat object merged
+~/miniconda3/envs/NatProt/bin/snakemake --snakefile ~/single-cell-nano-cut-tag/workflow/Snakefile_seurat_objects_merged.smk --cores 16 --profile htcondor -p
+
+# Downstream analysis
+Description of Rmarkdown
 
