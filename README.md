@@ -80,21 +80,37 @@ Bash script with user input or hardcoded in the config.yaml file ?
 # Preprocessing
 From fastq to Seurat objects for Downstream analysis
 ## Demultiplexing
+```
 ~/miniconda3/envs/NatProt/bin/snakemake --snakefile ~/single-cell-nano-cut-tag/workflow/Snakefile_demultiplexing.smk --cores 16 --profile htcondor -p
+```
 ## Cellranger
+```
 ~/miniconda3/envs/NatProt/bin/snakemake --snakefile ~/single-cell-nano-cut-tag/workflow/Snakefile_cellranger.smk --cores 16 --profile htcondor -p
+```
 ## Peaks calling
+```
 ~/miniconda3/envs/NatProt/bin/snakemake --snakefile ~/single-cell-nano-cut-tag/workflow/Snakefile_peaks_calling.smk --cores 16 --profile htcondor -p
+```
 ## Cell picking
+```
 ~/miniconda3/envs/NatProt/bin/snakemake --snakefile ~/single-cell-nano-cut-tag/workflow/Snakefile_cell_picking.smk --cores 16 --profile htcondor -p
+```
 ## Seurat objects
+```
 ~/miniconda3/envs/NatProt/bin/snakemake --snakefile ~/single-cell-nano-cut-tag/workflow/Snakefile_seurat_objects.smk --cores 16 --profile htcondor -p
+```
 ## Merge fragments
+```
 ~/miniconda3/envs/NatProt/bin/snakemake --snakefile ~/single-cell-nano-cut-tag/workflow/Snakefile_merge_fragments.smk --cores 16 --profile htcondor -p
+```
 ## Peak calling merge
+```
 ~/miniconda3/envs/NatProt/bin/snakemake --snakefile ~/single-cell-nano-cut-tag/workflow/Snakefile_peaks_calling_merged.smk --cores 16 --profile htcondor -p
+```
 ## Seurat object merged
+```
 ~/miniconda3/envs/NatProt/bin/snakemake --snakefile ~/single-cell-nano-cut-tag/workflow/Snakefile_seurat_objects_merged.smk --cores 16 --profile htcondor -p
+```
 
 # Downstream analysis
 Description of Rmarkdown
