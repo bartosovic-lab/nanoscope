@@ -9,14 +9,14 @@ Nature Protocols 2023 (link)
 
 # Overview
 This documentation will cover the Single cell nanoCut&Tag, Nature Protocols 2023, in deepth to successfully reproduce the step by step bioinformatic workflow described in the paper.
-The pipeline is composed two majors axes, [Preprocessing](#preprocessing) and [Downstream Analysis](#downstream-analysis) which will be broken down in sub-units to facilitate the go-through.
+The pipeline is composed three majors axes, [Set Up](#set-up), [Preprocessing](#preprocessing) and [Downstream Analysis](#downstream-analysis) which will be broken down in sub-units to facilitate the go-through.
 
 # Data Availability
 All raw and processed files can be found as supplementary files in the [GEO repository](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE198467).
 Seurat .rds object can also be used to start the analysis at the [Downstream Analysis](#downstream-analysis).
 
 # Set Up
-The whole project has been run on a High Performance Computing (HPC) linux cluster under CentOS(check version).
+The whole project has been run on a High Performance Computing (HPC) linux cluster under CentOS(check version) with htcondor scheduler.
 If you fancy using MacOS or Windows, please design your set up accordingly.
 
 ## Prepare environment
@@ -38,8 +38,8 @@ conda install -y -c conda-forge -c bioconda python==3.10.8 pysam==0.20.0 htcondo
 The raw data as fastq files can be downloaded throughout the [SRA-Toolkit](https://github.com/ncbi/sra-tools/wiki/HowTo:-fasterq-dump).
 ### Navigate to a new directory to store the data
 ```
-mkdir -p ~/Data/NatProt
-cd ~/Data/NatProt
+mkdir -p ~/NatProt/Data
+cd ~/NatProt/Data
 ```
 ### Download SRA
 ```
@@ -48,3 +48,34 @@ cd ~/Data/NatProt
 ```
 
 ## Clone github repository
+```
+cd ~/NatProt
+~/miniconda3/envs/NatProt/bin/git clone https://github.com/bartosovic-lab/single-cell-nano-cut-tag
+```
+
+## Install Cellranger
+Cellranger is a bit more complex to fit inside a conda environment and is generally heavy to store.
+On most of the HPCs running bioinformatic pipelines, Cellranger is already installed.
+However if you wish to run the pipeline on a separated workstation, you can follow [10Xgenomics guidelines](https://support.10xgenomics.com/single-cell-atac/software/pipelines/latest/installation).
+
+> If cellranger is not installed on your favorite HPC, please contact your HPC support.
+
+## HPC profiles
+The pipeline is implemented in workflow management software known as snakemake.
+It communicates with HPCs to run paralellized jobs to speed up the process.
+Like previously mentionned at the beginning of the [Set Up](#set-up), the conda environment has been built to create a communication between snakemake and htcordor scheduler, therefore, htcondor package has been installed in the conda environment.
+
+If your HPC is running on a different scheduler, you can install different style of profiles, like [slurm](https://github.com/Snakemake-Profiles/slurm).
+
+> Do not forget to change the profile in your snakemake command line : 
+```
+--profile slurm
+```
+> If you do not have access to an HPC, you can simply remove the profile options from the snakemake command line.
+
+## Modify config.yaml
+
+# Preprocessing
+# Downstream Analysis
+
+
