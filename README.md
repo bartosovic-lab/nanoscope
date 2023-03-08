@@ -25,13 +25,11 @@ Conda can be installed via miniconda following [miniconda guidelines](https://do
 
 ### Create conda environment
 ```
-conda create --name NatProt
+conda create --name NatProt -y -c conda-forge -c bioconda python==3.10.8 htcondor==10.2.1 snakemake==7.24.0 cookiecutter==2.1.1 git==2.39.2
 ```
+Sit in your new environment for till the end of the procedure.
 ```
 conda activate NatProt
-```
-```
-conda install -y -c conda-forge -c bioconda python==3.10.8 pysam==0.20.0 htcondor==10.2.1 python-levenshtein==0.20.9 pyyaml==6.0 deeptools==3.5.1 r-base==4.2.2 snakemake==7.24.0 samtools=1.16.1 cookiecutter==2.1.1 regex==2022.10.31 gzip==1.12 contextlib2==21.6.0 bedtools==2.30.0 macs2==2.2.7.1 git==2.39.2
 ```
 
 ## Download the raw data
@@ -41,10 +39,12 @@ The raw data as fastq files can be downloaded throughout the [SRA-Toolkit](https
 mkdir -p ~/NatProt/Data
 cd ~/NatProt/Data
 ```
-### Download SRA
+### Download SRA (TO BE TESTED)
 ```
-~/miniconda3/envs/NatProt/bin/fastq-dump -F --split-files SRR18305888
-~/miniconda3/envs/NatProt/bin/fastq-dump -F --split-files SRR18305889
+~/miniconda3/envs/NatProt/bin/fasterq-dump -f -e 1 --split-files --include-technical -o SRA.fastq SRR18305888
+~/miniconda3/envs/NatProt/bin/fasterq-dump -f -e 1 --split-files --include-technical -o SRA.fastq SRR18305889
+~/miniconda3/envs/NatProt/bin/fasterq-dump -f -e 1 --split-files --include-technical -o SRA.fastq SRR18305884
+~/miniconda3/envs/NatProt/bin/fasterq-dump -f -e 1 --split-files --include-technical -o SRA.fastq SRR18305885
 ```
 
 ## Clone github repository
@@ -65,6 +65,16 @@ The pipeline is implemented in workflow management software known as snakemake.
 It communicates with HPCs to run paralellized jobs to speed up the process.
 Like previously mentionned at the beginning of the [Set Up](#set-up), the conda environment has been built to create a communication between snakemake and htcordor scheduler, therefore, htcondor package has been installed in the conda environment.
 
+For htcondor workflow management, we will follow this [guidelines](https://github.com/Snakemake-Profiles/htcondor)
+```
+mkdir -p ~/.config/snakemake
+cd ~/.config/snakemake
+```
+```
+~/miniconda3/envs/NatProt/bin/cookiecutter https://github.com/Snakemake-Profiles/htcondor.git
+```
+> At `profile_name [htcondor]` press `enter` and select a path for your log files, something like `~/condor_jobs`
+
 If your HPC is running on a different scheduler, you can install different style of profiles, like [slurm](https://github.com/Snakemake-Profiles/slurm).
 
 > Do not forget to change the profile in your snakemake command line : 
@@ -75,25 +85,14 @@ If your HPC is running on a different scheduler, you can install different style
 
 ## Modify config.yaml
 
-Bash script with user input or hardcoded in the config.yaml file ?
+Modify enverything by hand
+FOr the sake of the tutorial, only 3 modalities datasets will be used bcdCT_MB21_02 and bcdCT_MB21_04
 
 # Preprocessing
 From fastq to Seurat objects for Downstream analysis
 ## Demultiplexing
 ```
 ~/miniconda3/envs/NatProt/bin/snakemake --snakefile ~/single-cell-nano-cut-tag/workflow/Snakefile_demultiplexing.smk --cores 16 --profile htcondor -p
-```
-## Cellranger
-```
-~/miniconda3/envs/NatProt/bin/snakemake --snakefile ~/single-cell-nano-cut-tag/workflow/Snakefile_cellranger.smk --cores 16 --profile htcondor -p
-```
-## Peaks calling
-```
-~/miniconda3/envs/NatProt/bin/snakemake --snakefile ~/single-cell-nano-cut-tag/workflow/Snakefile_peaks_calling.smk --cores 16 --profile htcondor -p
-```
-## Cell picking
-```
-~/miniconda3/envs/NatProt/bin/snakemake --snakefile ~/single-cell-nano-cut-tag/workflow/Snakefile_cell_picking.smk --cores 16 --profile htcondor -p
 ```
 
 # Downstream analysis
