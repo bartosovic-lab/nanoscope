@@ -41,16 +41,16 @@ cd ~/NatProt/Data
 ```
 ### Download SRA (TO BE TESTED)
 ```
-~/miniconda3/envs/NatProt/bin/fasterq-dump -f -e 1 --split-files --include-technical -o SRA.fastq SRR18305888
-~/miniconda3/envs/NatProt/bin/fasterq-dump -f -e 1 --split-files --include-technical -o SRA.fastq SRR18305889
-~/miniconda3/envs/NatProt/bin/fasterq-dump -f -e 1 --split-files --include-technical -o SRA.fastq SRR18305884
-~/miniconda3/envs/NatProt/bin/fasterq-dump -f -e 1 --split-files --include-technical -o SRA.fastq SRR18305885
+fasterq-dump -f -e 1 --split-files --include-technical -o SRA.fastq SRR18305888
+fasterq-dump -f -e 1 --split-files --include-technical -o SRA.fastq SRR18305889
+fasterq-dump -f -e 1 --split-files --include-technical -o SRA.fastq SRR18305884
+fasterq-dump -f -e 1 --split-files --include-technical -o SRA.fastq SRR18305885
 ```
 
 ## Clone github repository
 ```
 cd ~/NatProt
-~/miniconda3/envs/NatProt/bin/git clone https://github.com/bartosovic-lab/single-cell-nano-cut-tag
+git clone https://github.com/bartosovic-lab/single-cell-nano-cut-tag
 ```
 
 ## Install cellranger
@@ -71,7 +71,7 @@ mkdir -p ~/.config/snakemake
 cd ~/.config/snakemake
 ```
 ```
-~/miniconda3/envs/NatProt/bin/cookiecutter https://github.com/Snakemake-Profiles/htcondor.git
+cookiecutter https://github.com/Snakemake-Profiles/htcondor.git
 ```
 > At `profile_name [htcondor]` press `enter` and select a path for your log files, something like `~/condor_jobs`
 
@@ -92,7 +92,7 @@ FOr the sake of the tutorial, only 3 modalities datasets will be used bcdCT_MB21
 From fastq to Seurat objects for Downstream analysis
 ## Demultiplexing
 ```
-~/miniconda3/envs/NatProt/bin/snakemake --snakefile ~/single-cell-nano-cut-tag/workflow/Snakefile_demultiplexing.smk --cores 16 --profile htcondor -p
+snakemake --snakefile ~/single-cell-nano-cut-tag/workflow/Snakefile_demultiplexing.smk --cores 16 --profile htcondor -p
 ```
 
 # Downstream analysis
