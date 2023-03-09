@@ -39,12 +39,46 @@ The raw data as fastq files can be downloaded throughout the [SRA-Toolkit](https
 mkdir -p ~/NatProt/Data
 cd ~/NatProt/Data
 ```
-### Download SRA (TO BE TESTED)
+### Download SRA
 ```
 fasterq-dump -f -e 1 --split-files --include-technical -o SRA.fastq SRR18305888
+mv SRA_1.fastq P23209_1001_S1_L001_I1_001.fastq
+mv SRA_2.fastq P23209_1001_S1_L001_R1_001.fastq
+mv SRA_3.fastq P23209_1001_S1_L001_R2_001.fastq
+mv SRA_4.fastq P23209_1001_S1_L001_R3_001.fastq
+gzip *.fastq
+mkdir -p ~/NatProt/Data/fastq/P23209/P23209_1001/02-FASTQ/211025_A00187_0608_AHL2NKDRXY/
+mv *.fastq.gz ~/NatProt/Data/fastq/P23209/P23209_1001/02-FASTQ/211025_A00187_0608_AHL2NKDRXY/
+```
+```
 fasterq-dump -f -e 1 --split-files --include-technical -o SRA.fastq SRR18305889
+mv SRA_1.fastq P23209_1001_S1_L002_I1_001.fastq
+mv SRA_2.fastq P23209_1001_S1_L002_R1_001.fastq
+mv SRA_3.fastq P23209_1001_S1_L002_R2_001.fastq
+mv SRA_4.fastq P23209_1001_S1_L002_R3_001.fastq
+gzip *.fastq
+mkdir -p ~/NatProt/Data/fastq/P23209/P23209_1001/02-FASTQ/211025_A00187_0608_AHL2NKDRXY/
+mv *.fastq.gz ~/NatProt/Data/fastq/P23209/P23209_1001/02-FASTQ/211025_A00187_0608_AHL2NKDRXY/
+```
+```
 fasterq-dump -f -e 1 --split-files --include-technical -o SRA.fastq SRR18305884
+mv SRA_1.fastq P24004_1001_S1_L001_I1_001.fastq
+mv SRA_2.fastq P24004_1001_S1_L001_R1_001.fastq
+mv SRA_3.fastq P24004_1001_S1_L001_R2_001.fastq
+mv SRA_4.fastq P24004_1001_S1_L001_R3_001.fastq
+gzip *.fastq
+mkdir -p ~/NatProt/Data/fastq/P24004/P24004_1001/02-FASTQ/211221_A00621_0569_BHTNK3DRXY/
+mv *.fastq.gz ~/NatProt/Data/fastq/P24004/P24004_1001/02-FASTQ/211221_A00621_0569_BHTNK3DRXY/
+```
+```
 fasterq-dump -f -e 1 --split-files --include-technical -o SRA.fastq SRR18305885
+mv SRA_1.fastq P24004_1001_S1_L002_I1_001.fastq
+mv SRA_2.fastq P24004_1001_S1_L002_R1_001.fastq
+mv SRA_3.fastq P24004_1001_S1_L002_R2_001.fastq
+mv SRA_4.fastq P24004_1001_S1_L002_R3_001.fastq
+gzip *.fastq
+mkdir -p ~/NatProt/Data/fastq/P24004/P24004_1001/02-FASTQ/211221_A00621_0569_BHTNK3DRXY/
+mv *.fastq.gz ~/NatProt/Data/fastq/P24004/P24004_1001/02-FASTQ/211221_A00621_0569_BHTNK3DRXY/
 ```
 
 ## Clone github repository
