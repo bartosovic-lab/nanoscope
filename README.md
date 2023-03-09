@@ -83,6 +83,8 @@ mkdir -p ~/NatProt/Data/fastq/P24004/P24004_1001/02-FASTQ/211221_A00621_0569_BHT
 mv *.fastq.gz ~/NatProt/Data/fastq/P24004/P24004_1001/02-FASTQ/211221_A00621_0569_BHTNK3DRXY/
 ```
 
+> This step takes a while...
+
 ## Clone github repository
 ```
 cd ~/NatProt
