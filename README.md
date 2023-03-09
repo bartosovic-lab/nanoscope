@@ -180,7 +180,7 @@ All outputed files will be automatically generated and will be used to run the R
 Run snakemake :
 ```
 cd ~/NatProt/single-cell-nano-cut-tag
-snakemake --snakefile workflow/Snakefile --cores 16 --profile htcondor -p
+snakemake --snakefile workflow/Snakefile_preprocess.smk --cores 16 --profile htcondor -p
 ```
 
 # Downstream analysis
