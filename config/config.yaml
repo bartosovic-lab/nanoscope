@@ -1,0 +1,22 @@
+samples:
+  bcdCT_MB21_02:                                                                         # Change the name of your sample here
+    fastq_path:
+      ~/NatProt/Data/fastq/P23209/P23209_1001                                            # Modify path to fastq files here
+    barcodes:                                                                            # Define your different antibody barcodes here
+      ATAC: TATAGCCT
+      H3K27ac: ATAGAGGC
+      H3K27me3: CCTATCCT
+
+  bcdCT_MB21_04:                                                                         # Change the name of your sample here
+    fastq_path:
+      ~/NatProt/Data/fastq/P24004/P24004_1001                                            # Modify path to fastq files here
+    barcodes:                                                                            # Define your different antibody barcodes here
+      ATAC: TATAGCCT
+      H3K27ac: ATAGAGGC
+      H3K27me3: CCTATCCT
+
+general:
+  tempdir: ~/tmp/NatProt                                                                 # Modify path to a tmp folder already created here
+  conda_env: NatProt                                                                     # Modify the name of your conda environment here
+  cellranger_software: /data/bin/cellranger-atac                                         # Modify the path to cellranger binaries here
+  cellranger_ref: /data/ref/cellranger-atac/refdata-cellranger-atac-mm10-2020-A-2.0.0/   # Modify the path to cellranger reference here
