@@ -123,14 +123,45 @@ If your HPC is running on a different scheduler, you can install different style
 ```
 > If you do not have access to an HPC, you can simply remove the profile options from the snakemake command line.
 
-## Modify config.yaml
+## Change parameters
 
+### Creation of temporary folder
+This temporary directory will be passed to the config file to handle snakemake temporary outputs
 ```
 mkdir -p ~/tmp/NatProt
 ```
+### Modify congif.yaml
+The config.yaml file in the github repository will tailored the workflow according to its content.
+Here is showned the config file for the [downloaded fastq files](###download-sra).
 
-Modify enverything by hand
-For the sake of the tutorial, only 3 modalities datasets will be used bcdCT_MB21_02 and bcdCT_MB21_04
+One can change the name of the samples as well as the path of the fastq files and the associated modalities. General information can also be tweaked, such as the temporary directory and conda environment used by snakemake, and parameters related to cellranger binary and reference location.
+
+You can find the config.yaml file in `config/config.yaml`
+
+```
+samples:
+  sample_P23209:
+    fastq_path:
+      ~/NatProt/Data/fastq/P23209/P23209_1001/
+    barcodes:
+      ATAC: TATAGCCT
+      H3K27ac: ATAGAGGC
+      H3K27me3: CCTATCCT
+
+  sample_P24004:
+    fastq_path:
+      ~/NatProt/Data/fastq/P24004/P24004_1001/
+    barcodes:
+      ATAC: TATAGCCT
+      H3K27ac: ATAGAGGC
+      H3K27me3: CCTATCCT
+
+general:
+  tempdir: ~/tmp/NatProt                                                                                                                 
+  conda_env: NatProt
+  cellranger_software: /data/bin/cellranger-atac
+  cellranger_ref: /data/ref/cellranger-atac/refdata-cellranger-atac-mm10-2020-A-2.0.0/
+```
 
 # Preprocessing
 The first steps of processing from fastq files to cell picking will be done by the workflow management system, snakemake.
