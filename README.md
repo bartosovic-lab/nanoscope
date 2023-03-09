@@ -119,8 +119,12 @@ If your HPC is running on a different scheduler, you can install different style
 
 ## Modify config.yaml
 
+```
+mkdir -p ~/tmp/NatProt
+```
+
 Modify enverything by hand
-FOr the sake of the tutorial, only 3 modalities datasets will be used bcdCT_MB21_02 and bcdCT_MB21_04
+For the sake of the tutorial, only 3 modalities datasets will be used bcdCT_MB21_02 and bcdCT_MB21_04
 
 # Preprocessing
 From fastq to Seurat objects for Downstream analysis
