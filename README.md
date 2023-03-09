@@ -132,7 +132,7 @@ mkdir -p ~/tmp/NatProt
 ```
 ### Modify congif.yaml
 The config.yaml file in the github repository will tailored the workflow according to its content.
-Here is showned the config file for the [downloaded fastq files](###download-sra).
+Here is showned the config file for the [downloaded fastq files](#download-sra).
 
 One can change the name of the samples as well as the path of the fastq files and the associated modalities. General information can also be tweaked, such as the temporary directory and conda environment used by snakemake, and parameters related to cellranger binary and reference location.
 
