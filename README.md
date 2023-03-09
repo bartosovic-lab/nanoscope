@@ -27,7 +27,7 @@ Conda can be installed via miniconda following [miniconda guidelines](https://do
 
 ### Create conda environment
 ```
-conda create --name NatProt -y -c conda-forge -c bioconda python==3.10.8 htcondor==10.2.1 snakemake==7.24.0 cookiecutter==2.1.1 git==2.39.1 sra-tools==3.0.3 r-argparse==2.1.5 r-funr==0.3.2
+conda create --name NatProt -y -c conda-forge -c bioconda python==3.10.8 htcondor==10.2.1 snakemake==7.24.0 cookiecutter==2.1.1 git==2.39.1 sra-tools==3.0.3 r-ggplot2==3.4.1 r-argparse==2.1.5 r-funr==0.3.2 r-patchwork==1.1.2
 ```
 Sit in your new environment till the end of the procedure.
 ```
