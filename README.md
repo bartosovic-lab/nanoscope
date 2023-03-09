@@ -15,6 +15,8 @@ The pipeline is composed three majors axes, [Set Up](#set-up), [Preprocessing](#
 All raw and processed files can be found as supplementary files in the [GEO repository](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE198467).
 `seurat.rds` object can also be used to start the analysis from [Downstream Analysis](#downstream-analysis).
 
+> In this tutorail, only `GSM5949206` and `GSM5949208` will be processed
+
 # Set up
 The whole project has been run on a High Performance Computing (HPC) linux cluster under CentOS (release:7.9.2009) with htcondor workflow management system.
 If you fancy using MacOS or Windows, please design your set up accordingly.
