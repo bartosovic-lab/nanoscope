@@ -129,10 +129,23 @@ Modify enverything by hand
 For the sake of the tutorial, only 3 modalities datasets will be used bcdCT_MB21_02 and bcdCT_MB21_04
 
 # Preprocessing
-From fastq to Seurat objects for Downstream analysis
-## Demultiplexing
+The first steps of processing from fastq files to cell picking will be done by the workflow management system, snakemake.
+It will cover the following steps :
+ - Modality Demultiplexing
+ - Reads alignment with Cellranger
+ - Transform bam files to bigwig files
+ - Call peaks with Macs2
+ - Label fragments with associated barcode
+ - Label overlapping peaks with associated barcode
+ - Output barcode metrics
+ - Redo cell selection
+
+All outputed files will be automatically generated and will be used to run the R markdown vignette below.
+
+Run snakemake :
 ```
-snakemake --snakefile ~/single-cell-nano-cut-tag/workflow/Snakefile_demultiplexing.smk --cores 16 --profile htcondor -p
+cd ~/NatProt/
+snakemake --snakefile single-cell-nano-cut-tag/workflow/Snakefile --cores 16 --profile htcondor -p
 ```
 
 # Downstream analysis
