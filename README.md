@@ -105,7 +105,7 @@ The pipeline is implemented in workflow management software known as snakemake.
 It communicates with HPCs to run paralellized jobs to speed up the process.
 Like previously mentionned at the beginning of the [Set Up](#set-up), the conda environment has been built to create a communication between snakemake and htcordor scheduler, therefore, htcondor package has been installed in the conda environment.
 
-For htcondor workflow management, we will follow this [guidelines](https://github.com/Snakemake-Profiles/htcondor)
+For htcondor workflow management, we will follow these [guidelines](https://github.com/Snakemake-Profiles/htcondor)
 ```
 mkdir -p ~/.config/snakemake
 cd ~/.config/snakemake
