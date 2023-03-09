@@ -121,12 +121,12 @@ If your HPC is running on a different scheduler, you can install different style
 ```
 --profile slurm
 ```
-> If you do not have access to an HPC, you can simply remove the profile options from the snakemake command line.
+> If you do not have access to an HPC, you can simply remove the profile options from the snakemake command line and ignore this section.
 
-## Change parameters
+## Changing parameters
 
 ### Creation of temporary folder
-This temporary directory will be passed to the config file to handle snakemake temporary outputs
+This temporary directory will be given to the config file to handle snakemake temporary outputs
 ```
 mkdir -p ~/tmp/NatProt
 ```
