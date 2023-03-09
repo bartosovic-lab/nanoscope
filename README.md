@@ -13,7 +13,7 @@ The pipeline is composed three majors axes, [Set Up](#set-up), [Preprocessing](#
 
 # Data availability
 All raw and processed files can be found as supplementary files in the [GEO repository](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE198467).
-Seurat .rds object can also be used to start the analysis at the [Downstream Analysis](#downstream-analysis).
+`seurat.rds` object can also be used to start the analysis from [Downstream Analysis](#downstream-analysis).
 
 # Set up
 The whole project has been run on a High Performance Computing (HPC) linux cluster under CentOS (release:7.9.2009) with htcondor workflow management system.
