@@ -91,7 +91,7 @@ git clone https://github.com/bartosovic-lab/single-cell-nano-cut-tag
 
 ## Install cellranger
 Cellranger is a bit more complex to fit inside a conda environment and is generally heavy to store.
-On most of the HPCs running bioinformatic pipelines, Cellranger is already installed.
+On most HPCs running bioinformatic pipelines, Cellranger is already installed.
 However if you wish to run the pipeline on a separated workstation, you can follow [10Xgenomics guidelines](https://support.10xgenomics.com/single-cell-atac/software/pipelines/latest/installation).
 
 > If cellranger is not installed on your favorite HPC, please contact your HPC support.
