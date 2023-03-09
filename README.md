@@ -130,7 +130,7 @@ This temporary directory will be given to the config file to handle snakemake te
 ```
 mkdir -p ~/tmp/NatProt
 ```
-### Modify congif.yaml
+### Modify config.yaml
 The config.yaml file in the github repository will tailored the workflow according to its content.
 Here is showned the config file for the [downloaded fastq files](#download-sra).
 
