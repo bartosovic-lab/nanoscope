@@ -190,7 +190,7 @@ In order to follow step-by-step the vignette, the first thing we need to do is t
 
 
 ### Step-1 | install gdown
-gdown will be used to download the toy data from google drive
+[gdown](https://github.com/wkentaro/gdown) will be used to download the toy data from google drive
 ```
 pip install gdown
 ```
