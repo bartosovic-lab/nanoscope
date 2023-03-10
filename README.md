@@ -197,4 +197,3 @@ cd single-cell-nano-cut-tag_toy_data/input_files/
 
 Now we are ready to start the downstream analysis.\
 Please, follow the [vignette](). TODO\
-**NB** be sure to set as working directory in R the ```single-cell-nano-cut-tag/input_files/``` directory.
