@@ -184,5 +184,7 @@ snakemake --snakefile workflow/Snakefile_preprocess.smk --cores 16 --profile htc
 ```
 
 # Downstream analysis
-Description of Rmarkdown
+Once that the Set up and Preprocessing steps are succcesfully completed, data is ready for downstream analysis. In this part of the documentation we provide a step-by-step tutorial on how to perform the downstream analyses, from raw data to identification and annotation of the different cell states in the dataset in analysis.
+
+The vignette assumes you have alread
 
