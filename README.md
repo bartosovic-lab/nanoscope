@@ -188,10 +188,21 @@ Once that the Set up and Preprocessing steps are succcesfully completed, data is
 
 In order to follow step-by-step the vignette, the first thing we need to do is to download the input data in the same directory where the repository was cloned. In order to do this, please follow the steps below:
 
+
+## Step-1 | install gdown
+gdown will be used to download the toy data from google drive
 ```
-cd ~/NatProt
-# download dropbox - TODO
-cd input_files
+pip install gdown
 ```
 
+## Step-2 | download the toy data
+Toy data must be downloaded in the same directory where the github repository was previously clones
+```
+cd ~/NatProt
+gdown --folder https://drive.google.com/drive/folders/1spTuBv5HU3hE5bH0naVnu71-r3WxD0Eo?usp=share_link
+cd single-cell-nano-cut-tag/input_files/
+```
+
+## Step-3 | start the analysis
 Now we are ready to start the downstream analysis. Please, refere to the [vignette](). TODO
+**NB** be sure to set as working directory in R the ```single-cell-nano-cut-tag/input_files/``` directory.
