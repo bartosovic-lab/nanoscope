@@ -193,7 +193,7 @@ In order to follow step-by-step the vignette, the first thing we need to do is t
 Toy data must be downloaded in the same directory where the github repository was previously clones
 ```
 cd ~/NatProt
-curl -LO https://zenodo.org/record/7719233/files/single-cell-nano-cut-tag.tar.gz # it takes ~ mins
+curl -LO https://zenodo.org/record/7719233/files/single-cell-nano-cut-tag.tar.gz
 tar -zxvf single-cell-nano-cut-tag.tar.gz
 cd single-cell-nano-cut-tag/input_files/
 ```
