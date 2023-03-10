@@ -190,7 +190,7 @@ In order to follow step-by-step the vignette we need the input data. If you have
 
 If you have not generated this data, you can still download them as described below.
 ```
-curl -LO https://zenodo.org/record/7719233/files/single-cell-nano-cut-tag_toy_data.tar.gz
+curl -LO https://zenodo.org/record/7719349/files/single-cell-nano-cut-tag_toy_data.tar.gz
 tar -zxvf single-cell-nano-cut-tag_toy_data.tar.gz
 cd single-cell-nano-cut-tag_toy_data/input_files/
 ```
