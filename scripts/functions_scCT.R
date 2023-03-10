@@ -47,37 +47,3 @@ DepthCorMulMod <- function(obj) {
   return(p1)
 }
 
-
-
-load_ensembl_annot <- function(version = 'mm10') {
-  library(ensembldb)
-  
-  if (version == 'mm10'){
-    cat("*** Loading mm10 annotation of genes \n")
-    library(EnsDb.Mmusculus.v79)
-    ensdb = EnsDb.Mmusculus.v79
-  } else if (version == 'hg38'){
-    cat("*** Loading hg38 annotation of genes \n")
-    library(EnsDb.Hsapiens.v86)
-    ensdb = EnsDb.Hsapiens.v86
-  } else {
-    cat("*** ERROR: Only mm10 and hg38 supported\n")
-    return(NULL)
-  }
-  
-  seqlevelsStyle(ensdb) <- 'UCSC'
-  
-  gene.coords <- ensembldb::genes(ensdb, filter = ~ gene_biotype == "protein_coding")
-  lncRNA.coords <- ensembldb::genes(ensdb, filter = ~ gene_biotype == "lincRNA")
-  gene.coords <- c(gene.coords,lncRNA.coords)
-  
-  genebody.coords <- keepStandardChromosomes(gene.coords, pruning.mode = 'coarse')
-  
-  # Flatten the overlapping genes and extend by 2kb upstream of promoters
-  genebody.coords.flat <- GenomicRanges::reduce(x = genebody.coords)
-  genebodyandpromoter.coords.flat <- Signac::Extend(genebody.coords.flat,upstream = 2000)
-  
-  # Retrieve gene names from the original annotation (lost because of flatenning)
-  genebodyandpromoter.coords.flat$name<- gene.coords[nearest(genebodyandpromoter.coords.flat,genebody.coords)]$gene_name
-  return(genebodyandpromoter.coords.flat)
-}
