@@ -186,14 +186,7 @@ snakemake --snakefile workflow/Snakefile_preprocess.smk --cores 16 --profile htc
 # Downstream analysis
 Once that the Set up and Preprocessing steps are succcesfully completed, data is ready for downstream analysis. In this part of the documentation we provide a vignette on how to perform the downstream analyses, from raw data to identification and annotation of the different cell states in the dataset in analysis.
 
-This vignette assumes you have alread run the Set up and Preprocessing steps and succesfully generated, for each analysed sample and modality the followinf files:
-* ```fragments.tsv.gz``` and its index ```fragments.tsv.gz.tbi```
-* ```metadata.csv```
-* ```peaks.broadPeak```
-
-For convenience, these files are also provided [here](). TODO
-
-The first thing we need to do is to download the input data in the same directory where the repository was cloned. In order to do this, please follow the steps below:
+In order to follow step-by-step the vignette, the first thing we need to do is to download the input data in the same directory where the repository was cloned. In order to do this, please follow the steps below:
 
 ```
 cd ~/NatProt
