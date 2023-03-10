@@ -186,19 +186,15 @@ snakemake --snakefile workflow/Snakefile_preprocess.smk --cores 16 --profile htc
 # Downstream analysis
 Once that the Set up and Preprocessing steps are succcesfully completed, data is ready for downstream analysis. In this part of the documentation we provide a vignette on how to perform the downstream analyses, from raw data to identification and annotation of the different cell states in the dataset in analysis.
 
-In order to follow step-by-step the vignette, the first thing we need to do is to download the input data in the same directory where the repository was cloned. In order to do this, please follow the steps below:
+In order to follow step-by-step the vignette we need the input data. If you have followed the Set up and Preprocessing steps you should have the input data already in two directories called ```bcdCT_MB21_02``` and ```bcdCT_MB21_04```. 
 
-
-### Step-1 | download the toy data
-Toy data must be downloaded in the same directory where the github repository was previously clones
+If you have not generated this data, you can still download them as described below.
 ```
-cd ~/NatProt
-curl -LO https://zenodo.org/record/7719233/files/single-cell-nano-cut-tag.tar.gz
-tar -zxvf single-cell-nano-cut-tag.tar.gz
-cd single-cell-nano-cut-tag/input_files/
+curl -LO https://zenodo.org/record/7719233/files/single-cell-nano-cut-tag_toy_data.tar.gz
+tar -zxvf single-cell-nano-cut-tag_toy_data.tar.gz
+cd single-cell-nano-cut-tag_toy_data/input_files/
 ```
 
-### Step-2 | start the analysis
 Now we are ready to start the downstream analysis.\
 Please, follow the [vignette](). TODO\
 **NB** be sure to set as working directory in R the ```single-cell-nano-cut-tag/input_files/``` directory.
