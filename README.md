@@ -191,9 +191,9 @@ This vignette assumes you have alread run the Set up and Preprocessing steps and
 * ```metadata.csv```
 * ```peaks.broadPeak```
 
-For convenience, these files are also provided [here]().
+For convenience, these files are also provided [here](). TODO
 
-The first thing we need to do is to download the input data in the same dir where the repository has been cloned. In order to do this, please follow the steps below:
+The first thing we need to do is to download the input data in the same directory where the repository was cloned. In order to do this, please follow the steps below:
 
 ```
 cd ~/NatProt
