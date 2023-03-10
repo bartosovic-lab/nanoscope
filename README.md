@@ -201,3 +201,4 @@ cd ~/NatProt
 cd input_files
 ```
 
+Now we are ready to start the downstream analysis. Please, refere to the [vignette](). TODO
