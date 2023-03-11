@@ -196,4 +196,4 @@ cd single-cell-nano-cut-tag_toy_data/input_files/
 ```
 
 Now we are ready to start the downstream analysis.\
-Please, follow the [vignette]([https://fansalon.github.io](https://fansalon.github.io/vignette_single-cell-nanoCT.html)).
+Please, follow the [vignette](https://fansalon.github.io](https://fansalon.github.io/vignette_single-cell-nanoCT.html).
