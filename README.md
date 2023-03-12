@@ -142,6 +142,10 @@ One can change the name of the samples as well as the path of the fastq files an
 2. fastq files must be stored in directories whose path is formatted as follow: ```${fastqdir}/*/*/*fastq.gz```. Where ```${fastqdir}``` is the path you have specified in the config.yaml as ```fastq_path``` under the ```samples``` field.\
 Basically, this means that the fasta.gz files must be stored in a sub-directory of a sub-directory of the path specified as ```fastq_path``` under the ```samples``` field in the config.yaml file.
 
+# Go back to the git directory
+```
+cd ~/NatProt/single-cell-nano-cut-tag
+```
 
 You can find the config.yaml file in `config/config.yaml`
 
