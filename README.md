@@ -139,7 +139,7 @@ One can change the name of the samples as well as the path of the fastq files an
 **NB**: how to properly format your own config.yaml file:
 
 1. This tutorial assumes the cellranger atac reference has already been generated. If not, please follow cellranger instructions [here](https://support.10xgenomics.com/single-cell-atac/software/pipelines/latest/advanced/references)
-2. fastq files must be stored in a sub-directory of a sub-directory of ```fastq_path```. Where ```${fastq_path}``` is the path you have specified in the config.yaml as ```fastq_path``` under the ```samples``` field.\
+2. fastq files must be stored in a sub-directory of a sub-directory of ```fastq_path```. Where ```fastq_path``` is the path you have specified in the config.yaml as ```fastq_path``` under the ```samples``` field.\
 Basically, fastq files are supposed to be in path formatted as follow: ```${fastq_path}/*/*/*fastq.gz```.
 
 
