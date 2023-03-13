@@ -1,0 +1,4 @@
+name: nanoscope_base
+dependencies:
+  - python
+  - snakemake

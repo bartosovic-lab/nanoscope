@@ -23,18 +23,18 @@ print(modalities_combinations)
 features = ['peaks']
 print(features)
 
-def get_fastq_for_cellranger(fastq_folder,sample,antibody,barcode):
+def get_fastq_for_cellranger(fastq_folder,sample,modality,barcode):
     import glob
     result = []
     all_fastq_files  = glob.glob(fastq_folder + "/**/*.fastq.gz",recursive=True)
     all_fastq_parsed = [parse_fastq(x) for x in all_fastq_files]
     for x in all_fastq_parsed:
-        result.append('results/multimodal_data/{sample}/fastq_per_barcode/{antibody}_{barcode}/barcode_{barcode}/{seq_id}_{number}_{lane}_R1_{suffix}'.format(\
-            sample=sample, antibody=antibody , barcode=barcode, seq_id=x['id'], number=x['number'], lane=x['lane'], suffix=x['suffix']))
-        result.append('results/multimodal_data/{sample}/fastq_per_barcode/{antibody}_{barcode}/barcode_{barcode}/{seq_id}_{number}_{lane}_R2_{suffix}'.format( \
-            sample=sample,antibody=antibody,barcode=barcode,seq_id=x['id'],number=x['number'],lane=x['lane'],suffix=x['suffix']))
-        result.append('results/multimodal_data/{sample}/fastq_per_barcode/{antibody}_{barcode}/barcode_{barcode}/{seq_id}_{number}_{lane}_R3_{suffix}'.format( \
-            sample=sample,antibody=antibody,barcode=barcode,seq_id=x['id'],number=x['number'],lane=x['lane'],suffix=x['suffix']))
+        result.append('{sample}/fastq/{modality}_{barcode}/barcode_{barcode}/{seq_id}_{number}_{lane}_R1_{suffix}'.format(\
+            sample=sample, modality=modality , barcode=barcode, seq_id=x['id'], number=x['number'], lane=x['lane'], suffix=x['suffix']))
+        result.append('{sample}/fastq/{modality}_{barcode}/barcode_{barcode}/{seq_id}_{number}_{lane}_R2_{suffix}'.format( \
+            sample=sample,modality=modality,barcode=barcode,seq_id=x['id'],number=x['number'],lane=x['lane'],suffix=x['suffix']))
+        result.append('{sample}/fastq/{modality}_{barcode}/barcode_{barcode}/{seq_id}_{number}_{lane}_R3_{suffix}'.format( \
+            sample=sample,modality=modality,barcode=barcode,seq_id=x['id'],number=x['number'],lane=x['lane'],suffix=x['suffix']))
     return(result)
 
 def parse_fastq(path):
@@ -49,5 +49,3 @@ def parse_fastq(path):
     result['suffix']  = re.split('_[RI][0-9]+_',fastq)[1].strip("_")
     return(result)
 
-shell.executable("/bin/bash")
-shell.prefix("conda activate " + config['general']['conda_env']  + " ; ")
