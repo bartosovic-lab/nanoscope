@@ -1,22 +1,21 @@
 samples:
-  sample_P23209:                                                                         # Change the name of your sample here
+  nanoCT_001:                                                                         # Change the name of your sample here
     fastq_path:
-      ~/NatProt/Data/fastq/P23209/P23209_1001                                            # Modify path to fastq files here
+      /proj/snic2022-23-547/private/marek/nature_protocols/fastq/nanoCT_001/               # Modify path to fastq files here
     barcodes:                                                                            # Define your different antibody barcodes here
       ATAC: TATAGCCT
       H3K27ac: ATAGAGGC
       H3K27me3: CCTATCCT
 
-  sample_P24004:                                                                         # Change the name of your sample here
+  nanoCT_002:                                                                         # Change the name of your sample here
     fastq_path:
-      ~/NatProt/Data/fastq/P24004/P24004_1001                                            # Modify path to fastq files here
+      /proj/snic2022-23-547/private/marek/nature_protocols/fastq/nanoCT_002/                                            # Modify path to fastq files here
     barcodes:                                                                            # Define your different antibody barcodes here
       ATAC: TATAGCCT
       H3K27ac: ATAGAGGC
       H3K27me3: CCTATCCT
 
 general:
-  tempdir: ~/tmp/NatProt                                                                 # Modify path to a tmp folder already created here
-  conda_env: NatProt                                                                     # Modify the name of your conda environment here
-  cellranger_software: /data/bin/cellranger-atac                                         # Modify the path to cellranger binaries here
-  cellranger_ref: /data/ref/cellranger-atac/refdata-cellranger-atac-mm10-2020-A-2.0.0/   # Modify the path to cellranger reference here
+  tempdir: /proj/snic2022-23-547/private/marek/tmp/                                                                  # Modify path to a tmp folder already created here
+  cellranger_software: /sw/bioinfo/Chromium-cellranger-ATAC/2.0.0/rackham/cellranger-atac                            # Modify the path to cellranger binaries here
+  cellranger_ref: /sw/data/Chromium/cellranger-ATAC-data/2.0.0/rackham/refdata-cellranger-arc-mm10-2020-A-2.0.0/     # Modify the path to cellranger reference here
