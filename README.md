@@ -83,7 +83,7 @@ mv *.fastq.gz ./fastq/nanoCT_002/
 ## Clone github repository
 ```
 cd ~/NatProt
-git clone https://github.com/bartosovic-lab/single-cell-nano-cut-tag
+git clone https://github.com/bartosovic-lab/nanoscope
 ```
 
 > If you encounter authentication errors, you need to create a [personal access token](https://docs.github.com/fr/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token)
