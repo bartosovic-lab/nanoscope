@@ -47,3 +47,56 @@ DepthCorMulMod <- function(obj) {
   return(p1)
 }
 
+
+# Umap with connected modalities 
+plotConnectModal <- function(seurat,group) {
+  nmodalities <- length(seurat)
+  
+  # First, get coords of UMAP, modality name, cluster name and cell barcode for each modality
+  umap_embeddings <- list()
+  i <- 0
+  for(mod in names(seurat)) {
+    i <- i + 1
+    # get modality name without barcode
+    mod2 <- strsplit(mod,"_")[[1]][1]
+    # get UMAP 1 and 2 coords
+    umap_embeddings[[mod2]]               <- as.data.frame(seurat[[mod]]@reductions[['umap']]@cell.embeddings)
+    # adjust UMAP1 for plotting pursoses
+    umap_embeddings[[mod2]]$UMAP_1        <- umap_embeddings[[mod2]]$UMAP_1 + (i-1)*40 
+    # add modality name
+    umap_embeddings[[mod2]]$modality      <- unique(seurat[[mod]]$modality) 
+    # add cluster name
+    umap_embeddings[[mod2]]$cluster       <- seurat[[mod]]@meta.data[,group] 
+    # add cell barcode
+    umap_embeddings[[mod2]]$cell_barcode  <- rownames(umap_embeddings[[mod2]]) 
+  }
+  
+  # convert the list to dataf
+  umap.embeddings.merge <- purrr::reduce(umap_embeddings,rbind)
+  # get the names of the common cells among the analysed modalities
+  common.cells                        <- table(umap.embeddings.merge$cell_barcode)
+  common.cells                        <- names(common.cells[common.cells==nmodalities])
+  # subset the umap_embeddings, selecting only the info from the common set of cells
+  umap.embeddings.merge               <- umap.embeddings.merge[umap.embeddings.merge$cell_barcode %in% common.cells,]
+  
+  # label modality - get coords
+  coords <- aggregate(umap.embeddings.merge$UMAP_1,by=list(umap.embeddings.merge$modality),max)
+  names(coords) <- c("modality","max")
+  coords$min <- aggregate(umap.embeddings.merge$UMAP_1,by=list(umap.embeddings.merge$modality),min)[,"x"]
+  coords$mid_point <- (coords$max + coords$min) / 2
+  
+  plot <- ggplot(data=umap.embeddings.merge,aes(x=UMAP_1,y=UMAP_2,col=cluster)) + 
+    geom_point(size=0.2) + 
+    geom_line(data=umap.embeddings.merge, aes(group=cell_barcode,col=cluster),alpha=0.2,size=0.02) + 
+    theme_classic() + NoAxes() +
+    guides(color=guide_legend(title="")) +
+    geom_text(data=coords,aes(label=modality,x=mid_point,y=max(umap.embeddings.merge$UMAP_2+.1*umap.embeddings.merge$UMAP_2)),
+              colour='black', fontface = "bold",size=4)
+  return(plot)
+  
+}
+
+
+
+
+
