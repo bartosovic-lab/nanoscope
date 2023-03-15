@@ -198,14 +198,4 @@ snakemake --snakefile workflow/Snakefile_preprocess.smk --cores 16 --profile htc
 # Downstream analysis
 Once that the [Set Up](#set-up) and [Preprocessing](#preprocessing) steps are succcesfully completed, data is ready for downstream analysis. In this part of the documentation we provide a vignette on how to perform the downstream analyses, from raw data to identification and annotation of the different cell states in the dataset in analysis.
 
-In order to follow step-by-step the vignette we need the input data. If you have followed the Set up and Preprocessing steps you should have the input data already in two directories called ```sample_P23209``` and ```sample_P24004```. 
-
-If you have not generated this data, you can still download them as described below.
-```
-curl -LO https://zenodo.org/record/7719349/files/single-cell-nano-cut-tag_toy_data.tar.gz
-tar -zxvf single-cell-nano-cut-tag_toy_data.tar.gz
-cd single-cell-nano-cut-tag_toy_data/input_files/
-```
-
-Now we are ready to start the downstream analysis.\
 Please, follow the [vignette](https://fansalon.github.io/vignette_single-cell-nanoCT.html).
