@@ -1,4 +1,4 @@
-name: pick_cells
+name: nanoscope_pick_cells
 channels:
   - defaults
   - conda-forge

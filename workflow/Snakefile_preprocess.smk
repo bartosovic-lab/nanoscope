@@ -11,9 +11,6 @@ rule all_preprocess:
         macs_broad=[
             '{sample}/{modality}_{barcode}/peaks/macs_broad/{modality}_peaks.broadPeak'.format(sample=sample,modality=modality,barcode=
             barcodes_dict[sample][modality]) for sample in samples_list for modality in barcodes_dict[sample].keys()],
-        # fragments=[
-        #     '{sample}/{modality}_{barcode}/fragments/fragments.tsv.gz'.format(sample=sample,modality=modality,barcode=
-        #     barcodes_dict[sample][modality]) for sample in samples_list for modality in barcodes_dict[sample].keys()],
         peaks_overlap=[
             '{sample}/{modality}_{barcode}/barcode_metrics/peaks_barcodes.txt'.format(sample=sample,modality=modality,barcode=
             barcodes_dict[sample][modality]) for sample in samples_list for modality in barcodes_dict[sample].keys()],
@@ -35,7 +32,7 @@ rule demultiplex:
     params:
         nbarcodes=lambda wildcards: len(config['samples'][wildcards.sample]['barcodes']),
         out_folder=lambda wildcards: '{sample}/{modality}_{barcode}/fastq/'.format(sample=wildcards.sample,modality=wildcards.modality,barcode=wildcards.barcode),
-    conda: '../envs/debarcode.yaml'
+    conda: '../envs/nanoscope_debarcode.yaml'
     shell:
         "python3 {input.script} -i {input.fastq} -o {params.out_folder} --single_cell --barcode {wildcards.barcode} 2>&1"
 
@@ -64,7 +61,7 @@ rule bam_to_bw: # For QC reasons
     output:
         bigwig='{sample}/{modality}_{barcode}/bigwig/all_reads.bw'
     threads: 16
-    conda: '../envs/deeptools.yaml'
+    conda: '../envs/nanoscope_deeptools.yaml'
     shell:
         'bamCoverage -b {input.cellranger_bam} -o {output.bigwig} -p {threads} --minMappingQuality 5 '
         ' --binSize 50 --centerReads --smoothLength 250 --normalizeUsing RPKM --ignoreDuplicates --extendReads'
@@ -76,23 +73,11 @@ rule run_macs_broad:
         broad_peaks='{sample}/{modality}_{barcode}/peaks/macs_broad/{modality}_peaks.broadPeak'
     params:
         macs_outdir='{sample}/{modality}_{barcode}/peaks/macs_broad/'
-    conda: '../envs/deeptools.yaml'
+    conda: '../envs/nanoscope_deeptools.yaml'
     shell:
         'macs2 callpeak -t {input} -g mm -f BAMPE -n {wildcards.modality} '
         '--outdir {params.macs_outdir} --llocal 100000 --keep-dup 1 --broad-cutoff 0.1 '
         '--max-gap 1000 --broad 2>&1 '
-
-# rule add_barcode_fragments:
-#     input:
-#         fragments='{sample}/{modality}_{barcode}/cellranger/outs/fragments.tsv.gz'
-#     output:
-#         fragments='{sample}/{modality}_{barcode}/fragments/fragments.tsv.gz',
-#         index='{sample}/{modality}_{barcode}/fragments/fragments.tsv.gz.tbi',
-#     params:
-#         script=workflow.basedir + '/scripts/add_sample_to_fragments.py',
-#     shell:
-#         'python3 {params.script} {input.fragments} {wildcards.sample} | bgzip > {output.fragments}; '
-#         'tabix -p bed {output.fragments}'
 
 rule barcode_metrics_peaks:
     input:
@@ -104,7 +89,7 @@ rule barcode_metrics_peaks:
         get_cell_barcode=workflow.basedir + '/scripts/get_cell_barcode.awk',
         add_sample_to_list=workflow.basedir + '/scripts/add_sample_to_list.py',
         tmpdir=config['general']['tempdir']
-    conda: '../envs/deeptools.yaml'
+    conda: '../envs/nanoscope_deeptools.yaml'
     shell:
         'bedtools intersect -abam {input.bam} -b {input.peaks} -u | samtools view -f2 | '
         'awk -f {params.get_cell_barcode} | sed "s/CB:Z://g" |  '
@@ -119,7 +104,7 @@ rule barcode_metrics_all:
         get_cell_barcode=workflow.basedir + '/scripts/get_cell_barcode.awk',
         add_sample_to_list=workflow.basedir + '/scripts/add_sample_to_list.py',
         tmpdir=config['general']['tempdir']
-    conda:  '../envs/deeptools.yaml'
+    conda: '../envs/nanoscope_deeptools.yaml'
     shell:
         'mkdir -p {params.tmpdir}; '
         ' samtools view -f2 {input.bam}| '
@@ -144,6 +129,6 @@ rule cell_selection:
         out_prefix='{sample}/{modality}_{barcode}/cell_picking/',
     resources:
         mem_mb = 25000
-    conda: '../envs/pick_cells.yaml'
+    conda: '../envs/nanoscope_pick_cells.yaml'
     shell:
         "Rscript {params.script} --metadata {input.metadata} --fragments {input.fragments} --bcd_all {input.bcd_all} --bcd_peak {input.bcd_peak} --modality {wildcards.modality} --sample {wildcards.sample} --out_prefix {params.out_prefix}"

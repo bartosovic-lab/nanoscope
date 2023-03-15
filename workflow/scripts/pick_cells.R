@@ -4,6 +4,7 @@ library(ggplot2)
 library(funr)
 library(patchwork)
 library(mclust)
+library(rtracklayer)
 
 
 # Source aux functions

@@ -1,4 +1,4 @@
-name: deeptools
+name: nanoscope_deeptools
 channels:
   - defaults
   - conda-forge
