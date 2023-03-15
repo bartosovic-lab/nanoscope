@@ -140,7 +140,7 @@ Basically, fastq files are supposed to be in path formatted as follow: ```${fast
 
 Go back to the git directory
 ```
-cd ~/NatProt/single-cell-nano-cut-tag
+cd ~/NatProt/nanoscope
 ```
 
 You can find the config.yaml file in `config/config.yaml`
@@ -186,7 +186,7 @@ All outputed files will be automatically generated and will be used to run the R
 
 Run snakemake :
 ```
-cd ~/NatProt/single-cell-nano-cut-tag
+cd ~/NatProt/nanoscope
 snakemake --snakefile workflow/Snakefile_preprocess.smk --cores 16 --profile htcondor -p
 ```
 
