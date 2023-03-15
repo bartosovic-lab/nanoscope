@@ -3,6 +3,7 @@ library(argparse)
 library(ggplot2)
 library(funr)
 library(patchwork)
+library(mclust)
 
 
 # Source aux functions
@@ -16,7 +17,7 @@ parser <- ArgumentParser()
 parser$add_argument("-s", "--sample", type="character", default='foo', 
                     help="sample name [as in config file key]")
 
-parser$add_argument("-a", "--antibody", type="character", default='foo',
+parser$add_argument("-m", "--modality   ", type="character", default='foo',
                     help="antibody name [as in config file key]")
 
 parser$add_argument("-o", "--out_prefix", type="character", default="/",
@@ -49,7 +50,7 @@ parser$add_argument("--peak_fraction_max", type="double", default='1',
 
 
 args      <- parser$parse_args()
-saveRDS(object=args,file='results/arguments.Rds')
+# saveRDS(object=args,file='results/arguments.Rds')
 
 cutoff_reads_min            = args$min_reads
 cutoff_reads_max            = args$max_reads
@@ -70,7 +71,7 @@ metadata$promoter_ratio = (metadata$promoter_region_fragments+1) / (metadata$pas
 metadata$peak_region_ratio = (metadata$peak_region_fragments+1) / (metadata$passed_filters + 1)
 
 # Fix metadata cell barcodes
-metadata$barcode <- paste0(args$sample,"_",metadata$barcode)
+# metadata$barcode <- paste0(args$sample,"_",metadata$barcode)
 
 # Read barcode statistics files
 all_barcodes <- read.table(file=all_barcodes_file)
