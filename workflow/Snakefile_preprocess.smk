@@ -34,7 +34,7 @@ rule demultiplex:
         '{sample}/{modality}_{barcode}/fastq/barcode_{barcode}/{id}_{number}_{lane}_R3_{suffix}',
     params:
         nbarcodes=lambda wildcards: len(config['samples'][wildcards.sample]['barcodes']),
-        out_folder=lambda wildcards: '{sample}/fastq/{modality}_{barcode}/'.format(sample=wildcards.sample,modality=wildcards.modality,barcode=wildcards.barcode),
+        out_folder=lambda wildcards: '{sample}/{modality}_{barcode}/fastq/'.format(sample=wildcards.sample,modality=wildcards.modality,barcode=wildcards.barcode),
     conda: '../envs/debarcode.yaml'
     shell:
         "python3 {input.script} -i {input.fastq} -o {params.out_folder} --single_cell --barcode {wildcards.barcode} 2>&1"
@@ -51,14 +51,14 @@ rule run_cellranger:
     params:
         cellranger_software=config['general']['cellranger_software'],
         cellranger_ref=config['general']['cellranger_ref'],
-        fastq_folder=lambda wildcards: os.getcwd() + '/{sample}/fastq/{modality}_{barcode}/barcode_{barcode}/'.format(sample=wildcards.sample,modality=wildcards.modality,barcode=wildcards.barcode)
+        fastq_folder=lambda wildcards: os.getcwd() + '/{sample}/{modality}_{barcode}/fastq/barcode_{barcode}/'.format(sample=wildcards.sample,modality=wildcards.modality,barcode=wildcards.barcode)
     threads: 20
     shell:
         'rm -rf {wildcards.sample}/{wildcards.modality}_{wildcards.barcode}/cellranger/; '
         'cd {wildcards.sample}/{wildcards.modality}_{wildcards.barcode}/; '
         '{params.cellranger_software} count --id cellranger --reference {params.cellranger_ref} --fastqs {params.fastq_folder}'
 
-rule bam_to_bw:
+rule bam_to_bw: # For QC reasons
     input:
         cellranger_bam='{sample}/{modality}_{barcode}/cellranger/outs/possorted_bam.bam'
     output:
@@ -79,8 +79,8 @@ rule run_macs_broad:
     conda: '../envs/deeptools.yaml'
     shell:
         'macs2 callpeak -t {input} -g mm -f BAMPE -n {wildcards.modality} '
-        '--outdir {params.macs_outdir} --llocal 100000 --keep-dup=1 --broad-cutoff=0.1 '
-        '--min-length 1000 --max-gap 1000 --broad 2>&1 '
+        '--outdir {params.macs_outdir} --llocal 100000 --keep-dup 1 --broad-cutoff 0.1 '
+        '--max-gap 1000 --broad 2>&1 '
 
 # rule add_barcode_fragments:
 #     input:
@@ -94,7 +94,7 @@ rule run_macs_broad:
 #         'python3 {params.script} {input.fragments} {wildcards.sample} | bgzip > {output.fragments}; '
 #         'tabix -p bed {output.fragments}'
 
-rule barcode_overlap_peaks:
+rule barcode_metrics_peaks:
     input:
         bam='{sample}/{modality}_{barcode}/cellranger/outs/possorted_bam.bam',
         peaks='{sample}/{modality}_{barcode}/peaks/macs_broad/{modality}_peaks.broadPeak',
@@ -107,7 +107,7 @@ rule barcode_overlap_peaks:
     conda: '../envs/deeptools.yaml'
     shell:
         'bedtools intersect -abam {input.bam} -b {input.peaks} -u | samtools view -f2 | '
-        'awk -f {params.get_cell_barcode} | sed "s/CB:Z://g" | python3 {params.add_sample_to_list} {wildcards.sample} | '
+        'awk -f {params.get_cell_barcode} | sed "s/CB:Z://g" |  '
         'sort -T {params.tmpdir} | uniq -c > {output.overlap} && [[ -s {output.overlap} ]] ; '
 
 rule barcode_metrics_all:
@@ -119,10 +119,11 @@ rule barcode_metrics_all:
         get_cell_barcode=workflow.basedir + '/scripts/get_cell_barcode.awk',
         add_sample_to_list=workflow.basedir + '/scripts/add_sample_to_list.py',
         tmpdir=config['general']['tempdir']
-    conda: '../envs/deeptools.yaml'
+    conda:  '../envs/deeptools.yaml'
     shell:
+        'mkdir -p {params.tmpdir}; '
         ' samtools view -f2 {input.bam}| '
-        'awk -f {params.get_cell_barcode} | sed "s/CB:Z://g" | python3 {params.add_sample_to_list} {wildcards.sample} | '
+        'awk -f {params.get_cell_barcode} | sed "s/CB:Z://g" |  '
         'sort -T {params.tmpdir} | uniq -c > {output.all_bcd} && [[ -s {output.all_bcd} ]] ; '
 
 rule cell_selection:
@@ -141,5 +142,8 @@ rule cell_selection:
     params:
         script=workflow.basedir + '/scripts/pick_cells.R',
         out_prefix='{sample}/{modality}_{barcode}/cell_picking/',
+    resources:
+        mem_mb = 25000
+    conda: '../envs/pick_cells.yaml'
     shell:
         "Rscript {params.script} --metadata {input.metadata} --fragments {input.fragments} --bcd_all {input.bcd_all} --bcd_peak {input.bcd_peak} --modality {wildcards.modality} --sample {wildcards.sample} --out_prefix {params.out_prefix}"
