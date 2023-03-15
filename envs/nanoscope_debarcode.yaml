@@ -1,4 +1,4 @@
-name: debarcode
+name: nanoscope_debarcode
 channels:
   - defaults
   - conda-forge
