@@ -1,6 +1,6 @@
 # Nanoscope 
 # Analysis pipeline for single-cell nano-CUT&Tag data analysis
-### Federico Ansaloni, Bastien Herve, Marek Bartosovic
+### Federico Ansaloni, Bastien Hervé, Marek Bartosovic
 <hr>
 
 # Overview
