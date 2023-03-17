@@ -7,6 +7,29 @@
 This documentation will cover the Single cell nanoCut&Tag, Nature Protocols 2023, in deepth to successfully reproduce step by step bioinformatic workflow described in the paper.
 The pipeline is composed of three majors axes, [Set Up](#set-up), [Preprocessing](#preprocessing) and [Downstream Analysis](#downstream-analysis) which will be broken down into sub-units to facilitate the go-through.
 
+# Quick use
+
+If you wish to quickly use the pipeline follow these steps:
+
+```
+mkdir my_new_project
+cd my_new_project
+
+# Clone the git repo
+git clone https://github.com/bartosovic-lab/nanoscope
+
+# Create conda environment
+conda create --name nanoscope_base -f nanoscope/envs/nanoscope_base.yaml 
+conda activate nanoscope_base
+
+# Change file paths and othe parameters in pipeline config file 
+vim nanoscope/config/config.yaml
+
+# Run the pipeline
+snakemake --snakefile nanoscope/workflow/Snakefile_preprocess.smk --cores 16 --profile htcondor -p --use-conda --rerun-incomplete
+```
+
+
 # Data availability
 All raw and processed files can be found as supplementary files in the [GEO repository](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE198467).
 `seurat.rds` object can also be used to start the analysis from [Downstream Analysis](#downstream-analysis).
@@ -185,7 +208,7 @@ All outputed files will be automatically generated and will be used to run the R
 Run snakemake :
 ```
 cd ~/NatProt/nanoscope
-snakemake --snakefile workflow/Snakefile_preprocess.smk --cores 16 --profile htcondor -p
+snakemake --snakefile workflow/Snakefile_preprocess.smk --cores 16 --profile htcondor -p --use-conda
 ```
 
 # Downstream analysis
