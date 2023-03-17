@@ -22,6 +22,7 @@ If you fancy using MacOS or Windows, please design your set up accordingly.
 cd ~/NatProt
 git clone https://github.com/bartosovic-lab/nanoscope
 ```
+> If you encounter authentication errors, you need to create a [personal access token](https://docs.github.com/fr/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token)
 
 ## Prepare environment
 A conda environment will be used to set up an isolated architecture reducing troubleshooting.
@@ -83,7 +84,6 @@ mv *.fastq.gz ./fastq/sample_P24004/
 > This step takes a while...
 
 
-> If you encounter authentication errors, you need to create a [personal access token](https://docs.github.com/fr/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token)
 
 ## Install cellranger
 Cellranger is a bit more complex to fit inside a conda environment and is generally heavy to store.
