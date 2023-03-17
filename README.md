@@ -74,8 +74,8 @@ mv SRR18305885_3.fastq nanoCT_002_1001_S1_L002_R2_001.fastq
 mv SRR18305885_4.fastq nanoCT_002_1001_S1_L002_R3_001.fastq
 
 gzip *.fastq
-mkdir -p ./fastq/nanoCT_002/
-mv *.fastq.gz ./fastq/nanoCT_002/
+mkdir -p ./fastq/sample_P24004/
+mv *.fastq.gz ./fastq/sample_P24004/
 ```
 
 > This step takes a while...
