@@ -38,8 +38,7 @@ rule demultiplex:
 
 rule run_cellranger:
     input:
-        lambda wildcards: get_fastq_for_cellranger(config['samples'][wildcards.sample][
-            'fastq_path'],sample=wildcards.sample,modality=wildcards.modality,barcode=wildcards.barcode)
+        lambda wildcards: get_fastq_for_cellranger(config['samples'][wildcards.sample]['fastq_path'],sample=wildcards.sample,modality=wildcards.modality,barcode=wildcards.barcode)
     output:
         bam='{sample}/{modality}_{barcode}/cellranger/outs/possorted_bam.bam',
         frag='{sample}/{modality}_{barcode}/cellranger/outs/fragments.tsv.gz',
@@ -121,8 +120,8 @@ rule cell_selection:
     output:
         '{sample}/{modality}_{barcode}/cell_picking/cells_10x.png',
         '{sample}/{modality}_{barcode}/cell_picking/cells_picked.png',
-        '{sample}/{modality}_{barcode}/cell_picking/cells_picked.bw',
-        '{sample}/{modality}_{barcode}/cell_picking/cells_not_picked.bw',
+        # '{sample}/{modality}_{barcode}/cell_picking/cells_picked.bw',
+        # '{sample}/{modality}_{barcode}/cell_picking/cells_not_picked.bw',
         '{sample}/{modality}_{barcode}/cell_picking/metadata.csv',
     params:
         script=workflow.basedir + '/scripts/pick_cells.R',
