@@ -147,27 +147,26 @@ You can find the config.yaml file in `config/config.yaml`
 
 ```
 samples:
-  sample_P23209:
+  nanoCT_001:                                                                         # Change the name of your sample here
     fastq_path:
-      ~/NatProt/Data/fastq/P23209/P23209_1001/
-    barcodes:
+      ~/NatProt/Data/fastq/nanoCT_001/                                            # Modify path to fastq files here
+    barcodes:                                                                            # Define your different antibody barcodes here
       ATAC: TATAGCCT
       H3K27ac: ATAGAGGC
       H3K27me3: CCTATCCT
 
-  sample_P24004:
+  nanoCT_002:                                                                         # Change the name of your sample here
     fastq_path:
-      ~/NatProt/Data/fastq/P24004/P24004_1001/
-    barcodes:
+      ~/NatProt/Data/fastq/nanoCT_002/                                            # Modify path to fastq files here
+    barcodes:                                                                            # Define your different antibody barcodes here
       ATAC: TATAGCCT
       H3K27ac: ATAGAGGC
       H3K27me3: CCTATCCT
 
 general:
-  tempdir: ~/tmp/NatProt                                                                                                                 
-  conda_env: NatProt
-  cellranger_software: /data/bin/cellranger-atac
-  cellranger_ref: /data/ref/cellranger-atac/refdata-cellranger-atac-mm10-2020-A-2.0.0/
+  tempdir: ~/tmp/NatProt                                                                 # Modify path to a tmp folder already created here
+  cellranger_software: /data/bin/cellranger-atac                                         # Modify the path to cellranger binaries here
+  cellranger_ref: /data/ref/cellranger-atac/refdata-cellranger-atac-mm10-2020-A-2.0.0/   # Modif
 ```
 
 # Preprocessing
