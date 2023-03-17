@@ -147,9 +147,9 @@ You can find the config.yaml file in `config/config.yaml`
 
 ```
 samples:
-  nanoCT_001:
+  sample_P23209:
     fastq_path:
-      ~/NatProt/Data/fastq/nanoCT_001/
+      ~/NatProt/Data/fastq/sample_P23209/
     barcodes:
       ATAC: TATAGCCT
       H3K27ac: ATAGAGGC
