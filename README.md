@@ -155,9 +155,9 @@ samples:
       H3K27ac: ATAGAGGC
       H3K27me3: CCTATCCT
 
-  nanoCT_002:
+  sample_P24004:
     fastq_path:
-      ~/NatProt/Data/fastq/nanoCT_002/
+      ~/NatProt/Data/fastq/sample_P24004/
     barcodes:
       ATAC: TATAGCCT
       H3K27ac: ATAGAGGC
