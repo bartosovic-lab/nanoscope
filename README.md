@@ -42,6 +42,7 @@ If you fancy using MacOS or Windows, please design your set up accordingly.
 
 ## Clone github repository
 ```
+mkdir ~/nanoCT_project
 cd ~/nanoCT_project
 git clone https://github.com/bartosovic-lab/nanoscope
 ```
