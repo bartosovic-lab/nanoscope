@@ -114,11 +114,8 @@ mkdir -p ~/.config/snakemake
 cd ~/.config/snakemake
 
 template="gh:Snakemake-Profiles/slurm"
-cookiecutter --output-dir "$profile_dir" "$template"
+cookiecutter --output-dir ~/.config/snakemake "$template"
 ```
-
-
-If your HPC is running on a different scheduler, you can install different style of profiles, like [slurm](https://github.com/Snakemake-Profiles/slurm).
 
 > Do not forget to change the profile in your snakemake command line : 
 ```
