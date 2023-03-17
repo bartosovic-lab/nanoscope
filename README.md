@@ -42,7 +42,7 @@ If you fancy using MacOS or Windows, please design your set up accordingly.
 
 ## Clone github repository
 ```
-cd ~/NatProt
+cd ~/nanoCT_project
 git clone https://github.com/bartosovic-lab/nanoscope
 ```
 > If you encounter authentication errors, you need to create a [personal access token](https://docs.github.com/fr/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token)
@@ -64,8 +64,8 @@ conda activate nanoscope_base
 The raw data as fastq files can be downloaded throughout the [SRA-Toolkit](https://github.com/ncbi/sra-tools/wiki/HowTo:-fasterq-dump).
 ### Navigate to a new directory to store the data
 ```
-mkdir -p ~/NatProt/Data
-cd ~/NatProt/Data
+mkdir -p ~/nanoCT_project/Data
+cd ~/nanoCT_project/Data
 ```
 ### Download SRA
 ```
@@ -151,7 +151,7 @@ cookiecutter --output-dir ~/.config/snakemake "$template"
 ### Creation of temporary folder
 This temporary directory will be given to the config file to handle snakemake temporary outputs
 ```
-mkdir -p ~/tmp/NatProt
+mkdir -p ~/tmp/nanoCT_project
 ```
 ### Modify config.yaml
 The config.yaml file in the github repository will tailored the workflow according to its content.
@@ -164,7 +164,7 @@ One can change the name of the samples as well as the path of the fastq files an
 
 Go back to the git directory
 ```
-cd ~/NatProt/nanoscope
+cd ~/nanoCT_project/nanoscope
 ```
 
 You can find the config.yaml file in `config/config.yaml`
@@ -173,7 +173,7 @@ You can find the config.yaml file in `config/config.yaml`
 samples:
   sample_P23209:
     fastq_path:
-      ~/NatProt/Data/fastq/sample_P23209/
+      ~/nanoCT_project/Data/fastq/sample_P23209/
     barcodes:
       ATAC: TATAGCCT
       H3K27ac: ATAGAGGC
@@ -181,14 +181,14 @@ samples:
 
   sample_P24004:
     fastq_path:
-      ~/NatProt/Data/fastq/sample_P24004/
+      ~/nanoCT_project/Data/fastq/sample_P24004/
     barcodes:
       ATAC: TATAGCCT
       H3K27ac: ATAGAGGC
       H3K27me3: CCTATCCT
 
 general:
-  tempdir: ~/tmp/NatProt
+  tempdir: ~/tmp/nanoCT_project
   cellranger_software: /data/bin/cellranger-atac
   cellranger_ref: /data/ref/cellranger-atac/refdata-cellranger-atac-mm10-2020-A-2.0.0/
 ```
@@ -207,7 +207,7 @@ All outputed files will be automatically generated and will be used to run the R
 
 Run snakemake :
 ```
-cd ~/NatProt/nanoscope
+cd ~/nanoCT_project/nanoscope
 snakemake --snakefile workflow/Snakefile_preprocess.smk --cores 16 --profile htcondor -p --use-conda
 ```
 
