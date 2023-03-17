@@ -1,11 +1,7 @@
-# Single cell nanoCut&Tag protocol
-### Author1, Author2, Author3...
+# Nanoscope 
+# Analysis pipeline for single-cell nano-CUT&Tag data analysis
+### Federico Ansaloni, Bastien Herve, Marek Bartosovic
 <hr>
-Single cell nanoCut&Tag
-
-Author1, Author2, Author3...
-
-Nature Protocols 2023 (link)
 
 # Overview
 This documentation will cover the Single cell nanoCut&Tag, Nature Protocols 2023, in deepth to successfully reproduce step by step bioinformatic workflow described in the paper.
@@ -21,17 +17,23 @@ All raw and processed files can be found as supplementary files in the [GEO repo
 The whole project has been run on a High Performance Computing (HPC) linux cluster under CentOS (release:7.9.2009) with htcondor workflow management system.
 If you fancy using MacOS or Windows, please design your set up accordingly.
 
+## Clone github repository
+```
+cd ~/NatProt
+git clone https://github.com/bartosovic-lab/nanoscope
+```
+
 ## Prepare environment
 A conda environment will be used to set up an isolated architecture reducing troubleshooting.
 Conda can be installed via miniconda following [miniconda guidelines](https://docs.conda.io/projects/conda/en/latest/user-guide/install/linux.html).
 
 ### Create conda environment
 ```
-conda create --name NatProt -y -c conda-forge -c bioconda python==3.10.8 pysam==0.20.0 htcondor==10.2.1 python-levenshtein==0.20.9 pyyaml==6.0 deeptools==3.5.1 snakemake==7.24.0 samtools=1.16.1 cookiecutter==2.1.1 regex==2022.10.31 gzip==1.12 contextlib2==21.6.0 bedtools==2.30.0 macs2==2.2.7.1 git==2.39.1 sra-tools==3.0.3 r-ggplot2==3.4.1 r-argparse==2.1.5 r-funr==0.3.2 r-patchwork==1.1.2 r-mclust==6.0.0 r-dplyr==1.1.0 bioconductor-rtracklayer==1.58.0 bioconductor-genomicranges==1.50.0
+conda create --name nanoscope_base -f nanoscope/envs/nanoscope_base.yaml 
 ```
 Sit in your new environment till the end of the procedure.
 ```
-conda activate NatProt
+conda activate nanoscope_base
 ```
 
 ## Download the raw data
@@ -80,11 +82,6 @@ mv *.fastq.gz ./fastq/sample_P24004/
 
 > This step takes a while...
 
-## Clone github repository
-```
-cd ~/NatProt
-git clone https://github.com/bartosovic-lab/nanoscope
-```
 
 > If you encounter authentication errors, you need to create a [personal access token](https://docs.github.com/fr/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token)
 
@@ -104,11 +101,22 @@ For htcondor workflow management, we will follow these [guidelines](https://gith
 ```
 mkdir -p ~/.config/snakemake
 cd ~/.config/snakemake
-```
-```
+
 cookiecutter https://github.com/Snakemake-Profiles/htcondor.git
 ```
+
 > At `profile_name [htcondor]` press `enter` and select a path for your log files, something like `~/condor_jobs`
+
+
+For slurm workflow management, follow these [guidelines](https://github.com/Snakemake-Profiles/slurm)
+```
+mkdir -p ~/.config/snakemake
+cd ~/.config/snakemake
+
+template="gh:Snakemake-Profiles/slurm"
+cookiecutter --output-dir "$profile_dir" "$template"
+```
+
 
 If your HPC is running on a different scheduler, you can install different style of profiles, like [slurm](https://github.com/Snakemake-Profiles/slurm).
 
