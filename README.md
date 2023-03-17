@@ -46,14 +46,14 @@ cd ~/NatProt/Data
 fasterq-dump -f -e 1 --split-files --include-technical -o SRR18305888.fastq SRR18305888
 fasterq-dump -f -e 1 --split-files --include-technical -o SRR18305889.fastq SRR18305889
 
-mv SRR18305888_1.fastq nanoCT_001_1001_S1_L001_I1_001.fastq
-mv SRR18305888_2.fastq nanoCT_001_1001_S1_L001_R1_001.fastq
-mv SRR18305888_3.fastq nanoCT_001_1001_S1_L001_R2_001.fastq
-mv SRR18305888_4.fastq nanoCT_001_1001_S1_L001_R3_001.fastq
-mv SRR18305889_1.fastq nanoCT_001_1001_S1_L002_I1_001.fastq
-mv SRR18305889_2.fastq nanoCT_001_1001_S1_L002_R1_001.fastq
-mv SRR18305889_3.fastq nanoCT_001_1001_S1_L002_R2_001.fastq
-mv SRR18305889_4.fastq nanoCT_001_1001_S1_L002_R3_001.fastq
+mv SRR18305888_1.fastq sample_P23209_001_1001_S1_L001_I1_001.fastq
+mv SRR18305888_2.fastq sample_P23209_001_1001_S1_L001_R1_001.fastq
+mv SRR18305888_3.fastq sample_P23209_001_1001_S1_L001_R2_001.fastq
+mv SRR18305888_4.fastq sample_P23209_001_1001_S1_L001_R3_001.fastq
+mv SRR18305889_1.fastq sample_P23209_001_1001_S1_L002_I1_001.fastq
+mv SRR18305889_2.fastq sample_P23209_001_1001_S1_L002_R1_001.fastq
+mv SRR18305889_3.fastq sample_P23209_001_1001_S1_L002_R2_001.fastq
+mv SRR18305889_4.fastq sample_P23209_001_1001_S1_L002_R3_001.fastq
 
 gzip *.fastq
 mkdir -p ./fastq/sample_P23209/
@@ -64,14 +64,14 @@ mv *.fastq.gz ./fastq/sample_P23209/
 fasterq-dump -f -e 1 --split-files --include-technical -o SRR18305884.fastq SRR18305884
 fasterq-dump -f -e 1 --split-files --include-technical -o SRR18305885.fastq SRR18305885
 
-mv SRR18305884_1.fastq nanoCT_002_1001_S1_L001_I1_001.fastq
-mv SRR18305884_2.fastq nanoCT_002_1001_S1_L001_R1_001.fastq
-mv SRR18305884_3.fastq nanoCT_002_1001_S1_L001_R2_001.fastq
-mv SRR18305884_4.fastq nanoCT_002_1001_S1_L001_R3_001.fastq
-mv SRR18305885_1.fastq nanoCT_002_1001_S1_L002_I1_001.fastq
-mv SRR18305885_2.fastq nanoCT_002_1001_S1_L002_R1_001.fastq
-mv SRR18305885_3.fastq nanoCT_002_1001_S1_L002_R2_001.fastq
-mv SRR18305885_4.fastq nanoCT_002_1001_S1_L002_R3_001.fastq
+mv SRR18305884_1.fastq sample_P24004_002_1001_S1_L001_I1_001.fastq
+mv SRR18305884_2.fastq sample_P24004_002_1001_S1_L001_R1_001.fastq
+mv SRR18305884_3.fastq sample_P24004_002_1001_S1_L001_R2_001.fastq
+mv SRR18305884_4.fastq sample_P24004_002_1001_S1_L001_R3_001.fastq
+mv SRR18305885_1.fastq sample_P24004_002_1001_S1_L002_I1_001.fastq
+mv SRR18305885_2.fastq sample_P24004_002_1001_S1_L002_R1_001.fastq
+mv SRR18305885_3.fastq sample_P24004_002_1001_S1_L002_R2_001.fastq
+mv SRR18305885_4.fastq sample_P24004_002_1001_S1_L002_R3_001.fastq
 
 gzip *.fastq
 mkdir -p ./fastq/sample_P24004/
