@@ -175,12 +175,10 @@ The first steps of processing from fastq files to cell picking will be done by t
 It will cover the following steps :
  - Modality Demultiplexing
  - Reads alignment with Cellranger
- - Transform bam files to bigwig files
+ - Create pseudobulk bigwig tracks for all cells (for QC purposes) 
  - Call peaks with Macs2
- - Label fragments with associated barcode
- - Label overlapping peaks with associated barcode
- - Output barcode metrics
- - Redo cell selection
+ - Create summary files with number of reads per cell (including PCR duplicates) and number of reads in peak regions
+ - Redo cell selection, based on the summary files
 
 All outputed files will be automatically generated and will be used to run the R markdown vignette below.
 
