@@ -149,32 +149,32 @@ ggsave(plot = p1+p2,
        filename=paste0(args$out_prefix,'cells_picked.png'),width = 20,height = 10,units = 'in')
 
 
-################# Export bw selected / unselected
-cat("*** Reading fragments file \n")
-
-fragments         <- args$fragments
-fragments_gr      <- rtracklayer::import(fragments,format = "bed")
-
-
-cat("*** Exporting merged bw files \n")
-barcode_pass   <- metadata$barcode[metadata$passedMB]
-barcode_nopass <- metadata$barcode[!metadata$passedMB]
-  
-fragments.pass   <- fragments_gr[fragments_gr$name %in% barcode_pass]
-fragments.nopass <- fragments_gr[fragments_gr$name %in% barcode_nopass]
-  
-cat("*** Calculating coverage \n")
-coverage.pass   <- GenomicRanges::coverage(fragments.pass)
-coverage.nopass <- GenomicRanges::coverage(fragments.nopass)
-  
-cat("*** Normalizing \n")
-coverage.pass <- coverage.pass/length(fragments.pass)
-coverage.nopass <- coverage.nopass/length(fragments.nopass)
-  
-cat("*** Exporting \n")
-dir.create(args$out_prefix)
-rtracklayer::export(object=coverage.pass,  con = paste0(args$out_prefix,'/cells_picked.bw'))
-rtracklayer::export(object=coverage.nopass,con = paste0(args$out_prefix,'/cells_not_picked.bw'))
+# ################# Export bw selected / unselected
+# cat("*** Reading fragments file \n")
+#
+# fragments         <- args$fragments
+# fragments_gr      <- rtracklayer::import(fragments,format = "bed")
+#
+#
+# cat("*** Exporting merged bw files \n")
+# barcode_pass   <- metadata$barcode[metadata$passedMB]
+# barcode_nopass <- metadata$barcode[!metadata$passedMB]
+#
+# fragments.pass   <- fragments_gr[fragments_gr$name %in% barcode_pass]
+# fragments.nopass <- fragments_gr[fragments_gr$name %in% barcode_nopass]
+#
+# cat("*** Calculating coverage \n")
+# coverage.pass   <- GenomicRanges::coverage(fragments.pass)
+# coverage.nopass <- GenomicRanges::coverage(fragments.nopass)
+#
+# cat("*** Normalizing \n")
+# coverage.pass <- coverage.pass/length(fragments.pass)
+# coverage.nopass <- coverage.nopass/length(fragments.nopass)
+#
+# cat("*** Exporting \n")
+# dir.create(args$out_prefix)
+# rtracklayer::export(object=coverage.pass,  con = paste0(args$out_prefix,'/cells_picked.bw'))
+# rtracklayer::export(object=coverage.nopass,con = paste0(args$out_prefix,'/cells_not_picked.bw'))
 
 cat("*** Writing metadata \n")
 write.csv(x = metadata,file = paste0(args$out_prefix,'metadata.csv'))
