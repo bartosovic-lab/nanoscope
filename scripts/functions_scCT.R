@@ -89,7 +89,7 @@ plotConnectModal <- function(seurat,group) {
     geom_point(size=0.2) + 
     geom_line(data=umap.embeddings.merge, aes(group=cell_barcode,col=cluster),alpha=0.2,size=0.02) + 
     theme_classic() + NoAxes() +
-    guides(color=guide_legend(title="")) +
+    guides(color = guide_legend(override.aes = list(size=5),title="")) +
     geom_text(data=coords,aes(label=modality,x=mid_point,y=max(umap.embeddings.merge$UMAP_2+.1*umap.embeddings.merge$UMAP_2)),
               colour='black', fontface = "bold",size=4)
   return(plot)
