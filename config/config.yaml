@@ -1,15 +1,15 @@
 samples:
-  nanoCT_001:                                                                         # Change the name of your sample here
+  sample_P23209:                                                                         # Change the name of your sample here
     fastq_path:
-      ~/NatProt/Data/fastq/nanoCT_001/                                            # Modify path to fastq files here
+      ~/NatProt/Data/fastq/sample_P23209/                                                # Modify path to fastq files here
     barcodes:                                                                            # Define your different antibody barcodes here
       ATAC: TATAGCCT
       H3K27ac: ATAGAGGC
       H3K27me3: CCTATCCT
 
-  nanoCT_002:                                                                         # Change the name of your sample here
+  sample_P24004:                                                                         # Change the name of your sample here
     fastq_path:
-      ~/NatProt/Data/fastq/nanoCT_002/                                            # Modify path to fastq files here
+      ~/NatProt/Data/fastq/sample_P24004/                                                # Modify path to fastq files here
     barcodes:                                                                            # Define your different antibody barcodes here
       ATAC: TATAGCCT
       H3K27ac: ATAGAGGC
