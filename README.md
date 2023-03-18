@@ -1,5 +1,5 @@
 # Nanoscope 
-# Analysis pipeline for single-cell nano-CUT&Tag data analysis
+# Analysis pipeline for single-cell nano-CUT&Tag data
 ### Federico Ansaloni, Bastien Hervé, Marek Bartosovic
 <hr>
 
@@ -19,10 +19,10 @@ cd my_new_project
 git clone https://github.com/bartosovic-lab/nanoscope
 
 # Create conda environment
-conda create --name nanoscope_base -f nanoscope/envs/nanoscope_base.yaml 
+conda env create -f nanoscope/envs/nanoscope_base.yaml 
 conda activate nanoscope_base
 
-# Change file paths and othe parameters in pipeline config file 
+# Change file paths and other parameters in pipeline config file 
 vim nanoscope/config/config.yaml
 
 # Run the pipeline
@@ -54,7 +54,7 @@ Conda can be installed via miniconda following [miniconda guidelines](https://do
 
 ### Create conda environment
 ```
-conda create --name nanoscope_base -f nanoscope/envs/nanoscope_base.yaml 
+conda env create -f nanoscope/envs/nanoscope_base.yaml 
 ```
 Sit in your new environment till the end of the procedure.
 ```
