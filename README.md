@@ -19,6 +19,7 @@ cd my_new_project
 git clone https://github.com/bartosovic-lab/nanoscope
 
 # Create conda environment
+conda config --set channel_priority flexible
 conda env create -f nanoscope/envs/nanoscope_base.yaml 
 conda activate nanoscope_base
 
@@ -26,7 +27,7 @@ conda activate nanoscope_base
 vim nanoscope/config/config.yaml
 
 # Run the pipeline
-snakemake --snakefile nanoscope/workflow/Snakefile_preprocess.smk --cores 16 --profile htcondor -p --use-conda --rerun-incomplete
+snakemake --snakefile nanoscope/workflow/Snakefile_preprocess.smk --configfile nanoscope/config/config.yaml --cores 20 --jobs 20 -p --use-conda --rerun-incomplete --profile htcondor
 ```
 
 
