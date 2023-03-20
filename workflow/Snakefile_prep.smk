@@ -29,12 +29,10 @@ def get_fastq_for_cellranger(fastq_folder,sample,modality,barcode):
     all_fastq_files  = glob.glob(fastq_folder + "/**/*.fastq.gz",recursive=True)
     all_fastq_parsed = [parse_fastq(x) for x in all_fastq_files]
     for x in all_fastq_parsed:
-        result.append('{sample}/{modality}_{barcode}/fastq/barcode_{barcode}/{seq_id}_{number}_{lane}_R1_{suffix}'.format(\
-            sample=sample, modality=modality , barcode=barcode, seq_id=x['id'], number=x['number'], lane=x['lane'], suffix=x['suffix']))
-        result.append('{sample}/{modality}_{barcode}/fastq/barcode_{barcode}/{seq_id}_{number}_{lane}_R2_{suffix}'.format( \
-            sample=sample,modality=modality,barcode=barcode,seq_id=x['id'],number=x['number'],lane=x['lane'],suffix=x['suffix']))
-        result.append('{sample}/{modality}_{barcode}/fastq/barcode_{barcode}/{seq_id}_{number}_{lane}_R3_{suffix}'.format( \
-            sample=sample,modality=modality,barcode=barcode,seq_id=x['id'],number=x['number'],lane=x['lane'],suffix=x['suffix']))
+        if x['read'] == 'I1':
+            continue
+        result.append('{sample}/{modality}_{barcode}/fastq/barcode_{barcode}/{sample}_{number}_{lane}_{read}_{suffix}'.format(\
+            sample=sample, modality=modality , barcode=barcode, seq_id=x['id'], number=x['number'], lane=x['lane'], suffix=x['suffix'], read = x['read']))
     return(result)
 
 def parse_fastq(path):
