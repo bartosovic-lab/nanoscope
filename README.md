@@ -55,6 +55,7 @@ Conda can be installed via miniconda following [miniconda guidelines](https://do
 
 ### Create conda environment
 ```
+conda config --set channel_priority flexible
 conda env create -f nanoscope/envs/nanoscope_base.yaml 
 ```
 Sit in your new environment till the end of the procedure.
