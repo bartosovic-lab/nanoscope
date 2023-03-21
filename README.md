@@ -107,8 +107,13 @@ mkdir -p ./fastq/sample_P24004/
 mv *.fastq.gz ./fastq/sample_P24004/
 ```
 
-> This step takes a while...
+This step takes a while...
 
+> Note: The file names should follow the standard illumina .fastq naming convention having for example the following format:
+
+>SampleID_S1_L001_R1_001.fastq
+
+> Otherwise the pipeline probably won't work. For more details on illumina fastq file naming please see: https://support.illumina.com/help/BaseSpace_OLH_009008/Content/Source/Informatics/BS/NamingConvention_FASTQ-files-swBS.htm
 
 
 ## Install cellranger

@@ -17,13 +17,19 @@ class bcdCT:
         self.detect_reads()
         self.single_cell=args.single_cell
         self.out_prefix=args.out_prefix
+        if self.single_cell:
+            self.out_reads = ['R1','R2','R3']
+        else:
+            self.out_reads = ['R1','R3']
 
         if args.name:
             self.name = args.name
         else:
             self.autodetect_name()
 
+
         self.autodetect_barcodes(args)
+        self.prep_out_filenames()
 
     def detect_input(self,input):
         Error_message="*** Error: Wrong input files specified. The input must be either folder with _R1_*.fastq.gz _R2_*.fastq.gz _R3_*.fastq.gz files or paths to the files themselves ***\n" +\
@@ -64,33 +70,40 @@ class bcdCT:
 
         self.path_in = {key:self.path_in[key][0] for key in self.path_in.keys()}
 
-    def autodetect_name(self):
-        Error_message="*** Error: Prefix for R1 R2 R3 files not the same. Please use the same prefix for all the files or specify experiment name ***\n"
 
-        self.name = [split("_R[0-9]_",str(x)) for x in self.path_in.values()]
+
+    def in_handles(self,stack):
+        in_stack = {x: stack.enter_context(FastxFile(self.path_in[x],'r')) for x in ['R1','R2','R3']}
+        return in_stack
+
+    def prep_out_filenames(self):
+        self.path_out = {barcode: {} for barcode in self.picked_barcodes}
+        self.path_out  = {barcode: {read: "{0}/barcode_{1}/{2}".format(self.out_prefix,barcode,os.path.basename(self.path_in[read])) for read in self.out_reads} for barcode in self.picked_barcodes}
+        # If args.name is specified, replace the sample_id prefix with the one specified in args.name
+        # e.g. nanoCT_MB22_001_S1_L001_R1_001.fastq.gz is input --name is test
+        # Change to test_S1_L001_R1_001.fastq.gz
+        if args.name:
+            for barcode in self.path_out:
+                for read in self.path_out[barcode]:
+                    sample_id = split('_S[0-9]+_', os.path.basename(self.path_out[barcode][read]))[0].strip("_")
+                    self.path_out[barcode][read] = self.path_out[barcode][read].replace(sample_id,args.name)
+
+    def autodetect_name(self):
+        Error_message = "*** Error: Prefix for R1 R2 R3 files not the same. Please use the same prefix for all the files or specify experiment name ***\n"
+
+        self.name = [split("_R[0-9]_", str(x)) for x in self.path_in.values()]
         self.name = [x[0] for x in self.name]
 
         if len(list(set(self.name))) > 1:
             sys.stderr.write(Error_message)
             sys.exit(1)
 
-        self.name=self.name[0].split("/")[-1]
-
-    def in_handles(self,stack):
-        in_stack = {x: stack.enter_context(FastxFile(self.path_in[x],'r')) for x in ['R1','R2','R3']}
-        return in_stack
+        self.name = self.name[0].split("/")[-1]
 
     def create_out_handles(self,stack):
         for bcd in self.picked_barcodes:
             os.makedirs(self.out_prefix + "/barcode_" + bcd, exist_ok=True)
-        if self.single_cell:
-            out_reads = ['R1','R2','R3']
-        else:
-            out_reads = ['R1','R3']
-
-        self.path_out = {barcode: {} for barcode in self.picked_barcodes}
-        self.path_out  = {barcode: {read: "{0}/barcode_{1}/{2}".format(self.out_prefix,barcode,os.path.basename(self.path_in[read])) for read in out_reads} for barcode in self.picked_barcodes}
-        self.out_stack = {barcode: {read: stack.enter_context(gzip.open(self.path_out[barcode][read],'wt'))for read in out_reads} for barcode in self.picked_barcodes}
+        self.out_stack = {barcode: {read: stack.enter_context(gzip.open(self.path_out[barcode][read],'wt'))for read in self.out_reads} for barcode in self.picked_barcodes}
 
 
     def __iter__(self):

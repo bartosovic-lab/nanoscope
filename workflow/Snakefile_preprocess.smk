@@ -26,15 +26,15 @@ rule demultiplex:
         script=workflow.basedir + '/scripts/debarcode.py',
         fastq=lambda wildcards: glob.glob(config['samples'][wildcards.sample]['fastq_path'] + '/**/*{lane}*R[123]*.fastq.gz'.format(lane=wildcards.lane),recursive=True)
     output:
-        '{sample}/{modality}_{barcode}/fastq/barcode_{barcode}/{id}_{number}_{lane}_R1_{suffix}',
-        '{sample}/{modality}_{barcode}/fastq/barcode_{barcode}/{id}_{number}_{lane}_R2_{suffix}',
-        '{sample}/{modality}_{barcode}/fastq/barcode_{barcode}/{id}_{number}_{lane}_R3_{suffix}',
+        '{sample}/{modality}_{barcode}/fastq/barcode_{barcode}/{sample}_{number}_{lane}_R1_{suffix}',
+        '{sample}/{modality}_{barcode}/fastq/barcode_{barcode}/{sample}_{number}_{lane}_R2_{suffix}',
+        '{sample}/{modality}_{barcode}/fastq/barcode_{barcode}/{sample}_{number}_{lane}_R3_{suffix}',
     params:
         nbarcodes=lambda wildcards: len(config['samples'][wildcards.sample]['barcodes']),
         out_folder=lambda wildcards: '{sample}/{modality}_{barcode}/fastq/'.format(sample=wildcards.sample,modality=wildcards.modality,barcode=wildcards.barcode),
     conda: '../envs/nanoscope_debarcode.yaml'
     shell:
-        "python3 {input.script} -i {input.fastq} -o {params.out_folder} --single_cell --barcode {wildcards.barcode} 2>&1"
+        "python3 {input.script} -i {input.fastq} -o {params.out_folder} --single_cell --barcode {wildcards.barcode} --name {wildcards.sample} 2>&1"
 
 rule run_cellranger:
     input:
