@@ -162,7 +162,7 @@ Here is showned the config file for the [downloaded fastq files](#download-sra).
 
 One can change the name of the samples as well as the path of the fastq files and the associated modalities. General information can also be tweaked, such as the temporary directory and parameters related to cellranger binary and reference location.
 
-**NB**: this tutorial assumes the cellranger atac reference has already been generated. If not, please follow cellranger instructions [here](https://support.10xgenomics.com/single-cell-atac/software/pipelines/latest/advanced/references)
+**NB**: this tutorial assumes the cellranger atac reference has already been generated. If not, please follow cellranger instructions [here](https://support.10xgenomics.com/single-cell-atac/software/pipelines/latest/advanced/references) or download it directly from [cellranger website](https://support.10xgenomics.com/single-cell-atac/software/downloads/latest?).
 
 
 Go back to the git directory
