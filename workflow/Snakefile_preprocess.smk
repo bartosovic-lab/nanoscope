@@ -71,10 +71,11 @@ rule run_macs_broad:
     output:
         broad_peaks='{sample}/{modality}_{barcode}/peaks/macs_broad/{modality}_peaks.broadPeak'
     params:
-        macs_outdir='{sample}/{modality}_{barcode}/peaks/macs_broad/'
+        macs_outdir='{sample}/{modality}_{barcode}/peaks/macs_broad/',
+        macs_genome=config['general']['macs_genome']
     conda: '../envs/nanoscope_deeptools.yaml'
     shell:
-        'macs2 callpeak -t {input} -g mm -f BAMPE -n {wildcards.modality} '
+        'macs2 callpeak -t {input} -g {params.macs_genome} -f BAMPE -n {wildcards.modality} '
         '--outdir {params.macs_outdir} --llocal 100000 --keep-dup 1 --broad-cutoff 0.1 '
         '--max-gap 1000 --broad 2>&1 '
 
