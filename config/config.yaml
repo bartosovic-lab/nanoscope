@@ -19,3 +19,4 @@ general:
   tempdir: ~/tmp/nanoCT_project                                                          # Modify path to a tmp folder already created here
   cellranger_software: /data/bin/cellranger-atac                                         # Modify the path to cellranger binaries here
   cellranger_ref: /data/ref/cellranger-atac/refdata-cellranger-atac-mm10-2020-A-2.0.0/   # Modify the path to cellranger reference here
+  macs_genome: mm                                                                        # Modify genome for macs2 callpeak
