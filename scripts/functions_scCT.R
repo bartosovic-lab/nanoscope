@@ -13,7 +13,7 @@ listToMeta <- function(obj) {
 
 
 # Plot UMI counts per each modality and sample
-plotUMIcounts <- function(obj,quantiles,feature) {
+plotCounts <- function(obj,quantiles,feature,ylabel=feature) {
   dataf <- listToMeta(obj)
   # plot
   pp=ggplot(dataf, aes(x="x",y=dataf[,feature],fill=sample)) +
@@ -28,7 +28,7 @@ plotUMIcounts <- function(obj,quantiles,feature) {
     theme(axis.text.x=element_text(size = 0,angle = 0, hjust = .5)) +
     theme(axis.title.x = element_text(size=0)) +
     # y axis
-    ylab(feature) +
+    ylab(ylabel) +
     theme(axis.text.y=element_text(size = 12)) +
     theme(axis.title.y = element_text(size=14)) +
     theme(legend.position = "none") +
