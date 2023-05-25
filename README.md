@@ -199,6 +199,7 @@ general:
   tempdir: ~/tmp/nanoCT_project
   cellranger_software: /data/bin/cellranger-atac
   cellranger_ref: /data/ref/cellranger-atac/refdata-cellranger-atac-mm10-2020-A-2.0.0/
+  macs_genome: mm
 ```
 
 # Preprocessing
