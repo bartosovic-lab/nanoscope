@@ -223,4 +223,10 @@ snakemake --snakefile workflow/Snakefile_preprocess.smk --cores 16 --profile htc
 # Downstream analysis
 Once that the [Set Up](#set-up) and [Preprocessing](#preprocessing) steps are succcesfully completed, data is ready for downstream analysis. In this part of the documentation we provide a vignette on how to perform the downstream analyses, from raw data to identification and annotation of the different cell states in the dataset in analysis.
 
-Please, follow the [vignette](https://fansalon.github.io/vignette_single-cell-nanoCT.html).
+Please, follow this [vignette](https://fansalon.github.io/vignette_single-cell-nanoCT.html).
+
+Note how the dataset analysed in this vignette is composed by 2 biological replicates of the same sample. Often experiments are designed in order to have multiple samples and/or biological conditions requiring data integration, differential analysis, etc. These are not part of this vignette, but will be implemented in other vignettes in the future.
+
+
+
+
