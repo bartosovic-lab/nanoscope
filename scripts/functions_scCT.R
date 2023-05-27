@@ -97,6 +97,65 @@ plotConnectModal <- function(seurat,group) {
 }
 
 
-
-
+# Function to plot upset on peaks of each modality
+getUpsetPeaks <- function(modalities, samples, combined_peaks_ls, input_ls) {
+  
+  list_up <- list()
+  for (mod in modalities) {
+    i <- 0
+    for (smp in samples) {
+      i <- i + 1
+      
+      # overlap
+      combined_mod <- as.data.frame(combined_peaks_ls[[mod]])
+      overlap <- GenomicRanges::findOverlaps( toGRanges(combined_mod), input_ls[[paste0(mod,"_",smp)]], select = "first")
+      # convert NA to 0s and make it binary
+      overlap[is.na(overlap)] = 0
+      overlap <- ifelse(overlap>0,1,0)
+      combined_mod[,smp] <- overlap
+      
+      # add new values
+      if (i==1) {
+        final <- combined_mod
+      } else {
+        final[,smp] <- overlap
+      }
+      
+      # if last sample, append to list
+      if (smp==samples[length(samples)]) {
+        list_up[[mod]] <- final
+      }
+      
+      
+    }
+  }
+  
+  if (length(list_up)==1) {
+    pfinal=upset(list_up[[1]][,6:ncol(list_up[[1]])],colnames(list_up[[1]][,6:ncol(list_up[[1]])]),min_size=10,width_ratio=.3,
+                 set_sizes=(upset_set_size() + theme(axis.text.x=element_text(angle=45,hjust=1,size=8))),intersections="all",
+                 base_annotations=list('Size'=(intersection_size(counts=FALSE))))  + xlab(names(list_up)[1]) + theme(axis.title.x = element_text(size=12))
+  } else if (length(list_up)==2) {
+    p1=upset(list_up[[1]][,6:ncol(list_up[[1]])],colnames(list_up[[1]][,6:ncol(list_up[[1]])]),min_size=10,width_ratio=.3,
+             set_sizes=(upset_set_size() + theme(axis.text.x=element_text(angle=45,hjust=1,size=8))),intersections="all",
+             base_annotations=list('Size'=(intersection_size(counts=FALSE)))) + xlab(names(list_up)[1])+ theme(axis.title.x = element_text(size=12)) 
+    p2=upset(list_up[[2]][,6:ncol(list_up[[1]])],colnames(list_up[[2]][,6:ncol(list_up[[1]])]),min_size=10,width_ratio=.3,
+             set_sizes=(upset_set_size() + theme(axis.text.x=element_text(angle=45,hjust=1,size=8))),intersections="all",
+             base_annotations=list('Size'=(intersection_size(counts=FALSE)))) + xlab(names(list_up)[2]) + theme(axis.title.x = element_text(size=12))
+    pfinal=ggarrange(p1,p2,ncol=2)
+  } else if (length(list_up)==3) {
+    p1=upset(list_up[[1]][,6:ncol(list_up[[1]])],colnames(list_up[[1]][,6:ncol(list_up[[1]])]),min_size=10,width_ratio=.3,
+             set_sizes=(upset_set_size() + theme(axis.text.x=element_text(angle=45,hjust=1,size=8))),intersections="all",
+             base_annotations=list('Size'=(intersection_size(counts=FALSE))))  + xlab(names(list_up)[1]) + theme(axis.title.x = element_text(size=12))
+    p2=upset(list_up[[2]][,6:ncol(list_up[[1]])],colnames(list_up[[2]][,6:ncol(list_up[[1]])]),min_size=10,width_ratio=.3,
+             set_sizes=(upset_set_size() + theme(axis.text.x=element_text(angle=45,hjust=1,size=8))),intersections="all",
+             base_annotations=list('Size'=(intersection_size(counts=FALSE)))) + xlab(names(list_up)[2]) + theme(axis.title.x = element_text(size=12))
+    p3=upset(list_up[[3]][,6:ncol(list_up[[1]])],colnames(list_up[[3]][,6:ncol(list_up[[1]])]),min_size=10,width_ratio=.3,
+             set_sizes=(upset_set_size() + theme(axis.text.x=element_text(angle=45,hjust=1,size=8))),intersections="all",
+             base_annotations=list('Size'=(intersection_size(counts=FALSE)))) + xlab(names(list_up)[3]) + theme(axis.title.x = element_text(size=12))
+    pfinal=ggarrange(p1,p2,p3,ncol=3)
+  } else {
+    warning("Upset plot function implemented in this vignette is not implemented to work on more than 3 modalities")
+  }
+  return(pfinal)
+}
 
