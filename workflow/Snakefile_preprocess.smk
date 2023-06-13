@@ -20,6 +20,10 @@ rule all_preprocess:
         cell_pick=[
             '{sample}/{modality}_{barcode}/cell_picking/metadata.csv'.format(sample=sample,modality=modality,barcode=
             barcodes_dict[sample][modality]) for sample in samples_list for modality in barcodes_dict[sample].keys()],
+        noLA_bam=[
+            '{sample}/{modality}_{barcode}/cellranger/outs/possorted_noLA_duplicates_bam.bam'.format(sample=sample,modality=modality,barcode=
+            barcodes_dict[sample][modality]) for sample in samples_list for modality in barcodes_dict[sample].keys()],
+
 
 rule demultiplex:
     input:
@@ -54,12 +58,48 @@ rule run_cellranger:
         'cd {wildcards.sample}/{wildcards.modality}_{wildcards.barcode}/; '
         '{params.cellranger_software} count --id cellranger --reference {params.cellranger_ref} --fastqs {params.fastq_folder}'
 
+rule cellranger_bam_to_namesorted:
+    input:
+        bam = '{sample}/{modality}_{barcode}/cellranger/outs/possorted_bam.bam',
+    output:
+        bam = temp('{sample}/{modality}_{barcode}/cellranger/outs/namesorted_bam.bam'),
+    params:
+        tempfolder = config['general']['tempdir']
+    threads: 20
+    conda: '../envs/nanoscope_samtools.yaml'
+    shell:
+        'samtools sort -T -@ {threads} -n -o {output.bam} {input.bam} '
+
+rule remove_LA_duplicates:
+    input:
+        bam = '{sample}/{modality}_{barcode}/cellranger/outs/namesorted_bam.bam',
+    output:
+        bam = temp('{sample}/{modality}_{barcode}/cellranger/outs/namesorted_noLA_duplicates_bam.bam'),
+    params:
+        script = workflow.basedir + '/scripts/remove_LA_duplicates.py',
+    conda: '../envs/nanoscope_pysam.yaml'
+    shell:
+        'python3 {params.script} {input.bam} {output.bam}'
+
+rule possort_noLA_bam_file:
+    input:
+        bam = '{sample}/{modality}_{barcode}/cellranger/outs/namesorted_noLA_duplicates_bam.bam',
+    output:
+        bam = '{sample}/{modality}_{barcode}/cellranger/outs/possorted_noLA_duplicates_bam.bam',
+    conda: '../envs/nanoscope_samtools.yaml'
+    threads: 20
+    params:
+        tempfolder = config['general']['tempdir']
+    shell:
+        'samtools sort -@ {threads} -T {params.tempfolder} -o {output.bam} {input.bam}'
+
+
 rule bam_to_bw: # For QC reasons
     input:
         cellranger_bam='{sample}/{modality}_{barcode}/cellranger/outs/possorted_bam.bam'
     output:
         bigwig='{sample}/{modality}_{barcode}/bigwig/all_reads.bw'
-    threads: 16
+    threads: 20
     conda: '../envs/nanoscope_deeptools.yaml'
     shell:
         'bamCoverage -b {input.cellranger_bam} -o {output.bigwig} -p {threads} --minMappingQuality 5 '

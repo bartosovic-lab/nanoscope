@@ -1,0 +1,41 @@
+name: nanoscope_pysam
+channels:
+  - defaults
+  - conda-forge
+  - bioconda
+dependencies:
+  - _libgcc_mutex=0.1=conda_forge
+  - _openmp_mutex=4.5=2_kmp_llvm
+  - bzip2=1.0.8=h7b6447c_0
+  - c-ares=1.19.0=h5eee18b_0
+  - ca-certificates=2023.05.30=h06a4308_0
+  - krb5=1.20.1=hf590b9c_0
+  - ld_impl_linux-64=2.38=h1181459_1
+  - libcurl=8.1.2=h409715c_0
+  - libdeflate=1.18=h0b41bf4_0
+  - libedit=3.1.20221030=h5eee18b_0
+  - libev=4.33=h7f8727e_1
+  - libffi=3.4.4=h6a678d5_0
+  - libgcc-ng=13.1.0=he5830b7_0
+  - libnghttp2=1.52.0=h2d74bed_0
+  - libssh2=1.10.0=hdbd6064_1
+  - libstdcxx-ng=11.2.0=h1234567_1
+  - libuuid=1.41.5=h5eee18b_0
+  - libzlib=1.2.13=hd590300_5
+  - llvm-openmp=14.0.6=h9e868ea_0
+  - lz4-c=1.9.4=h6a678d5_0
+  - ncurses=6.4=h6a678d5_0
+  - openssl=3.1.1=hd590300_1
+  - pip=23.1.2=py310h06a4308_0
+  - pysam=0.21.0=py310h41dec4a_1
+  - python=3.10.11=h955ad1f_3
+  - python_abi=3.10=2_cp310
+  - readline=8.2=h5eee18b_0
+  - setuptools=67.8.0=py310h06a4308_0
+  - sqlite=3.41.2=h5eee18b_0
+  - tk=8.6.12=h1ccaba5_0
+  - tzdata=2023c=h04d1e81_0
+  - wheel=0.38.4=py310h06a4308_0
+  - xz=5.4.2=h5eee18b_0
+  - zlib=1.2.13=hd590300_5
+  - zstd=1.5.5=hc292b87_0
