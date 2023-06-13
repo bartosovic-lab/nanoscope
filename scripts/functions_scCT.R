@@ -159,3 +159,36 @@ getUpsetPeaks <- function(modalities, samples, combined_peaks_ls, input_ls) {
   return(pfinal)
 }
 
+
+plotPassed <- function(mdata.list,xaxis_text=NULL,angle_x=NULL) {
+  if (is.null(xaxis_text)) { xaxis_text=12 }
+  if (is.null(angle_x)) { angle_x=30 }
+  i <- 0
+  for (exp in names(mdata.list)) {
+    i <- i + 1
+    df <- mdata.list[[exp]]
+    counts <- as.data.frame(table(df$passedMB))
+    counts$Perc <- counts$Freq / sum(counts$Freq) * 100
+    counts$sample <- exp
+    # bind
+    if (i==1) {
+      metadata.df <- counts
+    } else {
+      metadata.df <- rbind(metadata.df,counts)
+    }
+  }
+  names(metadata.df)[1] <- "passedMB"
+  # now plot
+  pl=ggplot(metadata.df,aes(x=sample,y=Freq,fill=passedMB)) +
+    theme_bw() +
+    geom_bar(stat="identity",color='black',alpha=.7) +
+    # x-axis
+    theme(axis.text.x=element_text(angle=angle_x, hjust=1, size = xaxis_text)) + 
+    theme(axis.title.x = element_text(size= 0)) +
+    xlab("") +
+    theme(axis.title.x = element_text(size= 14)) +
+    # y-axis
+    ylab("Number of cells") +
+    theme(axis.text.y=element_text(size = 12)) +
+    theme(axis.title.y = element_text(size= 14)) 
+  return(pl)
