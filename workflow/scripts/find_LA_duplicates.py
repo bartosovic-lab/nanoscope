@@ -30,7 +30,7 @@ stats = {
 }
 
 n = 0
-n_target = 1000000  # test for 1 milion reads
+# n_target = 1000000  # test for 1 milion reads
 # n_target = 10000000 # test for 10 milion reads
 
 read1 = False
@@ -41,11 +41,11 @@ for line in samfile:
     if n % 100000 == 0:
         sys.stderr.write('*** {} lines processed\n'.format(n))
 
-    # Only take the first n_target reads # Debugging
-    if n == n_target:
-        # print(reads_unique)
-        print(stats)
-        break
+    # # Only take the first n_target reads # Debugging
+    # if n == n_target:
+    #     # print(reads_unique)
+    #     print(stats)
+    #     break
 
     # File needs to be namesorted - read a read pair
     read1 = line            # R1

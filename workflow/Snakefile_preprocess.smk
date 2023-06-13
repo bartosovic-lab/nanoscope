@@ -66,9 +66,11 @@ rule cellranger_bam_to_namesorted:
     params:
         tempfolder = config['general']['tempdir']
     threads: 20
+    resources:
+        mem_mb = 32000
     conda: '../envs/nanoscope_samtools.yaml'
     shell:
-        'samtools sort -T -@ {threads} -n -o {output.bam} {input.bam} '
+        'samtools sort -T {params.tempfolder} -@ {threads} -n -o {output.bam} {input.bam} '
 
 rule remove_LA_duplicates:
     input:
@@ -76,7 +78,7 @@ rule remove_LA_duplicates:
     output:
         bam = temp('{sample}/{modality}_{barcode}/cellranger/outs/namesorted_noLA_duplicates_bam.bam'),
     params:
-        script = workflow.basedir + '/scripts/remove_LA_duplicates.py',
+        script = workflow.basedir + '/scripts/find_LA_duplicates.py',
     conda: '../envs/nanoscope_pysam.yaml'
     shell:
         'python3 {params.script} {input.bam} {output.bam}'
@@ -88,6 +90,8 @@ rule possort_noLA_bam_file:
         bam = '{sample}/{modality}_{barcode}/cellranger/outs/possorted_noLA_duplicates_bam.bam',
     conda: '../envs/nanoscope_samtools.yaml'
     threads: 20
+    resources:
+        mem_mb=32000
     params:
         tempfolder = config['general']['tempdir']
     shell:
