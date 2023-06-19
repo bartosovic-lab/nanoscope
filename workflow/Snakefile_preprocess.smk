@@ -21,7 +21,7 @@ rule all_preprocess:
             '{sample}/{modality}_{barcode}/cell_picking/metadata.csv'.format(sample=sample,modality=modality,barcode=
             barcodes_dict[sample][modality]) for sample in samples_list for modality in barcodes_dict[sample].keys()],
         noLA_bam=[
-            '{sample}/{modality}_{barcode}/cellranger/outs/possorted_noLA_duplicates_bam.bam'.format(sample=sample,modality=modality,barcode=
+            '{sample}/{modality}_{barcode}/cellranger/outs/fragments_noLA_duplicates.tsv.gz'.format(sample=sample,modality=modality,barcode=
             barcodes_dict[sample][modality]) for sample in samples_list for modality in barcodes_dict[sample].keys()],
 
 
@@ -78,7 +78,7 @@ rule remove_LA_duplicates:
     output:
         bam = temp('{sample}/{modality}_{barcode}/cellranger/outs/namesorted_noLA_duplicates_bam.bam'),
     params:
-        script = workflow.basedir + '/scripts/find_LA_duplicates.py',
+        script = workflow.basedir + '/scripts/remove_LA_duplicates.py',
     conda: '../envs/nanoscope_pysam.yaml'
     shell:
         'python3 {params.script} {input.bam} {output.bam}'
@@ -87,7 +87,8 @@ rule possort_noLA_bam_file:
     input:
         bam = '{sample}/{modality}_{barcode}/cellranger/outs/namesorted_noLA_duplicates_bam.bam',
     output:
-        bam = '{sample}/{modality}_{barcode}/cellranger/outs/possorted_noLA_duplicates_bam.bam',
+        bam   = '{sample}/{modality}_{barcode}/cellranger/outs/possorted_noLA_duplicates_bam.bam',
+        index = '{sample}/{modality}_{barcode}/cellranger/outs/possorted_noLA_duplicates_bam.bam.bai',
     conda: '../envs/nanoscope_samtools.yaml'
     threads: 20
     resources:
@@ -95,8 +96,32 @@ rule possort_noLA_bam_file:
     params:
         tempfolder = config['general']['tempdir']
     shell:
-        'samtools sort -@ {threads} -T {params.tempfolder} -o {output.bam} {input.bam}'
+        'samtools sort -@ {threads} -T {params.tempfolder} -o {output.bam} {input.bam}; '
+        'samtools index {output.bam} '
 
+rule bam_noLA_to_fragments_noLA:
+    input:
+        bam = '{sample}/{modality}_{barcode}/cellranger/outs/possorted_noLA_duplicates_bam.bam',
+        index= '{sample}/{modality}_{barcode}/cellranger/outs/possorted_noLA_duplicates_bam.bam.bai',
+    output:
+        fragmments = temp('{sample}/{modality}_{barcode}/cellranger/outs/fragments_noLA_duplicates.tsv'),
+    conda: '../envs/nanoscope_sinto.yaml'
+    threads: 20
+    shell:
+        'sinto fragments -b {input.bam} -f{output.fragmments} -p {threads}'
+
+rule sort_sinto_output:
+    input:
+        fragments = '{sample}/{modality}_{barcode}/cellranger/outs/fragments_noLA_duplicates.tsv',
+    output:
+        fragments = '{sample}/{modality}_{barcode}/cellranger/outs/fragments_noLA_duplicates.tsv.gz',
+        index      = '{sample}/{modality}_{barcode}/cellranger/outs/fragments_noLA_duplicates.tsv.gz.tbi',
+    conda: '../envs/nanoscope_samtools.yaml'
+    resources:
+        mem_mb=16000
+    shell:
+        'sort -k1,1 -k2,2n {input.fragments} | bgzip > {output.fragments}; '
+        'tabix -p bed {output.fragments} '
 
 rule bam_to_bw: # For QC reasons
     input:
