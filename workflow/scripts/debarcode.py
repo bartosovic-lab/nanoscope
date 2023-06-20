@@ -9,7 +9,7 @@ from contextlib import ExitStack
 
 import yaml
 from pysam import FastxFile
-import Levenshtein                          # pip install python-Levenshtein
+import Levenshtein
 
 class bcdCT:
     def __init__(self,args):
