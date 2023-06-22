@@ -192,3 +192,84 @@ plotPassed <- function(mdata.list,xaxis_text=NULL,angle_x=NULL) {
     theme(axis.text.y=element_text(size = 12)) +
     theme(axis.title.y = element_text(size= 14)) 
   return(pl)
+}
+
+
+plotPassedCells <- function(obj,sample_list,mod_list) {
+  # convert obj to df
+  i <- 0
+  for (nm in names(obj)) {
+    i <- i + 1
+    # get samples and barcode name
+    for (s in sample_list) {
+      if (grepl(s,nm)) { 
+        sample <- s
+      }
+    }
+    for (m in mod_list) {
+      if (grepl(m,nm)) { 
+        mod <- m
+      }
+    }
+    obj[[nm]]$sample <- sample
+    obj[[nm]]$modality <- mod
+    if (i==1) {
+      df <- obj[[nm]]
+    } else {
+      df <- rbind(df,obj[[nm]])
+    }
+  }
+  plot <- ggplot(df,aes(x=all_unique_MB,y=peak_ratio_MB,fill=passedMB)) + 
+    theme_bw() +
+    geom_point(shape=21,size=.4) +
+    scale_x_log10(labels=trans_format('log10',math_format(10^.x))) +
+    #coord_cartesian(ylim = c(0,1),xlim = c(10,1000000)) +
+    facet_grid(modality~sample) +
+    theme(strip.text.x = element_text(size = 11, colour = "black", angle = 0, face= 'bold')) +
+    theme(strip.text.y = element_text(size = 11, colour = "black", face= 'bold')) + 
+    scale_fill_manual(values = c("#F8766D","#00BA38")) +
+    # x-axis
+    ylab("Fractio reads in peaks") +
+    theme(axis.text.x=element_text(angle=0, hjust=.5, size = 12)) + 
+    theme(axis.title.x = element_text(size= 14)) +
+    # y-axis
+    xlab("UMI") +
+    theme(axis.text.y=element_text(size = 12)) +
+    theme(axis.title.y = element_text(size= 14))+
+    guides(fill = guide_legend(override.aes = list(size=5)))
+  plot <- ggarrange(plot,legend='bottom')
+  return(plot)
+}
+
+
+
+
+commonCellHistonMarks <- function(mod1,name_mod1,mod2,name_mod2,mod3=NULL,name_mod3=NULL,sample) {
+  
+  # for 2 modalities
+  x <- list(name_mod1=mod1$barcode,
+            name_mod2=mod2$barcode)
+  names(x) <- c(name_mod1,name_mod2)
+  pp=ggVennDiagram(x) + 
+    scale_fill_gradient(low = "white", high = "white") +
+    theme(legend.position = "none") +
+    ggtitle(sample) +
+    theme(plot.title = element_text(size=14,hjust=0.5,face='bold'))
+  
+  # 3 modalities
+  if (!is.null(mod3)) {
+    x <- list(name_mod1=mod1$barcode,
+              name_mod2=mod2$barcode,
+              name_mod3=mod3$barcode)
+    names(x) <- c(name_mod1,name_mod2,name_mod3)
+    pp=ggVennDiagram(x) + 
+      scale_fill_gradient(low = "white", high = "white") +
+      theme(legend.position = "none") +
+      ggtitle(sample) +
+      theme(plot.title = element_text(size=14,hjust=0.5,face='bold'))
+  }
+  return(pp)
+  
+}
+
+
