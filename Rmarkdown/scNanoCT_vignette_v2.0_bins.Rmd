@@ -1,0 +1,760 @@
+---
+title: "nanoscope - Downstream Analysis Tutorial - bins"
+author:
+- name: Federico Ansaloni
+  affiliation: Karolinska Institutet
+output:
+  html_document:
+    theme: united
+    df_print: kable
+date: 'Compiled: `r format(Sys.Date(), "%B %d, %Y")`'
+---
+***
+
+## What is this tutorial for?
+
+This tutorial describes how to perform the downstream analysis on single-cell nano CUT&Tag data (2 biological replicates, 3 modalities), quantifying the fragment counts in genomic bins instead of peaks.
+
+This tutorial assumes that the data have already been preprocessed, including demultiplexing of the different modalities, running cellranger and custom cell calling (see [Set Up](https://github.com/bartosovic-lab/nanoscope#set-up) and [Preprocessing](https://github.com/bartosovic-lab/nanoscope#preprocessing)).\
+
+
+
+**Please note how in this tutorial we are describing how to perform the downstream analysis by using bins, not peaks.** For tutorial on peaks, see [here](https://fansalon.github.io/vignette_single-cell-nanoCT.html).\
+
+In addition, note how the biological data here analysed are 2 biological replicates of the same sample, thus it is safe to merge the two samples without any kind of integration. Often experiments are designed in order to have multiple samples and/or biological conditions requiring data integration, differential analysis, etc. These are not part of this vignette, but will be implemented in other vignettes in the future.\
+
+
+
+The downstream analysis implemented in this vignette is composed of 6 steps:\
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;**1.  Data loading (metadata and fragments)**\
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;**2.  Quality controls (QC)**\
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;**3.  Merge Seurat objects**\
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;**4.  Normalisation and dimensional reduction**\
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;**5.  Non-linear dimension reduction and clustering**\
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;**6.  Annotation**\
+\
+
+## Where/how can I get the input data?
+* If you are following [our tutorial](https://github.com/bartosovic-lab/nanoscope), your input data will probably already formatted in the proper way and stored in subdirectories of the  ```~/NatProt/nanoscope/``` folder\
+* If you have skipped the tutorial and just want to run this vignette, downloaded the toy data from [Zenodo](https://zenodo.org/record/7759368#.ZBrMcC-B3Eo)\
+* If you are running this vignette on your personal data, you will need to generate, for each sample and modality, the ```fragments.tsv.gz```, ```fragments.tsv.gz.tbi``` and ```metadata.csv``` files and store them in specific folders (see below section "1.1 Setting some initial variables")\
+\
+
+
+## 1. Data loading (metadata and fragments)
+In this section we are going to load the input files for each modality and sample, create a fragment object for each experiment, generate a bins x cell matrix for each experiment and finally generate one Seurat object for experiment.
+
+* Inputs of this section are the ```fragments.tsv.gz``` and ```metadata.csv``` files.\
+* Output of his section is a Seurat object for each experiment (6 in this case [2 samples * 3 modalities]).\
+
+First, load all the required libraries.
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,message = FALSE,warning = FALSE)
+knitr::opts_knit$set(root.dir = "~/NatProt/nanoscope/results//")
+```
+```{r setup2}
+rm(list = ls())
+library(Signac)
+library(Seurat)
+library(GenomicRanges)
+library(future)
+library(stringr)
+library(ggplot2)
+library(gghalves)
+library(ggpubr)
+library(EnsDb.Mmusculus.v79)
+library(BSgenome.Mmusculus.UCSC.mm10)
+library(ComplexUpset)
+library(regioneR)
+library(scales)
+library(ggVennDiagram)
+```
+\
+
+### 1.1 Setting some initial variables
+First, define some variables that will be used across the entire vignette. Modify them according to your data.\
+
+**Extremely important:**
+
+1. set as ```repodir``` the directory where the [nanoscope Github repo](https://github.com/bartosovic-lab/nanoscope/blob/main/README.md#clone-github-repository) is. This is required in order to upload all the custom functions needed to run this vignette\
+
+```{r init_var1 }
+# directory where the nanoscope repo was cloned
+repodir <- "~/Documents/GitHub/nanoscope/" # change accordingly
+source(paste0(repodir,"scripts/functions_scCT.R"))
+```
+
+
+2. set as ```wd``` the output root directory.\
+* If you are following [our tutorial](https://github.com/bartosovic-lab/nanoscope), please place the nanoscope output directories ```sample_P23209``` and ```sample_P24004``` in a directory called ```result``` and set it as working directory ```wd <- "~/NatProt/nanoscope/results/"```\
+* If you have skipped the tutorial and directly downloaded the toy data from [Zenodo](https://zenodo.org/record/7759368#.ZBrMcC-B3Eo), your ```wd``` will be ```/path/to/nanoscope_toy_data/results/```\
+* If you are running this vignette on your personal data please ensure that your ```wd``` is formatted as follow:\
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- ```fragments.tsv.gz``` is expected to be in a folder with this path: ```wd/{sample_name}/{modality_barcode}/cellranger/outs/```\
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- ```metadata.csv``` is expected to be in a folder with this path: ```wd/{sample_name}/{modality_barcode}/cell_picking/```\
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-Note that this vignette assumes the same modalities to have the same barcodes across the different samples\
+
+**Please note that nothing but the directories containing the input data for each samples must be stored in ```wd```**
+```{r init_var2 }
+# directory where the nanoscope output files are stored
+wd <- "~/NatProt/nanoscope/results" # change accordingly
+setwd(wd)
+```
+
+
+3. set other variables (genome version, assay type, etc)
+```{r init_var3 }
+# Set the used genome version
+genome <- "mm10"
+# Genome annotations
+genome_ann <- EnsDb.Mmusculus.v79
+# BSgenome
+bs_genome <- BSgenome.Mmusculus.UCSC.mm10
+# Assay (peaks or bins)
+assay <- "bins"
+# Samples
+samples <- dir()
+# Modalities
+modalities <- dir(samples[1]) # this assumes sample1, sample2, sampleN share the same modalities and barcodes!
+# Minimum number of cells a feature must be detected in to be included in the Seurat obj
+min_cell <- 1
+# Minium number of features a cell must have to be included in the Seurat obj
+min_feat <- 1
+```
+\
+
+
+### 1.2 Creating bin x cell matrix from a fragment file
+In order to create one Seurat object for each sample contaning a bin per cell count matrix we need to combine all the input files together. To this end we will need to: i) select the cells that passed internal filtering, ii) get the fragments file reporting the genomic coordinates of each fragment and the reads supporting each fragment and iii) construct a bin x cell matrix from a fragments file.\
+
+#### Load metadata files
+First, we parse the metadata file in order to get the cells that passed the filtering and are actually identified as cells.
+```{r load_metadata}
+##### Metadata
+# Load metadata for each experiment iterating across the sample list
+metadata.ls <- list()
+for (smpl in samples) {
+  cat("Loading metadata for sample",smpl,"\n")
+  for (mod in modalities) {
+    cat("\t",mod,"\n")
+
+    # Load metadata
+    metadata.ls[[paste0(mod,"_",smpl)]] <- read.csv(paste0(smpl,"/",mod,"/cell_picking/metadata.csv"),
+                                                  stringsAsFactors = FALSE)
+    rownames(metadata.ls[[paste0(mod,"_",smpl)]]) <- metadata.ls[[paste0(mod,"_",smpl)]]$barcode
+
+ }
+}
+
+```
+
+### Filtering-out low-quality cells
+Here we are going to exclude the cells which have not passed the internal filtering (flagged as ```passedMB```). This internal filtering takes into consideration the log10UMI and the percentage of reads in peaks for each cell and clusterizes the cells based on these values (by building a Gaussian finite mixture mode fitted via EM algorithm via ```Mclust```). This will cluster the cells in *n* clusters, but only the cells belonging to the top1 cluster with the highest log10UMI will be classified as ```passedMB=TRUE```.\
+
+Before doing this, however, we would like to know how many cells we are filtering out:
+```{r, fig.height=4.5, fig.width=4.5}
+plotPassed(metadata.ls,xaxis_text = 9,angle_x=60)
+```
+
+And which cells we are filtering out:
+```{r, fig.height=7.5, fig.width=10}
+plotPassedCells(metadata.ls,samples,modalities)
+```
+
+
+```{r filter_out_cells}
+metadata.ls <- lapply(metadata.ls, function(x){x[x$passedMB,]})
+```
+
+\
+
+
+#### Load fragments files and creation of fragment objects
+Then, we create a fragment object for each experiment (*i.e.*, an object holding all the information related to a single fragment file). To this end we will use the Signac function ```CreateFragmentObject```.\
+
+As explained in the [Signac vignette](https://stuartlab.org/signac/articles/merging.html), the ```CreateFragmentObject``` function checks that the file is present on disk, it is compressed and indexed, computes the MD5 sum for the file and the tabix index so that we can tell if the file is modified at any point, and checks that the expected cells (```metadata.csv```) are present in the file.
+
+```{r }
+##### Fragments
+# Create one fragment object per each experiment iterating across the sample list
+fragment.ls <- list()
+for (smpl in samples) {
+  cat("Loading fragments for sample",smpl,"\n")
+  for (mod in modalities) {
+    cat("\t",mod,"\n")
+
+    # Load fragments
+    fragment.ls[[paste0(mod,"_",smpl)]] <- CreateFragmentObject(
+                                              path = paste0(smpl,"/",mod,"/cellranger/outs/fragments.tsv.gz"),
+                                              cells = metadata.ls[[paste0(mod,"_",smpl)]]$barcode)
+
+  }
+}
+```
+```{r}
+head(fragment.ls[[paste0("ATAC_TATAGCCT_",samples[1])]])
+```
+\
+
+#### Construct a bin x cell matrix from a fragments file
+Now that each experiment has been associated to a fragment object containing fragments and metadata, we can create a bins x cell matrix for each experiment. This will be done by using the Signac function ```GenomeBinMatrix```.
+```GenomeBinMatrix``` subdivides the genome in non-overlapping windows of length X (X=2kb here) and counts for each bin, for each cell, the number of overlapping fragments.
+
+To speed-up the process, we launch ```FeatureMatrix``` with ```process_n = 20000```. This runs OK on our 64GB MacBook Pro, but could go out-of-memory on other systems. If this happens, please, decrease the ```process_n``` value (2000 should be fine for every system).
+
+
+```{r bin_x_cell}
+
+# As usual, append the object to a list
+counts.ls <- list()
+# Iterate among the experiment names in order to retrieve fragments and cell barcodes from the same experiment
+for (experim in names(fragment.ls)) {
+  
+  cat("Analysing experiment: ",experim,"\n")
+  
+  # modality name
+  modal <- paste0(str_split_fixed(experim,"_",4)[,1],"_",str_split_fixed(experim,"_",4)[,2])
+  cat("\tBins from modality: ",modal,"\n")
+
+  # Create FeatureMatrix
+  counts.ls[[experim]] <- GenomeBinMatrix(fragments = fragment.ls[[experim]],         # fragments
+                                        cells = metadata.ls[[experim]]$barcode,       # metadata
+                                        binsize = 5000,                               # bin size
+                                        genome = seqlengths(bs_genome),               # chom sizes
+                                        process_n = 20000) # the higher, the faster, the more memory is used
+
+}
+counts.ls[[names(fragment.ls)[1]]][3990:4000,1:50]
+```
+\
+
+
+### 1.3 Create one Seurat object for each experiment
+Now that we have generated a bins x cell matrix for each experiment, we can store it in a Seurat object along with the fragment object and the metadata.
+
+This is done for each experiment separately, objects will be merged in the next step. The reason for this is that we would like to first perform QC on each experiment individually and then merge all the experiments in a single Seurat object.
+```{r create_obj}
+obj.ls <- list()
+# Iterate among the experiment names in order to retrieve fragments and cell barcodes from the same experiment
+for (experim in names(counts.ls)) {
+
+  # Get sample and modality name from the experiment variable
+  smpl <- str_split_fixed(experim,"_",3)[,3]
+  modality <- str_split_fixed(experim,"_",2)[,1]
+
+  # Create the chromatin assay
+  chrom.assay <- CreateChromatinAssay(counts = counts.ls[[experim]],
+                                      fragments = fragment.ls[[experim]],
+                                      genome = genome,
+                                      min.cells = min_cell,
+                                      min.features = min_feat)
+
+  # Create the object
+  obj.ls[[experim]] <- CreateSeuratObject(counts = chrom.assay,
+                                          assay = assay,
+                                          meta.data=metadata.ls[[experim]],
+                                          project = smpl)
+
+  # Add some metadata of origin
+  obj.ls[[experim]]$dataset <- experim
+  obj.ls[[experim]]$modality <- modality
+  obj.ls[[experim]]$sample <- smpl
+
+}
+```
+\
+
+## 2. Quality controls (QC) **OPTIONAL**
+Before merging the objects, we are going to do some QC on the individual experiments. In particular, we are going to drop cells with abnormal number of UMIs. To define what is "abnormal" and what is not, we will use quantiles. Everything greater than the 95th or less than the 5th quantiles will be here considered as "abnormal" and therefore discarded.
+
+**Please, consider how applying these filters is optional and the thresholds used should be specifically set for each dataset as they usually are highly sample-specific. The thresholds we are applying here are quite harsh and, if applied to other datasets, might lead to removal of important biological information.**
+
+* Input of this section is a Seurat object for each experiment (6 in this case [2 samples * 3 modalities]).\
+* Output of this section is a Seurat object for each experiment (6 in this case [2 samples * 3 modalities]) containing cells which have passed QCs.
+
+```{r qc_filtering}
+obj.ls.qc <- list()
+quant_high <- 0.99
+quant_low <- 0.01
+for (experiment in names(obj.ls)) {
+
+  # Calculate 5th and 95th quantiles for logUMI
+  logUMI_cutoff_high <- quantile(obj.ls[[experiment]]$logUMI, quant_high)
+  logUMI_cutoff_low  <- quantile(obj.ls[[experiment]]$logUMI, quant_low)
+
+  # Filter out cells outside these thresholds
+  obj.ls.qc[[experiment]] <- subset(obj.ls[[experiment]],
+                                    logUMI > logUMI_cutoff_low &
+                                      logUMI < logUMI_cutoff_high)
+
+  # print number of discarded cells
+  old_n_cell <- nrow(obj.ls[[experiment]][[]])
+  new_n_cell <- nrow(obj.ls.qc[[experiment]][[]])
+  discarded <- old_n_cell - new_n_cell
+  cat(experiment,"\n")
+  cat("\tdiscarded",discarded,"cells (",round(discarded/old_n_cell*100,2),"%)\n")
+}
+```
+```{r}
+plotCounts(obj = obj.ls, quantiles = c(quant_low,quant_high), feature = "logUMI")
+rm(obj.ls)
+```
+\
+
+### Number of cells for each sample and modality
+Now we can plot, for each sample, the number of cells being simultaneously profiled by all the three modalities. Since we will annotate the cells based on their H3K27ac signal (see **6.  Annotation**), all the cells lacking the H3K27ac profiling will result as not annotated at the end of the processing of the data. So it is important that the majority of the cells have H3K27ac profiling and that, in general, there is a good overlap among the different modalities.
+
+
+```{r number_cells, fig.height=5, fig.width=7}
+
+# Plot number of cells for each modality for each sample
+venn1 <- commonCellHistonMarks(mod1 = obj.ls.qc[[paste0(modalities[1],"_",samples[1])]], 
+                               name_mod1 = strsplit(modalities[1],"_")[[1]][1],
+                               mod2 = obj.ls.qc[[paste0(modalities[2],"_",samples[1])]], 
+                               name_mod2 = gsub("H3","",strsplit(modalities[2],"_")[[1]][1]),
+                               mod3 = obj.ls.qc[[paste0(modalities[3],"_",samples[1])]], 
+                               name_mod3 = gsub("H3","",strsplit(modalities[3],"_")[[1]][1]),
+                               sample = samples[1] )
+venn2 <- commonCellHistonMarks(mod1 = obj.ls.qc[[paste0(modalities[1],"_",samples[2])]], 
+                               name_mod1 = strsplit(modalities[1],"_")[[1]][1],
+                               mod2 = obj.ls.qc[[paste0(modalities[2],"_",samples[2])]], 
+                               name_mod2 = gsub("H3","",strsplit(modalities[2],"_")[[1]][1]),
+                               mod3 = obj.ls.qc[[paste0(modalities[3],"_",samples[2])]], 
+                               name_mod3 = gsub("H3","",strsplit(modalities[3],"_")[[1]][1]),
+                               sample = samples[2] )
+
+```
+
+```{r, fig.height=5, fig.width=12}
+ggarrange(venn1,venn2,ncol=2)
+```
+
+
+
+## 3. Merge Seurat objects
+Now that we have one object for experiment containing only QC-passed cells, we can merge all the objects from different samples obtaining one Seurat object for modality.
+
+* Input of this section is a QC-passed Seurat object for each experiment (6 in this case [2 samples * 3 modalities]).\
+* Output of this section is a single Seurat object for each modality.
+
+
+### Merge Seurat objects across different samples
+```{r merge_modalities}
+combined.obj.ls <- list()
+for (mod in modalities) {
+
+  # merge objects among the different samples
+  combined.obj.ls[[mod]] <- merge(obj.ls.qc[[paste0(mod,"_",samples[1])]],
+                                  y = obj.ls.qc[[paste0(mod,"_",samples[2])]],
+                                  add.cell.ids = c(samples[1], samples[2]) )
+
+}
+```
+```{r}
+combined.obj.ls[[modalities[1]]][["bins"]]
+combined.obj.ls[[modalities[2]]][["bins"]]
+combined.obj.ls[[modalities[3]]][["bins"]]
+```
+
+\
+
+
+## 4. Normalisation and dimensional reduction
+After having filter out low quality cells and having generated one Seurat object per each modality, we can proceed with normalisation and dimensionality reduction. Once again, we will follow [Signac vignette](https://stuartlab.org/signac/articles/pbmc_vignette.html#normalization-and-linear-dimensional-reduction).
+
+* First, we perform data normalisation. To this end, ```RunTFIDF``` will be used
+* Second, we select variable features (bins)
+* Third, dimension reduction by running singular value decomposition (SVD)
+```{r normalisation_variable_feat}
+
+# Normalisation
+combined.obj.ls <- lapply(combined.obj.ls,RunTFIDF)
+# a warning (Some features contain 0 total counts) might rise. This is due to the cell filtering performed in the QC step. Should be safe to proceed
+
+# Variable features
+combined.obj.ls <- lapply(combined.obj.ls,FindTopFeatures)
+
+# Dim reduction
+combined.obj.ls <- lapply(combined.obj.ls,RunSVD)
+```
+
+It usually happens that the first LSI (you can think it as a principal component, if you are more familiar with scrna-seq) is mostly associated to the sequencing depth, rather than biological variation. We will test this by running a modified version of the ```DepthCor``` function. The modifications simply consists in plotting the modality name as plot title.
+
+```{r fig.width = 10, fig.height = 4}
+plot.list <- lapply(combined.obj.ls,DepthCorMulMod)
+ggarrange(plot.list[[1]],plot.list[[2]],plot.list[[3]],ncol=3)
+```
+
+Here, the correlation between the first LSI and sequencing depth is quite strong. We will discard it from further analyses.\
+
+
+Then, the dimensionality of the dataset should be determined. Although more sophisticated (and time consuming) methods have been implemented (like the JackStraw procedure), we think that the ‘Elbow plot’ could be informative enough. In the ‘Elbow plot’ the standard deviation explained by each LSI is plotted. When the the plateau is reached, it means that adding more LSI to our analysis does not actually increase the variability explained.
+
+```{r fig.width = 10, fig.height = 4}
+plot.list_elbow <- lapply(combined.obj.ls,ElbowPlot,reduction = "lsi",ndims = 50)
+ggarrange(plot.list_elbow[[1]],plot.list_elbow[[2]],plot.list_elbow[[3]],ncol=3)
+pc <- 35
+```
+
+In this case, we believe that considering the first 35 LSI should be definitely more than enough for all the three modalities (probably even less than 35 should be fine).
+\
+
+
+## 5.  Non-linear dimension reduction and clustering
+Now that we have normalised and found variable features in the data, we can perform graph-based clustering and non-linear dimension reduction for visualization. This is done individually for each modality as different modalities might require different parameters (*e.g.*, number of PCs, clustering resolution, ..).\
+
+To find the most appropriate parameter we have used, and suggest using, [clustertree](https://cran.r-project.org/web/packages/clustree/vignettes/clustree.html).\
+
+As you will notice, the resolution value for the ATAC modality is quite low (.2), but this is necessary in order to avoid over-clustering of the cluster 0. With any value of resolution greater than 0.2, the cluster 0 is subclustered in two or more clusters, but we do not think there is enough variability here to define the cells in cluster 0 as belonging to more than one cluster.
+
+```{r umap}
+# Run dimension reduction and clustering on each modality individually
+
+# ATAC
+combined.obj.ls$ATAC_TATAGCCT <- RunUMAP(combined.obj.ls$ATAC_TATAGCCT,reduction = 'lsi', dims = 2:pc)
+combined.obj.ls$ATAC_TATAGCCT <- FindNeighbors(combined.obj.ls$ATAC_TATAGCCT,reduction = 'lsi', dims = 2:pc)
+combined.obj.ls$ATAC_TATAGCCT <- FindClusters(combined.obj.ls$ATAC_TATAGCCT, verbose = FALSE, algorithm = 3,resolution = .2)
+# algorithm = 3 means SLM algorithm is used for modularity optimization
+
+# H3K27ac
+combined.obj.ls$H3K27ac_ATAGAGGC <- RunUMAP(combined.obj.ls$H3K27ac_ATAGAGGC,reduction = 'lsi', dims = 2:pc)
+combined.obj.ls$H3K27ac_ATAGAGGC <- FindNeighbors(combined.obj.ls$H3K27ac_ATAGAGGC,reduction = 'lsi', dims = 2:pc)
+combined.obj.ls$H3K27ac_ATAGAGGC <- FindClusters(combined.obj.ls$H3K27ac_ATAGAGGC, verbose = FALSE, algorithm = 3,resolution = .6)
+
+# H3K27me3
+combined.obj.ls$H3K27me3_CCTATCCT <- RunUMAP(combined.obj.ls$H3K27me3_CCTATCCT,reduction = 'lsi', dims = 2:pc)
+combined.obj.ls$H3K27me3_CCTATCCT <- FindNeighbors(combined.obj.ls$H3K27me3_CCTATCCT,reduction = 'lsi', dims = 2:pc)
+combined.obj.ls$H3K27me3_CCTATCCT <- FindClusters(combined.obj.ls$H3K27me3_CCTATCCT, verbose = FALSE, algorithm = 3,resolution = .2)
+```
+
+```{r fig.width = 10, fig.height = 4}
+# Plot each modality separately
+p1=DimPlot(combined.obj.ls$ATAC_TATAGCCT, label = TRUE) + NoLegend() +
+  ggtitle("ATAC") +
+  theme(plot.title = element_text(size=15,hjust=0.5,face='bold'))
+
+p2=DimPlot(combined.obj.ls$H3K27ac_ATAGAGGC, label = TRUE) + NoLegend() +
+  ggtitle("H3K27ac") +
+  theme(plot.title = element_text(size=15,hjust=0.5,face='bold'))
+
+p3=DimPlot(combined.obj.ls$H3K27me3_CCTATCCT, label = TRUE) + NoLegend() +
+  ggtitle("H3K27me3") +
+  theme(plot.title = element_text(size=15,hjust=0.5,face='bold'))
+
+ggarrange(p1,p2,p3,ncol=3)
+```
+\
+
+
+## 6.  Annotation
+Now that we have identified the different cell states, we need to annotate them, assigning to each of them a biological identity. To this end, we will estimate the activity of each gene by quantifying the number of fragments mapping to its gene body and 2kb upstream the TSS. This will be done by using the Signac function ```GeneActivity```.\
+
+Of course, this has to be done on modalities marking transcriptionally active regions. In our case either ATAC or H3K27ac. We believe that H3K27ac is the active modality which might best predict gene activity, thus we will calculate the gene activity scores on nano CUT&Tag H3K27ac modality.\
+
+Once again, for most of these processes, we will here follow the [Signac vignette](https://stuartlab.org/signac/articles/pbmc_vignette.html).
+\
+
+### 6.1 Add gene annotations to the Seurat object
+Before creating a gene activity matrix we first need to add gene annotations to the H3K27ac Seurat object.
+```{r add_gene_ann }
+# get gene annotations from Ensembl
+annotations <- GetGRangesFromEnsDb(ensdb = genome_ann)
+
+# change to UCSC style since the data was mapped to mm10
+seqlevelsStyle(annotations) <- 'UCSC'
+
+# add the gene information to the object
+Annotation(combined.obj.ls$H3K27ac_ATAGAGGC) <- annotations
+```
+\
+
+### 6.2 Create gene activity matrix
+Having added the gene annotations, we can calculate the gene activity. This is done by the Signac ```GeneActivity``` function that: i) extracts gene coordinates and extends them to include the 2 kb upstream region and ii) counts the number of fragments for each cell that map to each of these regions. Finally, the gene activities are added to the Seurat object as 'RNA'
+```{r gene_activity}
+
+# Calculate gene activities
+gene.activities <- GeneActivity(combined.obj.ls$H3K27ac_ATAGAGGC)
+
+# Add the gene activity matrix to the Seurat object as a new assay
+combined.obj.ls$H3K27ac_ATAGAGGC[['RNA']] <- CreateAssayObject(counts = gene.activities)
+
+# normalize RNA data
+combined.obj.ls$H3K27ac_ATAGAGGC <- NormalizeData(
+  object = combined.obj.ls$H3K27ac_ATAGAGGC,
+  assay = 'RNA',
+  normalization.method = 'LogNormalize',
+  scale.factor = median(combined.obj.ls$H3K27ac_ATAGAGGC$nCount_RNA)
+)
+
+# Set RNA as default assay
+DefaultAssay(combined.obj.ls$H3K27ac_ATAGAGGC) <- 'RNA'
+```
+\
+
+### 6.3 Visualisation of gene activity for some known marker genes
+By plotting the activities of known canonical marker genes we can get some hints on the biological identities of most of the H3K27ac clusters. Although the signal might sometimes be a bit noisy, already by plotting the gene activity scores we can discriminate some cell states such as astrocytes (telencephalon and non-telencephalon), vascular cells (endothelial, smooth muscle, leptomeningeal cells), oligodendrocytes, neurons (excitatory and inhibitory), microglia, macrophages, Bergmann glia, olfactory ensheating cells and choroid plexus cells.\
+
+([These atlases](http://mousebrain.org) are a great resource to manually annotate your favorite cell state!)\
+
+For conciseness, we here opted for a manual annotation, but the probably best practice would be to integrate one of the active nanoCUT&Tag modalities with scRNA-seq data. If interested in doing so, please follow [this](https://stuartlab.org/signac/articles/pbmc_vignette.html#integrating-with-scrna-seq-data) Signac tutorial.\
+
+
+#### Astrocytes telencephalon - AST-TE (clusters 0)
+```{r fig.width = 12, fig.height = 3}
+FeaturePlot(
+  object = combined.obj.ls$H3K27ac_ATAGAGGC,
+  features = c('Foxg1','Lhx2','Mfge8'),
+  pt.size = 0.1,
+  max.cutoff = 'q95',
+  ncol = 3,
+  label = T)
+```
+\
+
+#### Vascular endothelial cells - VEC (clusters 1)
+```{r fig.width = 12, fig.height = 3}
+FeaturePlot(
+  object = combined.obj.ls$H3K27ac_ATAGAGGC,
+  features = c('Gpr116','Cldn5','Emcn'),
+  pt.size = 0.1,
+  max.cutoff = 'q95',
+  ncol = 3,
+  label = T)
+```
+\
+
+#### Microglia - MGL (cluster 2)
+```{r fig.width = 12, fig.height = 6}
+FeaturePlot(
+  object = combined.obj.ls$H3K27ac_ATAGAGGC,
+  features = c('P2ry12','Ccr6','Selplg'),
+  pt.size = 0.1,
+  max.cutoff = 'q95',
+  ncol = 3,
+  label = T)
+```
+\
+
+#### Astrocytes non-telencephalon - AST-NT (cluster 3)
+```{r fig.width = 12, fig.height = 3}
+FeaturePlot(object = combined.obj.ls$H3K27ac_ATAGAGGC,
+  features = c('Irx2','Agt','Slc6a9'),
+  pt.size = 0.1,
+  max.cutoff = 'q95',
+  ncol = 3,
+  label = T)
+```
+\
+
+#### Oligodendrocytes - OL (cluster 4)
+```{r fig.width = 12, fig.height = 3}
+FeaturePlot(
+  object = combined.obj.ls$H3K27ac_ATAGAGGC,
+  features = c('Mag','Mbp','Sox10'),
+  pt.size = 0.1,
+  max.cutoff = 'q95',
+  ncol = 3,
+  label = T)
+```
+\
+
+#### Excitatory neurons - EXC (clusters 5, 7)
+```{r fig.width = 8, fig.height = 3}
+FeaturePlot(
+  object = combined.obj.ls$H3K27ac_ATAGAGGC,
+  features = c('Neurod1','Neurod6'),
+  pt.size = 0.1,
+  max.cutoff = 'q95',
+  ncol = 2,
+  label = T)
+```
+\
+
+#### Vascular smooth muscle cells - VLMC (cluster 6)
+```{r fig.width = 12, fig.height = 6}
+FeaturePlot(
+  object = combined.obj.ls$H3K27ac_ATAGAGGC,
+  features = c('Dcn','Slc6a13'),
+  pt.size = 0.1,
+  max.cutoff = 'q95',
+  ncol = 3,
+  label = T)
+```
+\
+
+#### Bergmann glia - BG (cluster 8)
+```{r fig.width = 12, fig.height = 3}
+FeaturePlot(
+  object = combined.obj.ls$H3K27ac_ATAGAGGC,
+  features = c('A2m','Gdf10','Hopx'),
+  pt.size = 0.1,
+  max.cutoff = 'q95',
+  ncol = 3,
+  label = T)
+```
+\
+
+#### Inhibitory neurons - INH (clusters 9, 11, 13)
+```{r fig.width = 8, fig.height = 3}
+FeaturePlot(
+  object = combined.obj.ls$H3K27ac_ATAGAGGC,
+  features = c('Gad1','Slc32a1'),
+  pt.size = 0.1,
+  max.cutoff = 'q95',
+  ncol = 2,
+  label = T)
+```
+\
+
+#### Choroid plexus - CHP (10)
+```{r fig.width = 8, fig.height = 3}
+FeaturePlot(
+  object = combined.obj.ls$H3K27ac_ATAGAGGC,
+  features = c('Clic6','Folr1'),
+  pt.size = 0.1,
+  max.cutoff = 'q95',
+  ncol = 2,
+  label = T)
+```
+\
+
+#### Olfactory ensheating cells - OEC (cluster 12)
+```{r fig.width = 12, fig.height = 3}
+FeaturePlot(
+  object = combined.obj.ls$H3K27ac_ATAGAGGC,
+  features = c('Frzb','Mgst1','Prss56'),
+  pt.size = 0.1,
+  max.cutoff = 'q95',
+  ncol = 3,
+  label = T)
+```
+\
+
+
+
+### 6.4 Final annotation
+Now we are ready to annotate the clusters! We are going to generate here two layers of annotations, one more general and one more specific.\
+
+Layer 2 (cell-state-specific)
+```{r Assign_identities_layer2}
+
+##### Annotation layer2
+# create a named annotation vector
+l2.ids <- c("0"="AST-TE","1"="VEC","2"="MGL","3"="AST-NT","4"="OL",
+            "5"="EXC1","6"="VLMC","7"="EXC2","8"="BG","9"="INH1",
+            "10"="CHP","11"="INH2","12"="OEC","13"="INH3")
+names(l2.ids) <- levels(combined.obj.ls$H3K27ac_ATAGAGGC)
+
+# rename the cluster identities with the layer2 annotations
+combined.obj.ls$H3K27ac_ATAGAGGC <- RenameIdents(combined.obj.ls$H3K27ac_ATAGAGGC,l2.ids)
+
+# Add layer2 annotations to the object
+combined.obj.ls$H3K27ac_ATAGAGGC <- AddMetaData(combined.obj.ls$H3K27ac_ATAGAGGC,
+                                                Idents(combined.obj.ls$H3K27ac_ATAGAGGC),"layer2_annotation")
+
+# UMAP plot
+p1=DimPlot(combined.obj.ls$H3K27ac_ATAGAGGC, label = TRUE, repel = T) + NoLegend() +
+  ggtitle("H3K27ac") +
+  theme(plot.title = element_text(size=15,hjust=0.5,face='bold'))
+```
+
+Layer 1 (cell-type-specific)
+```{r Assign_identities_layer1}
+
+##### General layer, L1
+# create a named annotation vector
+l1.ids <- c("AST-TE"="Astroependymal","VEC"="Vascular","MGL"="Immune","AST-NT"="Astroependymal","OL"="Oligodendrocytes",
+            "EXC1"="Neurons","VLMC"="Vascular","EXC2"="Neurons","BG"="Astroependymal","INH1"="Neurons",
+            "CHP"="Astroependymal","INH2"="Neurons","OEC"="OEC","INH3"="Neurons")
+
+names(l1.ids) <- levels(combined.obj.ls$H3K27ac_ATAGAGGC)
+
+# rename the cluster identities with the layer1 annotations
+combined.obj.ls$H3K27ac_ATAGAGGC <- RenameIdents(combined.obj.ls$H3K27ac_ATAGAGGC,l1.ids)
+
+# Add layer1 annotations to the object
+combined.obj.ls$H3K27ac_ATAGAGGC <- AddMetaData(combined.obj.ls$H3K27ac_ATAGAGGC,
+                                                Idents(combined.obj.ls$H3K27ac_ATAGAGGC),"layer1_annotation")
+
+# UMAP plot
+p2=DimPlot(combined.obj.ls$H3K27ac_ATAGAGGC, label = F) +
+  ggtitle("H3K27ac") +
+  theme(plot.title = element_text(size=15,hjust=0.5,face='bold'))
+```
+
+```{r fig.width = 10, fig.height = 4,echo = FALSE}
+p2+p1
+```
+\
+
+Finally, transfer the layer1 and layer2 annotations from the H3K27ac to the H3K27me3 and ATAC modalities.
+```{r transfer_label}
+
+# H3K27ac annotated cell states
+idents_l1 <- combined.obj.ls$H3K27ac_ATAGAGGC$layer1_annotation
+idents_l2 <- combined.obj.ls$H3K27ac_ATAGAGGC$layer2_annotation
+
+
+# Transfer to ATAC and H3K27me3
+
+# layer1
+combined.obj.ls$ATAC_TATAGCCT <- AddMetaData(combined.obj.ls$ATAC_TATAGCCT,
+                                             idents_l1,
+                                             col.name='layer1_annotation')
+combined.obj.ls$H3K27me3_CCTATCCT <- AddMetaData(combined.obj.ls$H3K27me3_CCTATCCT,
+                                                 idents_l1,
+                                                 col.name='layer1_annotation')
+
+# layer2
+combined.obj.ls$ATAC_TATAGCCT <- AddMetaData(combined.obj.ls$ATAC_TATAGCCT,
+                                             idents_l2,
+                                             col.name='layer2_annotation')
+combined.obj.ls$H3K27me3_CCTATCCT <- AddMetaData(combined.obj.ls$H3K27me3_CCTATCCT,
+                                                 idents_l2,
+                                                 col.name='layer2_annotation')
+
+```
+
+
+```{r fig.width = 10, fig.height = 4}
+# Plot each modality separately
+p1=DimPlot(combined.obj.ls$ATAC_TATAGCCT, label = TRUE,repel = F, group.by = "layer2_annotation") + NoLegend() +
+  ggtitle("ATAC") +
+  theme(plot.title = element_text(size=15,hjust=0.5,face='bold'))
+
+p2=DimPlot(combined.obj.ls$H3K27ac_ATAGAGGC, label = TRUE,repel = F, group.by = "layer2_annotation") + NoLegend() +
+  ggtitle("H3K27ac") +
+  theme(plot.title = element_text(size=15,hjust=0.5,face='bold'))
+
+p3=DimPlot(combined.obj.ls$H3K27me3_CCTATCCT, label = TRUE,repel = F, group.by = "layer2_annotation") + NoLegend() +
+  ggtitle("H3K27me3") +
+  theme(plot.title = element_text(size=15,hjust=0.5,face='bold'))
+
+ggarrange(p1,p2,p3,ncol=3)
+```
+
+```{r fig.width = 10, fig.height = 4}
+plotConnectModal(seurat = combined.obj.ls, group = 'layer1_annotation')
+```
+
+```{r saverds}
+saveRDS(combined.obj.ls, file = "../nanoscope_final_bins_5kb.rds")
+```
+\
+
+
+## 7. Session info 
+<details>
+  <summary>**Session Info**</summary>
+```{r}
+sessionInfo()
+```
+</details>
+\
+
+
+
+
+
+
+
