@@ -1,0 +1,121 @@
+---
+date: "2023-06-13"
+output:
+  html_document:
+    theme: united
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,message = FALSE,warning = FALSE)
+```
+
+# Comparison between nanoCT results using "peaks" or "bins" approach
+This vignette compares the final annotations of the same nanoCT data analysed with [peaks](https://fansalon.github.io/vignette_single-cell-nanoCT.html) or [bins]().\
+
+To compare the results the cells (barcodes) associated to a given cell-type in the "bin" nanoCT results were matched with the respective cell-types in the "peaks" nanoCT results. In other words, we counted how many of the X cells annotated as 'Inhibithory Neurons 1' in the "bin" nanoCT results were annotated as 'Inhibithory Neurons 1' in the "peaks" nanoCT results, how many as 'Excitatory Neurons 1', etc.
+
+
+## Load libraries
+```{r load_lib}
+library(ggplot2)
+library(reshape2)
+```
+\
+
+
+## Load the data
+```{r load_data}
+
+# Read RDS
+bins <- readRDS("~/NatProt/nanoscope/nanoscope_final_bins_5kb.rds")
+peaks <- readRDS("~/NatProt/nanoscope/nanoscope_final_peaks.rds")
+```
+\
+
+## Count number of cells for cell-type in bins and peaks, for all the modalities
+```{r count}
+
+### bins
+# for each modality, get barcode and annotation
+bins.ls <- lapply(bins, function(x){
+  data.frame(barcode=rownames(x@meta.data),
+             bins=as.character(x@meta.data[,"layer2_annotation"]))})
+
+### peaks
+# for each modality, get barcode and annotation
+peaks.ls <- lapply(peaks, function(x){
+  data.frame(barcode=rownames(x@meta.data),
+             peaks=as.character(x@meta.data[,"layer2_annotation"]))})
+
+### merge
+merged.ls <- list()
+mat.ls <- list()
+for (mod in names(bins.ls)) {
+  merged.ls[[mod]] <- merge(bins.ls[[mod]],peaks.ls[[mod]],by="barcode",all=T,sort=F)
+  merged.ls[[mod]][is.na(merged.ls[[mod]])] <- "N/A"
+  # convert to matrix
+  mat.ls[[mod]] = melt(as.matrix(table(merged.ls[[mod]]$peaks, merged.ls[[mod]]$bins)))
+}
+
+
+
+```
+\
+
+## Plot
+```{r}
+
+# ATAC
+ggplot(data = mat.ls$ATAC_TATAGCCT, aes(x=Var1, y=Var2, fill=log10(value+1))) + 
+  geom_tile() +
+  geom_text(aes(label=value),color="white") +
+  # x-axis
+  theme(axis.text.x=element_text(angle=45, hjust=1, size = 10)) + 
+  theme(axis.title.x = element_text(size= 14)) +
+  xlab("peaks") +
+  theme(axis.title.x = element_text(size= 14)) +
+  # y-axis
+  ylab("bins") +
+  theme(axis.text.y=element_text(size = 10)) +
+  theme(axis.title.y = element_text(size= 14)) +
+  ggtitle("ATAC") +
+  theme(plot.title = element_text(size=14,hjust=0.5,face='bold')) + 
+  guides(fill=guide_legend(title="Number of cells\nlog10 + 1"))
+
+# H3K27ac
+ggplot(data = mat.ls$H3K27ac_ATAGAGGC, aes(x=Var1, y=Var2, fill=log10(value+1))) + 
+  geom_tile() +
+  geom_text(aes(label=value),color="white") +
+  # x-axis
+  theme(axis.text.x=element_text(angle=45, hjust=1, size = 10)) + 
+  theme(axis.title.x = element_text(size= 14)) +
+  xlab("peaks") +
+  theme(axis.title.x = element_text(size= 14)) +
+  # y-axis
+  ylab("bins") +
+  theme(axis.text.y=element_text(size = 10)) +
+  theme(axis.title.y = element_text(size= 14)) +
+  ggtitle("H3K27ac") +
+  theme(plot.title = element_text(size=14,hjust=0.5,face='bold')) + 
+  guides(fill=guide_legend(title="Number of cells\nlog10 + 1"))
+
+# H3K27ac
+ggplot(data = mat.ls$H3K27ac_ATAGAGGC, aes(x=Var1, y=Var2, fill=log10(value+1))) + 
+  geom_tile() +
+  geom_text(aes(label=value),color="white") +
+  # x-axis
+  theme(axis.text.x=element_text(angle=45, hjust=1, size = 10)) + 
+  theme(axis.title.x = element_text(size= 14)) +
+  xlab("peaks") +
+  theme(axis.title.x = element_text(size= 14)) +
+  # y-axis
+  ylab("bins") +
+  theme(axis.text.y=element_text(size = 10)) +
+  theme(axis.title.y = element_text(size= 14)) +
+  ggtitle("H3K27ac") +
+  theme(plot.title = element_text(size=14,hjust=0.5,face='bold')) + 
+  guides(fill=guide_legend(title="Number of cells\nlog10 + 1"))
+
+
+```
