@@ -11,7 +11,7 @@ knitr::opts_chunk$set(echo = TRUE,message = FALSE,warning = FALSE)
 ```
 
 # Comparison between nanoCT results using "peaks" or "bins" approach
-This vignette compares the final annotations of the same nanoCT data analysed with [peaks](https://fansalon.github.io/vignette_single-cell-nanoCT.html) or [bins]().\
+This vignette compares the final annotations of the same nanoCT data analysed with [peaks](https://fansalon.github.io/vignette_single-cell-nanoCT.html) or [bins](https://fansalon.github.io/vignette_single-cell-nanoCT_bins.html).\
 
 To compare the results the cells (barcodes) associated to a given cell-type in the "bin" nanoCT results were matched with the respective cell-types in the "peaks" nanoCT results. In other words, we counted how many of the X cells annotated as 'Inhibithory Neurons 1' in the "bin" nanoCT results were annotated as 'Inhibithory Neurons 1' in the "peaks" nanoCT results, how many as 'Excitatory Neurons 1', etc.
 
@@ -64,7 +64,7 @@ for (mod in names(bins.ls)) {
 \
 
 ## Plot
-```{r}
+```{r, fig.width = 8, fig.height = 7}
 
 # ATAC
 ggplot(data = mat.ls$ATAC_TATAGCCT, aes(x=Var1, y=Var2, fill=log10(value+1))) + 
@@ -100,8 +100,8 @@ ggplot(data = mat.ls$H3K27ac_ATAGAGGC, aes(x=Var1, y=Var2, fill=log10(value+1)))
   theme(plot.title = element_text(size=14,hjust=0.5,face='bold')) + 
   guides(fill=guide_legend(title="Number of cells\nlog10 + 1"))
 
-# H3K27ac
-ggplot(data = mat.ls$H3K27ac_ATAGAGGC, aes(x=Var1, y=Var2, fill=log10(value+1))) + 
+# H3K27me3
+ggplot(data = mat.ls$H3K27me3_CCTATCCT, aes(x=Var1, y=Var2, fill=log10(value+1))) + 
   geom_tile() +
   geom_text(aes(label=value),color="white") +
   # x-axis
@@ -113,7 +113,7 @@ ggplot(data = mat.ls$H3K27ac_ATAGAGGC, aes(x=Var1, y=Var2, fill=log10(value+1)))
   ylab("bins") +
   theme(axis.text.y=element_text(size = 10)) +
   theme(axis.title.y = element_text(size= 14)) +
-  ggtitle("H3K27ac") +
+  ggtitle("H3K27me3") +
   theme(plot.title = element_text(size=14,hjust=0.5,face='bold')) + 
   guides(fill=guide_legend(title="Number of cells\nlog10 + 1"))
 
