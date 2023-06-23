@@ -225,9 +225,9 @@ Once that the [Set Up](#set-up) and [Preprocessing](#preprocessing) steps are su
 
 If you prefer to perform the analysis by using **peaks**, please, follow this [vignette](https://fansalon.github.io/vignette_single-cell-nanoCT.html).\
 If you prefer to perform the analysis by using **bins**, please, follow this [vignette](https://fansalon.github.io/vignette_single-cell-nanoCT_bins.html).\
-[Here]() you can also find an additional vignette where the analyses run by using bins and peaks on the same dataset are compared.\
+[Here]() you can also find an additional vignette where the analyses run by using bins and peaks on the same dataset are compared.
 
-The use of peaks or bins mostly depends on the workflow you are applying to your analysis. If in your analyses you need to integrate different datasets (ATAC-seq with nanoCT, or different nanoCT datasets), or different samples, then we suggest to use bins (bins are the same everywhere). A downside of using bins is that the signal is probably a bit less specific than when using peaks, and overall the clustering resolution could be a bit worse when using bins than peaks.\
+The use of peaks or bins mostly depends on the workflow you are applying to your analysis. If in your analyses you need to integrate different datasets (ATAC-seq with nanoCT, or different nanoCT datasets), or different samples, then we suggest to use bins (bins are the same everywhere). A downside of using bins is that the signal is probably a bit less specific than when using peaks, and overall the clustering resolution could be a bit worse when using bins than peaks.
 
 
 Note how the dataset analysed in this vignette is composed by 2 biological replicates of the same sample. Often experiments are designed in order to have multiple samples and/or biological conditions requiring data integration, differential analysis, etc. These are not part of this vignette, but will be implemented in other vignettes in the future.
