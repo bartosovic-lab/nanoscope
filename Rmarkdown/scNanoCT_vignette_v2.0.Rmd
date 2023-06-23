@@ -19,7 +19,9 @@ This tutorial assumes that the data have already been preprocessed, including de
 
 
 
-**Please note how in this tutorial we are describing how to perform the downstream analysis by using peaks, not bins. In addition, note how the biological data here analysed are 2 biological replicates of the same sample, thus it is safe to merge the two samples without any kind of integration. Often experiments are designed in order to have multiple samples and/or biological conditions requiring data integration, differential analysis, etc. These are not part of this vignette, but will be implemented in other vignettes in the future. **\
+**Please note how in this tutorial we are describing how to perform the downstream analysis by using peaks, not bins.** For tutorial on bins, see [here](https://fansalon.github.io/vignette_single-cell-nanoCT_bins.html).\
+
+In addition, note how the biological data here analysed are 2 biological replicates of the same sample, thus it is safe to merge the two samples without any kind of integration. Often experiments are designed in order to have multiple samples and/or biological conditions requiring data integration, differential analysis, etc. These are not part of this vignette, but will be implemented in other vignettes in the future.\
 
 
 
@@ -242,7 +244,9 @@ And which cells we are filtering out:
 plotPassedCells(metadata.ls,samples,modalities)
 ```
 
+In this case, you can see how the cells can be easily clustered in three groups: empty droplets, weird droplets and good cells and how only the good cells are selected. However, if you notice something weird, please, re-do the cell selection by applying some hard cutoffs.\
 
+Once we have classified the good cells as ```passedMB=TRUE```, we can proceed with the selection of the good cells only, discarding all the others from further analyses:
 ```{r filter_out_cells}
 metadata.ls <- lapply(metadata.ls, function(x){x[x$passedMB,]})
 ```
@@ -354,8 +358,8 @@ Please note how we are not here applying any filtering on the TSS enrichment sco
 
 ```{r qc_filtering}
 obj.ls.qc <- list()
-quant_high <- 0.95
-quant_low <- 0.05
+quant_high <- 0.99
+quant_low <- 0.01
 for (experiment in names(obj.ls)) {
 
   # Calculate 5th and 95th quantiles for logUMI
@@ -582,11 +586,11 @@ For conciseness, we here opted for a manual annotation, but the probably best pr
 
 
 
-
-#### Astrocytes non-telencephalon - AST-NT (cluster 0)
+#### Astrocytes telencephalon - AST-TE (clusters 0, 7)
 ```{r fig.width = 12, fig.height = 3}
-FeaturePlot(object = combined.obj.ls$H3K27ac_ATAGAGGC,
-  features = c('Irx2','Agt','Slc6a9'),
+FeaturePlot(
+  object = combined.obj.ls$H3K27ac_ATAGAGGC,
+  features = c('Foxg1','Lhx2','Mfge8'),
   pt.size = 0.1,
   max.cutoff = 'q95',
   ncol = 3,
@@ -606,11 +610,10 @@ FeaturePlot(
 ```
 \
 
-#### Astrocytes telencephalon - AST-TE (clusters 2, 7)
+#### Astrocytes non-telencephalon - AST-NT (cluster 2)
 ```{r fig.width = 12, fig.height = 3}
-FeaturePlot(
-  object = combined.obj.ls$H3K27ac_ATAGAGGC,
-  features = c('Foxg1','Lhx2','Mfge8'),
+FeaturePlot(object = combined.obj.ls$H3K27ac_ATAGAGGC,
+  features = c('Irx2','Agt','Slc6a9'),
   pt.size = 0.1,
   max.cutoff = 'q95',
   ncol = 3,
@@ -618,19 +621,7 @@ FeaturePlot(
 ```
 \
 
-#### Oligodendrocytes - OL (cluster 3)
-```{r fig.width = 12, fig.height = 3}
-FeaturePlot(
-  object = combined.obj.ls$H3K27ac_ATAGAGGC,
-  features = c('Mag','Mbp','Sox10'),
-  pt.size = 0.1,
-  max.cutoff = 'q95',
-  ncol = 3,
-  label = T)
-```
-\
-
-#### Excitatory neurons - EXC (clusters 4, 15)
+#### Excitatory neurons - EXC (clusters 3, 19, 21)
 ```{r fig.width = 8, fig.height = 3}
 FeaturePlot(
   object = combined.obj.ls$H3K27ac_ATAGAGGC,
@@ -638,6 +629,18 @@ FeaturePlot(
   pt.size = 0.1,
   max.cutoff = 'q95',
   ncol = 2,
+  label = T)
+```
+\
+
+#### Oligodendrocytes - OL (cluster 4)
+```{r fig.width = 12, fig.height = 3}
+FeaturePlot(
+  object = combined.obj.ls$H3K27ac_ATAGAGGC,
+  features = c('Mag','Mbp'),
+  pt.size = 0.1,
+  max.cutoff = 'q95',
+  ncol = 3,
   label = T)
 ```
 \
@@ -654,7 +657,7 @@ FeaturePlot(
 ```
 \
 
-#### Inhibitory neurons - INH (clusters 6, 14)
+#### Inhibitory neurons - INH (clusters 6, 9, 16, 17, 18)
 ```{r fig.width = 8, fig.height = 3}
 FeaturePlot(
   object = combined.obj.ls$H3K27ac_ATAGAGGC,
@@ -678,7 +681,7 @@ FeaturePlot(
 ```
 \
 
-#### Vascular smooth muscle cells - VSMC (cluster 9)
+#### Vascular smooth muscle cells - VSMC (cluster 10)
 ```{r fig.width = 12, fig.height = 3}
 FeaturePlot(
   object = combined.obj.ls$H3K27ac_ATAGAGGC,
@@ -690,26 +693,14 @@ FeaturePlot(
 ```
 \
 
-#### Olfactory ensheating cells - OEC (cluster 10)
+#### Oligodendrocyte precursor cells - OPC (cluster 11) 
 ```{r fig.width = 12, fig.height = 3}
 FeaturePlot(
   object = combined.obj.ls$H3K27ac_ATAGAGGC,
-  features = c('Frzb','Mgst1','Prss56'),
+  features = c('Pdgfra','Sox10','Olig1'),
   pt.size = 0.1,
   max.cutoff = 'q95',
   ncol = 3,
-  label = T)
-```
-\
-
-#### Vascular leptomeningeal cells - VLMC (cluster 11)
-```{r fig.width = 8, fig.height = 3}
-FeaturePlot(
-  object = combined.obj.ls$H3K27ac_ATAGAGGC,
-  features = c('Dcn','Slc6a13'),
-  pt.size = 0.1,
-  max.cutoff = 'q95',
-  ncol = 2,
   label = T)
 ```
 \
@@ -726,7 +717,31 @@ FeaturePlot(
 ```
 \
 
-#### Choroid plexus - CHP (13)
+#### Olfactory ensheating cells - OEC (cluster 13)
+```{r fig.width = 12, fig.height = 3}
+FeaturePlot(
+  object = combined.obj.ls$H3K27ac_ATAGAGGC,
+  features = c('Frzb','Mgst1','Prss56'),
+  pt.size = 0.1,
+  max.cutoff = 'q95',
+  ncol = 3,
+  label = T)
+```
+\
+
+#### Vascular leptomeningeal cells - VLMC (cluster 14)
+```{r fig.width = 8, fig.height = 3}
+FeaturePlot(
+  object = combined.obj.ls$H3K27ac_ATAGAGGC,
+  features = c('Dcn','Slc6a13'),
+  pt.size = 0.1,
+  max.cutoff = 'q95',
+  ncol = 2,
+  label = T)
+```
+\
+
+#### Choroid plexus - CHP (15)
 ```{r fig.width = 8, fig.height = 3}
 FeaturePlot(
   object = combined.obj.ls$H3K27ac_ATAGAGGC,
@@ -738,6 +753,17 @@ FeaturePlot(
 ```
 \
 
+#### Ependymal cells - EPE (20)
+```{r fig.width = 12, fig.height = 3}
+FeaturePlot(
+  object = combined.obj.ls$H3K27ac_ATAGAGGC,
+  features = c('Foxj1','Pifo','Dynlrb2'),
+  pt.size = 0.1,
+  max.cutoff = 'q95',
+  ncol = 3,
+  label = T)
+```
+
 
 ### 6.4 Final annotation
 Now we are ready to annotate the clusters! We are going to generate here two layers of annotation, one more general and one more specific.\
@@ -747,10 +773,11 @@ Layer 2 (cell-state-specific)
 
 ##### Annotation layer2
 # create a named annotation vector
-l2.ids <- c("0"="AST-NT","1"="VEC","2"="AST-TE1","3"="OL","4"="EXC1",
-            "5"="MGL","6"="INH1","7"="AST-TE2","8"="BG","9"="VSMC",
-            "10"="OEC","11"="VLMC","12"="MAC","13"="CHP","14"="INH2",
-            "15"="EXC2")
+l2.ids <- c("0"="AST-TE1","1"="VEC","2"="AST-NTE","3"="EXC1","4"="OL",
+            "5"="MGL","6"="INH1","7"="AST-TE2","8"="BG","9"="INH2",
+            "10"="VSMC","11"="OPC","12"="MAC","13"="OEC","14"="VLMC",
+            "15"="CHP","16"="INH3","17"="INH4","18"="INH5","19"="EXC2",
+            "20"="EPE","21"="EXC3")
 names(l2.ids) <- levels(combined.obj.ls$H3K27ac_ATAGAGGC)
 
 # rename the cluster identities with the layer2 annotations
@@ -771,11 +798,15 @@ Layer 1 (cell-type-specific)
 
 ##### General layer, L1
 # create a named annotation vector
-l1.ids <- c("AST-NT"="Astroependymal","VEC"="Vascular","AST-TE1"="Astroependymal",
-            "OL"="Oligodendrocytes","EXC1"="Neurons","MGL"="Immune","INH1"="Neurons",
-            "AST-TE2"="Astroependymal","BG"="Astroependymal","VSMC"="Vascular",
-            "OEC"="OEC","VLMC"="Vascular","MAC"="Immune","CHP"="Astroependymal",
-            "INH2"="Neurons","EXC2"="Neurons")
+l1.ids <- c("AST-TE1"="Astroependymal","VEC"="Vascular","AST-NTE"="Astroependymal",
+            "EXC1"="Neurons","OL"="Oligodendrocytes","MGL"="Immune","INH1"="Neurons",
+            "AST-TE2"="Astroependymal","BG"="Astroependymal","INH2"="Neurons",
+            "VSMC"="Vascular","OPC"="Oligodendrocytes","MAC"="Immune",
+            "OEC"="OEC","VLMC"="Vascular","CHP"="Astroependymal","INH3"="Neurons",
+            "INH4"="Neurons","INH5"="Neurons","EXC2"="Neurons","EPE"="Astroependymal","EXC3"="Neurons")
+
+
+
 names(l1.ids) <- levels(combined.obj.ls$H3K27ac_ATAGAGGC)
 
 # rename the cluster identities with the layer1 annotations
@@ -827,15 +858,18 @@ combined.obj.ls$H3K27me3_CCTATCCT <- AddMetaData(combined.obj.ls$H3K27me3_CCTATC
 
 ```{r fig.width = 10, fig.height = 4}
 # Plot each modality separately
-p1=DimPlot(combined.obj.ls$ATAC_TATAGCCT, label = TRUE,repel = T, group.by = "layer2_annotation") + NoLegend() +
+p1=DimPlot(combined.obj.ls$ATAC_TATAGCCT, label = TRUE,repel = T, group.by = "layer2_annotation", label.size = 3) + 
+  NoLegend() +
   ggtitle("ATAC") +
   theme(plot.title = element_text(size=15,hjust=0.5,face='bold'))
 
-p2=DimPlot(combined.obj.ls$H3K27ac_ATAGAGGC, label = TRUE,repel = T, group.by = "layer2_annotation") + NoLegend() +
+p2=DimPlot(combined.obj.ls$H3K27ac_ATAGAGGC, label = TRUE,repel = T, group.by = "layer2_annotation", label.size = 3) + 
+  NoLegend() +
   ggtitle("H3K27ac") +
   theme(plot.title = element_text(size=15,hjust=0.5,face='bold'))
 
-p3=DimPlot(combined.obj.ls$H3K27me3_CCTATCCT, label = TRUE,repel = T, group.by = "layer2_annotation") + NoLegend() +
+p3=DimPlot(combined.obj.ls$H3K27me3_CCTATCCT, label = TRUE,repel = T, group.by = "layer2_annotation", label.size = 3) + 
+  NoLegend() +
   ggtitle("H3K27me3") +
   theme(plot.title = element_text(size=15,hjust=0.5,face='bold'))
 
