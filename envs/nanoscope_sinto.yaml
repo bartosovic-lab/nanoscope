@@ -1,4 +1,4 @@
-name: sinto
+name: nanoscope_sinto
 channels:
   - defaults
   - conda-forge
