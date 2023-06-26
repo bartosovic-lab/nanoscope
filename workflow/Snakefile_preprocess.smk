@@ -108,7 +108,7 @@ rule bam_noLA_to_fragments_noLA:
     conda: '../envs/nanoscope_sinto.yaml'
     threads: 20
     shell:
-        'sinto fragments -b {input.bam} -f{output.fragmments} -p {threads}'
+        'sinto fragments -b {input.bam} -f {output.fragmments} -p {threads}'
 
 rule sort_sinto_output:
     input:
