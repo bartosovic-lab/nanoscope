@@ -53,6 +53,8 @@ rule run_cellranger:
         cellranger_ref=config['general']['cellranger_ref'],
         fastq_folder=lambda wildcards: os.getcwd() + '/{sample}/{modality}_{barcode}/fastq/barcode_{barcode}/'.format(sample=wildcards.sample,modality=wildcards.modality,barcode=wildcards.barcode)
     threads: 20
+    resources:
+        mem_mb = 32000
     shell:
         'rm -rf {wildcards.sample}/{wildcards.modality}_{wildcards.barcode}/cellranger/; '
         'cd {wildcards.sample}/{wildcards.modality}_{wildcards.barcode}/; '
@@ -92,7 +94,7 @@ rule possort_noLA_bam_file:
     conda: '../envs/nanoscope_samtools.yaml'
     threads: 20
     resources:
-        mem_mb=32000
+        mem_mb = 32000
     params:
         tempfolder = config['general']['tempdir']
     shell:
@@ -118,7 +120,7 @@ rule sort_sinto_output:
         index      = '{sample}/{modality}_{barcode}/cellranger/outs/fragments_noLA_duplicates.tsv.gz.tbi',
     conda: '../envs/nanoscope_samtools.yaml'
     resources:
-        mem_mb=16000
+        mem_mb = 16000
     shell:
         'sort -k1,1 -k2,2n {input.fragments} | bgzip > {output.fragments}; '
         'tabix -p bed {output.fragments} '
@@ -130,6 +132,8 @@ rule bam_to_bw: # For QC reasons
         bigwig='{sample}/{modality}_{barcode}/bigwig/all_reads.bw'
     threads: 20
     conda: '../envs/nanoscope_deeptools.yaml'
+    resources:
+        mem_mb = 16000
     shell:
         'bamCoverage -b {input.cellranger_bam} -o {output.bigwig} -p {threads} --minMappingQuality 5 '
         ' --binSize 50 --centerReads --smoothLength 250 --normalizeUsing RPKM --ignoreDuplicates --extendReads'
@@ -143,6 +147,8 @@ rule run_macs_broad:
         macs_outdir='{sample}/{modality}_{barcode}/peaks/macs_broad/',
         macs_genome=config['general']['macs_genome']
     conda: '../envs/nanoscope_deeptools.yaml'
+    resources:
+        mem_mb = 16000
     shell:
         'macs2 callpeak -t {input} -g {params.macs_genome} -f BAMPE -n {wildcards.modality} '
         '--outdir {params.macs_outdir} --llocal 100000 --keep-dup 1 --broad-cutoff 0.1 '
@@ -159,6 +165,8 @@ rule barcode_metrics_peaks:
         add_sample_to_list=workflow.basedir + '/scripts/add_sample_to_list.py',
         tmpdir=config['general']['tempdir']
     conda: '../envs/nanoscope_deeptools.yaml'
+    resources:
+        mem_mb = 16000
     shell:
         'bedtools intersect -abam {input.bam} -b {input.peaks} -u | samtools view -f2 | '
         'awk -f {params.get_cell_barcode} | sed "s/CB:Z://g" |  '
@@ -174,6 +182,8 @@ rule barcode_metrics_all:
         add_sample_to_list=workflow.basedir + '/scripts/add_sample_to_list.py',
         tmpdir=config['general']['tempdir']
     conda: '../envs/nanoscope_deeptools.yaml'
+    resources:
+        mem_mb = 16000
     shell:
         'mkdir -p {params.tmpdir}; '
         ' samtools view -f2 {input.bam}| '
