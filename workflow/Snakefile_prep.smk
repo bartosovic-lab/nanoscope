@@ -2,7 +2,7 @@ import itertools
 import os
 import glob
 
-configfile: workflow.basedir + '/../config/config.yaml'
+# configfile: workflow.basedir + '/../config/config.yaml'
 
 samples_list  = list(config['samples'].keys())
 print(samples_list)
