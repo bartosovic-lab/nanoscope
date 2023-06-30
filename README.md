@@ -27,7 +27,7 @@ conda activate nanoscope_base
 vim nanoscope/config/config.yaml
 
 # Run the pipeline
-snakemake --snakefile nanoscope/workflow/Snakefile_preprocess.smk --configfile nanoscope/config/config.yaml --cores 20 --jobs 20 -p --use-conda --rerun-incomplete --profile htcondor
+snakemake --snakefile nanoscope/workflow/Snakefile_preprocess.smk --configfile nanoscope/config/config.yaml --cores 20 --jobs 20 -p --use-conda --rerun-incomplete --profile slurm
 ```
 
 
@@ -35,11 +35,15 @@ snakemake --snakefile nanoscope/workflow/Snakefile_preprocess.smk --configfile n
 All raw and processed files can be found as supplementary files in the [GEO repository](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE198467).
 `seurat.rds` object can also be used to start the analysis from [Downstream Analysis](#downstream-analysis).
 
-> In this tutorial, only `GSM5949206` and `GSM5949208` will be processed
+> In this tutorial, only [GSM5949206](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE198467) (SRR18305888 and SRR18305889) and [GSM5949208](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE198467) (SRR18305884, SRR18305885) will be processed
 
 # Set up
-The whole project has been run on a High Performance Computing (HPC) linux cluster under CentOS (release:7.9.2009) with htcondor workflow management system.
-If you fancy using MacOS or Windows, please design your set up accordingly.
+The whole project has been tested on 
+- High Performance Computing (HPC) linux cluster under CentOS (release:7.9.2009) with htcondor workflow management system 
+- HPC linux cluster under CentOS (release:7.9.2009) with slurm workflow management system
+
+
+If you fancy using MacOS, Windows or another linux distro, please design your set up accordingly.
 
 ## Clone github repository
 ```
@@ -47,7 +51,6 @@ mkdir ~/nanoCT_project
 cd ~/nanoCT_project
 git clone https://github.com/bartosovic-lab/nanoscope
 ```
-> If you encounter authentication errors, you need to create a [personal access token](https://docs.github.com/fr/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token)
 
 ## Prepare environment
 A conda environment will be used to set up an isolated architecture reducing troubleshooting.
@@ -65,6 +68,9 @@ conda activate nanoscope_base
 
 ## Download the raw data
 The raw data as fastq files can be downloaded throughout the [SRA-Toolkit](https://github.com/ncbi/sra-tools/wiki/HowTo:-fasterq-dump).
+
+SRA tools can be installed using ```conda install -c bioconda sra-tools```
+
 ### Navigate to a new directory to store the data
 ```
 mkdir -p ~/nanoCT_project/Data
@@ -72,8 +78,8 @@ cd ~/nanoCT_project/Data
 ```
 ### Download SRA
 ```
-fasterq-dump -f -e 1 --split-files --include-technical -o SRR18305888.fastq SRR18305888
-fasterq-dump -f -e 1 --split-files --include-technical -o SRR18305889.fastq SRR18305889
+fasterq-dump -f -e 8 --split-files --include-technical -o SRR18305888.fastq SRR18305888
+fasterq-dump -f -e 8 --split-files --include-technical -o SRR18305889.fastq SRR18305889
 
 mv SRR18305888_1.fastq sample_P23209_001_1001_S1_L001_I1_001.fastq
 mv SRR18305888_2.fastq sample_P23209_001_1001_S1_L001_R1_001.fastq
@@ -90,8 +96,8 @@ mv *.fastq.gz ./fastq/sample_P23209/
 ```
 
 ```
-fasterq-dump -f -e 1 --split-files --include-technical -o SRR18305884.fastq SRR18305884
-fasterq-dump -f -e 1 --split-files --include-technical -o SRR18305885.fastq SRR18305885
+fasterq-dump -f -e 8 --split-files --include-technical -o SRR18305884.fastq SRR18305884
+fasterq-dump -f -e 8 --split-files --include-technical -o SRR18305885.fastq SRR18305885
 
 mv SRR18305884_1.fastq sample_P24004_002_1001_S1_L001_I1_001.fastq
 mv SRR18305884_2.fastq sample_P24004_002_1001_S1_L001_R1_001.fastq
@@ -123,10 +129,14 @@ However if you wish to run the pipeline on a separated workstation, you can foll
 
 > If cellranger is not installed on your favorite HPC, please contact your HPC support.
 
+Pre compiled references for cellranger-atac for some species are available [here](https://support.10xgenomics.com/single-cell-atac/software/downloads/latest)
+
+To generate cellranger-atac reference please follow [here](https://support.10xgenomics.com/single-cell-atac/software/pipelines/latest/advanced/references)
+
 ## HPC profiles
 The pipeline is implemented in workflow management software known as snakemake.
-It communicates with HPCs to run paralellized jobs to speed up the process.
-Like previously mentionned at the beginning of the [Set Up](#set-up), the conda environment has been built to create a communication between snakemake and htcordor scheduler, therefore, htcondor package has been installed in the conda environment.
+It communicates with HPCs to run parallelized jobs to speed up the process.
+Like previously mentioned at the beginning of the [Set Up](#set-up), the conda environment has been built to create a communication between snakemake and htcordor/slurm scheduler, therefore, htcondor package has been installed in the conda environment.
 
 For htcondor workflow management, we will follow these [guidelines](https://github.com/Snakemake-Profiles/htcondor)
 ```
@@ -148,10 +158,6 @@ template="gh:Snakemake-Profiles/slurm"
 cookiecutter --output-dir ~/.config/snakemake "$template"
 ```
 
-> Do not forget to change the profile in your snakemake command line : 
-```
---profile slurm
-```
 > If you do not have access to an HPC, you can simply remove the profile options from the snakemake command line and ignore this section.
 
 ## Changing parameters
@@ -167,7 +173,7 @@ Here is showned the config file for the [downloaded fastq files](#download-sra).
 
 One can change the name of the samples as well as the path of the fastq files and the associated modalities. General information can also be tweaked, such as the temporary directory and parameters related to cellranger binary and reference location.
 
-**NB**: this tutorial assumes the cellranger atac reference has already been generated. If not, please follow cellranger instructions [here](https://support.10xgenomics.com/single-cell-atac/software/pipelines/latest/advanced/references) or download it directly from [cellranger website](https://support.10xgenomics.com/single-cell-atac/software/downloads/latest?).
+**NB**: this tutorial assumes the cellranger-atac reference has already been generated. If not, please follow cellranger instructions [here](https://support.10xgenomics.com/single-cell-atac/software/pipelines/latest/advanced/references) or download it directly from [cellranger website](https://support.10xgenomics.com/single-cell-atac/software/downloads/latest?).
 
 
 Go back to the git directory
@@ -214,10 +220,23 @@ It will cover the following steps :
 
 All outputed files will be automatically generated and will be used to run the R markdown vignette below.
 
-Run snakemake :
+cd into project directory
 ```
-cd ~/nanoCT_project/nanoscope
-snakemake --snakefile workflow/Snakefile_preprocess.smk --cores 16 --profile htcondor -p --use-conda
+cd ~/nanoCT_project/
+```
+Run snakemake with htcondor profile
+
+```
+snakemake --snakefile nanoscope/workflow/Snakefile_preprocess.smk --cores 16 --jobs 100 --profile htcondor -p --use-conda --configfile nanoscope/config/config.yaml
+```
+Slurm profile
+```
+snakemake --snakefile nanoscope/workflow/Snakefile_preprocess.smk --cores 16 --jobs 100 --profile slurm -p --use-conda --configfile nanoscope/config/config.yaml
+```
+
+In interactive shell
+```
+snakemake --snakefile nanoscope/workflow/Snakefile_preprocess.smk --cores 16 --jobs 100 -p --use-conda --configfile nanoscope/config/config.yaml
 ```
 
 # Downstream analysis
