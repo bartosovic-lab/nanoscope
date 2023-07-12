@@ -109,6 +109,8 @@ rule bam_noLA_to_fragments_noLA:
         fragmments = temp('{sample}/{modality}_{barcode}/cellranger/outs/fragments_noLA_duplicates.tsv'),
     conda: '../envs/nanoscope_sinto.yaml'
     threads: 20
+    resources:
+        mem_mb=16000
     shell:
         'sinto fragments -b {input.bam} -f {output.fragmments} -p {threads}'
 
