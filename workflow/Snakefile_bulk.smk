@@ -1,25 +1,34 @@
 include: 'Snakefile_prep.smk'
+include: 'Snakefile_nanoscope.smk'
 
 rule all:
     input:
-        trim = [run.samples[s].trimmed_fastq_all.path for s in run.samples_list]
+        trim = [run.samples[s].trimmed_fastq_all[i].path for s in run.samples_list for i,item in enumerate(run.samples[s].trimmed_fastq_all)]
 
 
 rule trim_trim_galore:
     input:
-        fastq_R1 = run.samples[wildcards.sample].debarcoded_fastq_by_lane[wildcards.lane][wildcards.modality]['R1'],
-        fastq_R2 = run.samples[wildcards.sample].debarcoded_fastq_by_lane[wildcards.lane][wildcards.modality]['R3'],
+        fastq_R1 = lambda wildcards: run.samples[wildcards.sample].debarcoded_fastq_dict[wildcards.lane][wildcards.modality]['R1'].path,
+        fastq_R2 = lambda wildcards: run.samples[wildcards.sample].debarcoded_fastq_dict[wildcards.lane][wildcards.modality]['R3'].path,
     output:
-        out_R1 = trimmed_fastq_wildcard['R1'],
-        out_R2 = trimmed_fastq_wildcard['R2']
+        out_R1 = trimmed_fastq_output['R1'],
+        out_R2 = trimmed_fastq_output['R3'],
     params:
-        outdir="{sample}/{modality}_{barcode}/temp/trimming/"
+        outdir = trim_params_outdir,
+        OUT_R1 = lambda wildcards: run.samples[wildcards.sample].trimmed_fastq_dict[wildcards.lane][wildcards.modality]['R1'].path,
+        OUT_R2 = lambda wildcards: run.samples[wildcards.sample].trimmed_fastq_dict[wildcards.lane][wildcards.modality]['R3'].path
     conda: "../envs/bulk/nanoscope_trim.yaml"
     threads: 8
     resources:
         mem_mb=8000
     shell:
-        "trim_galore --cores {threads} --fastqc --paired -o {params.outdir} --basename {wildcards.sample}_{wildcards.lane} {input}"
+        """
+        trim_galore --cores {threads} --fastqc --paired -o {params.outdir} --basename {wildcards.sample}_{wildcards.lane} {input.fastq_R1} {input.fastq_R2};
+        TRIM_OUT_R1=`ls {params.outdir}/*_{wildcards.lane}*_val_1.fq.gz`;
+        TRIM_OUT_R2=`ls {params.outdir}/*_{wildcards.lane}*_val_2.fq.gz`;
+        mv $TRIM_OUT_R1 {params.OUT_R1}
+        mv $TRIM_OUT_R2 {params.OUT_R2}
+        """
 
 
 #
