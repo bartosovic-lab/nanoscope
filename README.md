@@ -27,7 +27,7 @@ conda activate nanoscope_base
 vim nanoscope/config/config.yaml
 
 # Run the pipeline
-snakemake --snakefile nanoscope/workflow/Snakefile_preprocess.smk --configfile nanoscope/config/config.yaml --cores 20 --jobs 20 -p --use-conda --rerun-incomplete --profile slurm
+snakemake --snakefile nanoscope/workflow/Smalefile_nanoscope.smk.smk --configfile nanoscope/config/config.yaml --cores 20 --jobs 20 -p --use-conda --rerun-incomplete --profile slurm
 ```
 
 
@@ -227,16 +227,16 @@ cd ~/nanoCT_project/
 Run snakemake with htcondor profile
 
 ```
-snakemake --snakefile nanoscope/workflow/Snakefile_preprocess.smk --cores 16 --jobs 100 --profile htcondor -p --use-conda --configfile nanoscope/config/config.yaml
+snakemake --snakefile nanoscope/workflow/Smalefile_nanoscope.smk.smk --cores 16 --jobs 100 --profile htcondor -p --use-conda --configfile nanoscope/config/config.yaml
 ```
 Slurm profile
 ```
-snakemake --snakefile nanoscope/workflow/Snakefile_preprocess.smk --cores 16 --jobs 100 --profile slurm -p --use-conda --configfile nanoscope/config/config.yaml
+snakemake --snakefile nanoscope/workflow/Smalefile_nanoscope.smk.smk --cores 16 --jobs 100 --profile slurm -p --use-conda --configfile nanoscope/config/config.yaml
 ```
 
 In interactive shell
 ```
-snakemake --snakefile nanoscope/workflow/Snakefile_preprocess.smk --cores 16 --jobs 100 -p --use-conda --configfile nanoscope/config/config.yaml
+snakemake --snakefile nanoscope/workflow/Smalefile_nanoscope.smk.smk --cores 16 --jobs 100 -p --use-conda --configfile nanoscope/config/config.yaml
 ```
 
 # Downstream analysis

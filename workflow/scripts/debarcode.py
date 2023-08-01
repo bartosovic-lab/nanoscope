@@ -234,7 +234,7 @@ def main(args):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='')
+    parser = argparse.ArgumentParser(description='', formatter_class=argparse.RawTextHelpFormatter)
 
     parser.add_argument('-i', '--input',
                         required=True,
@@ -261,7 +261,8 @@ if __name__ == '__main__':
     parser.add_argument('--name',
                         type=str,
                         default=None,
-                        help='Custom name for the experiment (Default: Autodetect from filename)')
+                        help="""Custom name for the experiment, e.g.\n\nInput filename: nanoCT_MB22_001_S1_L001_R1_001.fastq.gz\n\nOutput by default is the same filename:       barcode_XXXXXXXX/nanoCT_MB22_001_S1_L001_R1_001.fastq.gz\nif --name is set as "test", the output is:    barcode_XXXXXXXX/test_S1_L001_R1_001.fastq.gz\n\n(Default: Autodetect from filename)
+                        """)
 
     parser.add_argument('--mismatch',
                         type=int,

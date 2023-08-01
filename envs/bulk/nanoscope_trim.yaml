@@ -1,0 +1,47 @@
+name: bulkCT_trim
+channels:
+  - bioconda
+  - defaults
+dependencies:
+  - _libgcc_mutex=0.1=main
+  - _openmp_mutex=5.1=1_gnu
+  - bz2file=0.98=py37h06a4308_1
+  - ca-certificates=2023.05.30=h06a4308_0
+  - certifi=2022.12.7=py37h06a4308_0
+  - cutadapt=2.6=py37h516909a_0
+  - dbus=1.13.18=hb2f20db_0
+  - dnaio=0.3=py37h14c3975_1
+  - expat=2.4.9=h6a678d5_0
+  - fastqc=0.12.1=hdfd78af_0
+  - font-ttf-dejavu-sans-mono=2.37=hd3eb1b0_0
+  - fontconfig=2.14.1=h4c34cd2_2
+  - freetype=2.12.1=h4a9f257_0
+  - gdbm=1.18=hd4cb3f1_4
+  - glib=2.69.1=he621ea3_2
+  - icu=58.2=he6710b0_3
+  - ld_impl_linux-64=2.38=h1181459_1
+  - libffi=3.4.4=h6a678d5_0
+  - libgcc-ng=11.2.0=h1234567_1
+  - libgomp=11.2.0=h1234567_1
+  - libpng=1.6.39=h5eee18b_0
+  - libstdcxx-ng=11.2.0=h1234567_1
+  - libuuid=1.41.5=h5eee18b_0
+  - libxcb=1.15=h7f8727e_0
+  - libxml2=2.10.3=hcbfbd50_0
+  - ncurses=6.4=h6a678d5_0
+  - openjdk=11.0.13=h87a67e3_0
+  - openssl=1.1.1u=h7f8727e_0
+  - pcre=8.45=h295c915_0
+  - perl=5.34.0=h5eee18b_2
+  - pigz=2.6=h27cfd23_0
+  - pip=22.3.1=py37h06a4308_0
+  - python=3.7.16=h7a1cb2a_0
+  - readline=8.2=h5eee18b_0
+  - setuptools=65.6.3=py37h06a4308_0
+  - sqlite=3.41.2=h5eee18b_0
+  - tk=8.6.12=h1ccaba5_0
+  - trim-galore=0.6.10=hdfd78af_0
+  - wheel=0.38.4=py37h06a4308_0
+  - xopen=0.7.3=py_0
+  - xz=5.4.2=h5eee18b_0
+  - zlib=1.2.13=h5eee18b_0
