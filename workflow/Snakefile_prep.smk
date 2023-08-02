@@ -7,6 +7,7 @@ from pathlib import Path
 
 debarcoded_fastq_wildcard = '{sample}/{modality}_{barcode}/fastq_debarcoded/barcode_{barcode}/{prefix}_{number}_{lane}_{read}_{suffix}'
 trimmed_fastq_wildcard    = '{sample}/{modality}_{barcode}/fastq_trimmed/{prefix}_{number}_{lane}_{read}_{suffix}'
+bowtie2_map_wildcard      = '{sample}/{modality}_{barcode}/bowtie2_out/{sample}_{modality}_{lane}_mapped.bam'
 
 debarcoded_fastq_output = {r: '{sample}/{modality}_{barcode}/fastq_debarcoded/barcode_{barcode}/{prefix}_{number}_{lane}_{read}_{suffix}'.replace('{read}',r) for r in ['R1','R2','R3']}
 trimmed_fastq_output    = {r: '{sample}/{modality}_{barcode}/fastq_trimmed/{prefix}_{number}_{lane}_{read}_{suffix}'.replace('{read}',r) for r in ['R1','R2','R3']}
@@ -51,15 +52,18 @@ class sample:
         for f in self.all_fastq_files:
             self.fastq_by_lane[f.lane][f.read] = f
 
+        ###########
+        # OUTPUTS #
+        ###########
 
-        #########################################
-        # Files that are output of debarcode.py #
-        #########################################
-        self.generate_output(files_list='debarcoded_fastq_all', files_dict='debarcoded_fastq_dict', wildcard=debarcoded_fastq_wildcard)
-        self.generate_output(files_list='trimmed_fastq_all', files_dict='trimmed_fastq_dict',wildcard=trimmed_fastq_wildcard,filter_read = 'R2')
+        self.generate_debarcoded_output(files_list='debarcoded_fastq_all', files_dict='debarcoded_fastq_dict', wildcard=debarcoded_fastq_wildcard)
+        self.generate_debarcoded_output(files_list='trimmed_fastq_all', files_dict='trimmed_fastq_dict',wildcard=trimmed_fastq_wildcard,filter_read = 'R2')
+
+        # Bowtie2 mapping output
+        self.bowtie2_bam_all  = [bowtie2_map_wildcard.format(sample = self.sample_name,modality=m,barcode=self.barcodes_dict[m],lane=l) for m in self.modality_names for l in self.all_lanes]
 
 
-    def generate_output(self, files_list, files_dict, wildcard,filter_read = False):
+    def generate_debarcoded_output(self, files_list, files_dict, wildcard,filter_read = False):
         setattr(self, files_list,[])    # Empty list
         setattr(self,files_dict, {l: collections.defaultdict(dict) for l in self.all_lanes})    # Empty dictionary
 

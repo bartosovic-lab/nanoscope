@@ -1,0 +1,39 @@
+name: bulkCT_map2
+channels:
+  - bioconda
+  - defaults
+dependencies:
+  - _libgcc_mutex=0.1=main
+  - _openmp_mutex=5.1=1_gnu
+  - bowtie2=2.4.1=py38he513fc3_0
+  - bzip2=1.0.8=h7b6447c_0
+  - c-ares=1.19.0=h5eee18b_0
+  - ca-certificates=2023.05.30=h06a4308_0
+  - gdbm=1.18=hd4cb3f1_4
+  - htslib=1.13=h9093b5e_0
+  - krb5=1.19.2=hac12032_0
+  - ld_impl_linux-64=2.38=h1181459_1
+  - libcurl=7.87.0=h91b91d3_0
+  - libdeflate=1.17=h5eee18b_0
+  - libedit=3.1.20210714=h7f8727e_0
+  - libev=4.33=h7f8727e_1
+  - libffi=3.3=he6710b0_2
+  - libgcc-ng=11.2.0=h1234567_1
+  - libgomp=11.2.0=h1234567_1
+  - libnghttp2=1.52.0=ha637b67_1
+  - libssh2=1.10.0=h37d81fd_2
+  - libstdcxx-ng=11.2.0=h1234567_1
+  - ncurses=6.2=he6710b0_1
+  - openssl=1.1.1u=h7f8727e_0
+  - perl=5.34.0=h5eee18b_2
+  - pip=23.1.2=py38h06a4308_0
+  - python=3.8.12=h12debd9_0
+  - readline=8.1=h27cfd23_0
+  - samtools=1.13=h8c37831_0
+  - setuptools=67.8.0=py38h06a4308_0
+  - sqlite=3.40.1=h5082296_0
+  - tbb=2020.3=hfd86e86_0
+  - tk=8.6.12=h1ccaba5_0
+  - wheel=0.38.4=py38h06a4308_0
+  - xz=5.2.10=h5eee18b_1
+  - zlib=1.2.13=h5eee18b_0

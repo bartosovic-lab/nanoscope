@@ -3,7 +3,8 @@ include: 'Snakefile_nanoscope.smk'
 
 rule all:
     input:
-        trim = [run.samples[s].trimmed_fastq_all[i].path for s in run.samples_list for i,item in enumerate(run.samples[s].trimmed_fastq_all)]
+        trim    = [run.samples[s].trimmed_fastq_all[i].path for s in run.samples_list for i,item in enumerate(run.samples[s].trimmed_fastq_all)],
+        bowtie2 = [run.samples[s].bowtie2_bam_all for s in run.samples_list]
 
 
 rule trim_trim_galore:
@@ -30,30 +31,28 @@ rule trim_trim_galore:
         mv $TRIM_OUT_R2 {params.OUT_R2}
         """
 
+rule map_bowtie2:
+    input:
+        read1 = lambda wildcards: run.samples[wildcards.sample].trimmed_fastq_dict[wildcards.lane][wildcards.modality]['R1'].path,
+        read2 = lambda wildcards: run.samples[wildcards.sample].trimmed_fastq_dict[wildcards.lane][wildcards.modality]['R3'].path
+    output:
+        bam = bowtie2_map_wildcard,
+        log = bowtie2_map_wildcard.replace('.bam','.log')
+    params:
+        index = config['general']['bowtie2_index']
+    conda: "../envs/bulk/nanoscope_map.yaml"
+    threads: 16
+    resources:
+        mem_mb=32000
+    shell:
+        """
+        bowtie2 --threads {threads} \
+                --dovetail \
+                -x {params.index} \
+                -1 {input.read1} \
+                -2 {input.read2} 2> {output.log} | samtools view -bS > {output.bam}
+        """
 
-#
-# rule map_bowtie2:
-#     input:
-#         read1="out/{sample}/trimming/{sample}_{lane}_val_1.fq.gz",
-#         read2="out/{sample}/trimming/{sample}_{lane}_val_2.fq.gz",
-#     output:
-#         bam=temp("out/{sample}/{sample}_{lane}_mapped.bam"),
-#         log="out/logs/{sample}/{sample}_{lane}_bowtie2_map.log"
-#     params:
-#         index=config['general']['bowtie2_index']
-#     conda: "../envs/bulkCT_map.yaml"
-#     threads: 16
-#     resources:
-#         mem_mb=32000
-#     shell:
-#         """
-#         bowtie2 --threads {threads} \
-#                 --dovetail \
-#                 -x {params.index} \
-#                 -1 {input.read1} \
-#                 -2 {input.read2} 2> {output.log} | samtools view -bS > {output.bam}
-#         """
-#
 # rule bam_sort_and_index:
 #     input:
 #         "out/{sample}/{sample}_{lane}_mapped.bam",
