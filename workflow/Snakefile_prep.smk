@@ -9,6 +9,8 @@ debarcoded_fastq_wildcard = '{sample}/{modality}_{barcode}/fastq_debarcoded/barc
 trimmed_fastq_wildcard    = '{sample}/{modality}_{barcode}/fastq_trimmed/{prefix}_{number}_{lane}_{read}_{suffix}'
 bowtie2_map_wildcard      = '{sample}/{modality}_{barcode}/bowtie2_out/{sample}_{modality}_{lane}_mapped.bam'
 bam_sorted_wildcard       = '{sample}/{modality}_{barcode}/bowtie2_out/{sample}_{modality}_{lane}_sorted.bam'
+bam_merged_wildcard       = '{sample}/{modality}_{barcode}/bowtie2_out/{sample}_{modality}_merged.bam'
+bigwig_wildcard           = '{sample}/{modality}_{barcode}/bowtie2_out/{sample}_{modality}_merged.bw'
 
 debarcoded_fastq_output = {r: '{sample}/{modality}_{barcode}/fastq_debarcoded/barcode_{barcode}/{prefix}_{number}_{lane}_{read}_{suffix}'.replace('{read}',r) for r in ['R1','R2','R3']}
 trimmed_fastq_output    = {r: '{sample}/{modality}_{barcode}/fastq_trimmed/{prefix}_{number}_{lane}_{read}_{suffix}'.replace('{read}',r) for r in ['R1','R2','R3']}
@@ -63,6 +65,8 @@ class sample:
         # Bowtie2 mapping output
         self.bowtie2_bam_all  = [bowtie2_map_wildcard.format(sample = self.sample_name,modality=m,barcode=self.barcodes_dict[m],lane=l) for m in self.modality_names for l in self.all_lanes]
         self.bam_sorted_all   = [bam_sorted_wildcard.format(sample = self.sample_name,modality=m,barcode=self.barcodes_dict[m],lane=l) for m in self.modality_names for l in self.all_lanes]
+        self.bam_merged_all   = [bam_merged_wildcard.format(sample=self.sample_name,modality=m,barcode=self.barcodes_dict[m]) for m in self.modality_names]
+        self.bigwig_all       = [bigwig_wildcard.format(sample=self.sample_name,modality=m,barcode=self.barcodes_dict[m]) for m in self.modality_names]
 
 
     def generate_debarcoded_output(self, files_list, files_dict, wildcard,filter_read = False):
