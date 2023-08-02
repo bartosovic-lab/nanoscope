@@ -3,9 +3,9 @@ include: 'Snakefile_nanoscope.smk'
 
 rule all:
     input:
-        trim    = [run.samples[s].trimmed_fastq_all[i].path for s in run.samples_list for i,item in enumerate(run.samples[s].trimmed_fastq_all)],
-        bowtie2 = [run.samples[s].bowtie2_bam_all for s in run.samples_list]
-
+        trim       = [run.samples[s].trimmed_fastq_all[i].path for s in run.samples_list for i,item in enumerate(run.samples[s].trimmed_fastq_all)],
+        bowtie2    = [run.samples[s].bowtie2_bam_all for s in run.samples_list],
+        bam_sorted = [run.samples[s].bam_sorted_all for s in run.samples_list]
 
 rule trim_trim_galore:
     input:
@@ -53,15 +53,15 @@ rule map_bowtie2:
                 -2 {input.read2} 2> {output.log} | samtools view -bS > {output.bam}
         """
 
-# rule bam_sort_and_index:
-#     input:
-#         "out/{sample}/{sample}_{lane}_mapped.bam",
-#     output:
-#         bam_sorted=temp("out/{sample}/{sample}_{lane}_sorted.bam"),
-#         bam_index=temp("out/{sample}/{sample}_{lane}_sorted.bam.bai"),
-#     threads: 16
-#     conda: "../envs/bulkCT_map.yaml"
-#     resources:
-#         mem_mb=32000
-#     shell:
-#         "samtools sort -o {output.bam_sorted} -@ {threads} {input} && samtools index {output.bam_sorted} "
+rule bam_sort_and_index:
+    input:
+        bowtie2_map_wildcard
+    output:
+        bam_sorted = bam_sorted_wildcard,
+        bam_index  = bam_sorted_wildcard + '.bai'
+    threads: 16
+    conda: "../envs/bulk/nanoscope_map.yaml"
+    resources:
+        mem_mb=32000
+    shell:
+        "samtools sort -o {output.bam_sorted} -@ {threads} {input} && samtools index {output.bam_sorted} "
