@@ -152,5 +152,6 @@ rule peaks_to_3column_bed:
         fasta_index = 'reference/bowtie2/genome.fa.fai'
     output:
         macs_merged_accross_all_wildcard + '_3column.bed'
+    conda: '../envs/nanoscope_samtools.yaml'
     shell:
         'cut -f1-3 {input.peaks} | bedtools sort -faidx {input.fasta_index} -i - > {output}'
