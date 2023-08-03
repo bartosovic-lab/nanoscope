@@ -5,13 +5,14 @@ import re
 import collections
 from pathlib import Path
 
-debarcoded_fastq_wildcard = '{sample}/{modality}_{barcode}/fastq_debarcoded/barcode_{barcode}/{prefix}_{number}_{lane}_{read}_{suffix}'
-trimmed_fastq_wildcard    = '{sample}/{modality}_{barcode}/fastq_trimmed/{prefix}_{number}_{lane}_{read}_{suffix}'
-bowtie2_map_wildcard      = '{sample}/{modality}_{barcode}/bowtie2_out/{sample}_{modality}_{lane}_mapped.bam'
-bam_sorted_wildcard       = '{sample}/{modality}_{barcode}/bowtie2_out/{sample}_{modality}_{lane}_sorted.bam'
-bam_merged_wildcard       = '{sample}/{modality}_{barcode}/bowtie2_out/{sample}_{modality}_merged.bam'
-bigwig_wildcard           = '{sample}/{modality}_{barcode}/bowtie2_out/{sample}_{modality}_merged.bw'
-macs_wildcard             = '{sample}/{modality}_{barcode}/peaks/macs2/{sample}_{modality}_peaks.broadPeak'
+debarcoded_fastq_wildcard          = '{sample}/{modality}_{barcode}/fastq_debarcoded/barcode_{barcode}/{prefix}_{number}_{lane}_{read}_{suffix}'
+trimmed_fastq_wildcard             = '{sample}/{modality}_{barcode}/fastq_trimmed/{prefix}_{number}_{lane}_{read}_{suffix}'
+bowtie2_map_wildcard               = '{sample}/{modality}_{barcode}/bowtie2_out/{sample}_{modality}_{lane}_mapped.bam'
+bam_sorted_wildcard                = '{sample}/{modality}_{barcode}/bowtie2_out/{sample}_{modality}_{lane}_sorted.bam'
+bam_merged_wildcard                = '{sample}/{modality}_{barcode}/bowtie2_out/{sample}_{modality}_merged.bam'
+bigwig_wildcard                    = '{sample}/{modality}_{barcode}/bowtie2_out/{sample}_{modality}_merged.bw'
+macs_wildcard                      = '{sample}/{modality}_{barcode}/peaks/macs2/{sample}_{modality}_peaks.broadPeak'
+macs_merged_accross_all_wildcard   = '{sample}/all_modalities_merged/peaks/macs2/{sample}_peaks.broadPeak'
 
 debarcoded_fastq_output = {r: '{sample}/{modality}_{barcode}/fastq_debarcoded/barcode_{barcode}/{prefix}_{number}_{lane}_{read}_{suffix}'.replace('{read}',r) for r in ['R1','R2','R3']}
 trimmed_fastq_output    = {r: '{sample}/{modality}_{barcode}/fastq_trimmed/{prefix}_{number}_{lane}_{read}_{suffix}'.replace('{read}',r) for r in ['R1','R2','R3']}
@@ -66,6 +67,7 @@ class sample:
         self.bam_merged_all   = [bam_merged_wildcard.format(sample=self.sample_name,modality=m,barcode=self.barcodes_dict[m]) for m in self.modality_names]
         self.bigwig_all       = [bigwig_wildcard.format(sample=self.sample_name,modality=m,barcode=self.barcodes_dict[m]) for m in self.modality_names]
         self.macs_all         = [macs_wildcard.format(sample=self.sample_name,modality=m,barcode=self.barcodes_dict[m]) for m in self.modality_names]
+        self.macs_merged_all  = [macs_merged_accross_all_wildcard.format(sample=self.sample_name)]
 
 
     def generate_debarcoded_output(self, files_list, files_dict, wildcard,filter_read = False):

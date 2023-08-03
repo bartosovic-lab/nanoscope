@@ -3,12 +3,13 @@ include: 'Snakefile_nanoscope.smk'
 
 rule all:
     input:
-        trim       = [run.samples[s].trimmed_fastq_all[i].path for s in run.samples_list for i,item in enumerate(run.samples[s].trimmed_fastq_all)],
-        bowtie2    = [run.samples[s].bowtie2_bam_all for s in run.samples_list],
-        bam_sorted = [run.samples[s].bam_sorted_all for s in run.samples_list],
-        bam_merged = [run.samples[s].bam_merged_all for s in run.samples_list],
-        bigwigs    = [run.samples[s].bigwig_all for s in run.samples_list],
-        peaks      = [run.samples[s].macs_all for s in run.samples_list],
+        trim         = [run.samples[s].trimmed_fastq_all[i].path for s in run.samples_list for i,item in enumerate(run.samples[s].trimmed_fastq_all)],
+        bowtie2      = [run.samples[s].bowtie2_bam_all for s in run.samples_list],
+        bam_sorted   = [run.samples[s].bam_sorted_all for s in run.samples_list],
+        bam_merged   = [run.samples[s].bam_merged_all for s in run.samples_list],
+        bigwigs      = [run.samples[s].bigwig_all for s in run.samples_list],
+        peaks        = [run.samples[s].macs_all for s in run.samples_list],
+        peaks_merged = [run.samples[s].macs_merged_all for s in run.samples_list],
 
 rule trim_trim_galore:
     input:
@@ -108,5 +109,21 @@ rule run_macs_broad_bulk:
         mem_mb = 16000
     shell:
         'macs2 callpeak -t {input} -g {params.macs_genome} -f BAMPE -n {wildcards.sample}_{wildcards.modality} '
+        '--outdir {params.macs_outdir} --llocal 100000 --keep-dup 1 --broad-cutoff 0.1 '
+        '--max-gap 1000 --broad 2>&1 '
+
+rule macs_accross_all_bam_files:
+    input:
+        lambda wildcards: [bam_merged_wildcard.format(sample = wildcards.sample, modality = m, barcode = run.samples[wildcards.sample].barcodes_dict[m]) for m in run.samples[wildcards.sample].modality_names]
+    output:
+        macs_merged_accross_all_wildcard
+    params:
+        macs_outdir = str(Path(macs_merged_accross_all_wildcard).parents[0]),
+        macs_genome = config['general']['macs_genome']
+    conda: '../envs/nanoscope_deeptools.yaml'
+    resources:
+        mem_mb = 16000
+    shell:
+        'macs2 callpeak -t {input} -g {params.macs_genome} -f BAMPE -n {wildcards.sample} '
         '--outdir {params.macs_outdir} --llocal 100000 --keep-dup 1 --broad-cutoff 0.1 '
         '--max-gap 1000 --broad 2>&1 '
