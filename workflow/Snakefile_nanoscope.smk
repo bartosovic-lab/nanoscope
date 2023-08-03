@@ -35,7 +35,7 @@ rule demultiplex:
         debarcoded_fastq_output['R2'],
         debarcoded_fastq_output['R3'],
     params:
-        out_folder = debarcode_params_outdir
+        out_folder = str(Path(debarcoded_fastq_wildcard).parents[1])
     conda: '../envs/nanoscope_debarcode.yaml'
     threads: 1
     shell:

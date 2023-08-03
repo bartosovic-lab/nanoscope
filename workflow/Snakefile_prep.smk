@@ -11,12 +11,10 @@ bowtie2_map_wildcard      = '{sample}/{modality}_{barcode}/bowtie2_out/{sample}_
 bam_sorted_wildcard       = '{sample}/{modality}_{barcode}/bowtie2_out/{sample}_{modality}_{lane}_sorted.bam'
 bam_merged_wildcard       = '{sample}/{modality}_{barcode}/bowtie2_out/{sample}_{modality}_merged.bam'
 bigwig_wildcard           = '{sample}/{modality}_{barcode}/bowtie2_out/{sample}_{modality}_merged.bw'
+macs_wildcard             = '{sample}/{modality}_{barcode}/peaks/macs2/{sample}_{modality}_peaks.broadPeak'
 
 debarcoded_fastq_output = {r: '{sample}/{modality}_{barcode}/fastq_debarcoded/barcode_{barcode}/{prefix}_{number}_{lane}_{read}_{suffix}'.replace('{read}',r) for r in ['R1','R2','R3']}
 trimmed_fastq_output    = {r: '{sample}/{modality}_{barcode}/fastq_trimmed/{prefix}_{number}_{lane}_{read}_{suffix}'.replace('{read}',r) for r in ['R1','R2','R3']}
-
-debarcode_params_outdir = str(Path(debarcoded_fastq_wildcard).parents[1])
-trim_params_outdir      = str(Path(trimmed_fastq_wildcard).parents[0])
 
 def find_all_fastq_files(path):
     all_fastq = itertools.chain(*[glob.glob(path + x) for x in ['/**/*R*.fastq.gz', '/*R*.fastq.gz']])
@@ -67,6 +65,7 @@ class sample:
         self.bam_sorted_all   = [bam_sorted_wildcard.format(sample = self.sample_name,modality=m,barcode=self.barcodes_dict[m],lane=l) for m in self.modality_names for l in self.all_lanes]
         self.bam_merged_all   = [bam_merged_wildcard.format(sample=self.sample_name,modality=m,barcode=self.barcodes_dict[m]) for m in self.modality_names]
         self.bigwig_all       = [bigwig_wildcard.format(sample=self.sample_name,modality=m,barcode=self.barcodes_dict[m]) for m in self.modality_names]
+        self.macs_all         = [macs_wildcard.format(sample=self.sample_name,modality=m,barcode=self.barcodes_dict[m]) for m in self.modality_names]
 
 
     def generate_debarcoded_output(self, files_list, files_dict, wildcard,filter_read = False):
