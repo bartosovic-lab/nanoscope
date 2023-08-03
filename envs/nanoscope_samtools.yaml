@@ -6,23 +6,26 @@ channels:
 dependencies:
   - _libgcc_mutex=0.1=conda_forge
   - _openmp_mutex=4.5=2_gnu
+  - bedtools=2.31.0=hf5e1c6e_2
   - bzip2=1.0.8=h7b6447c_0
   - c-ares=1.19.0=h5eee18b_0
   - ca-certificates=2023.05.30=h06a4308_0
-  - htslib=1.17=h6bc39ce_1
-  - krb5=1.19.4=h568e23c_0
-  - libcurl=7.88.1=h91b91d3_0
+  - curl=7.88.1=h5eee18b_1
+  - htslib=1.10=h244ad75_0
+  - krb5=1.20.1=h143b758_1
+  - libcurl=7.88.1=h251f7ec_1
   - libdeflate=1.17=h5eee18b_0
   - libedit=3.1.20221030=h5eee18b_0
   - libev=4.33=h7f8727e_1
   - libgcc-ng=13.1.0=he5830b7_0
   - libgomp=13.1.0=he5830b7_0
-  - libnghttp2=1.52.0=ha637b67_1
-  - libssh2=1.10.0=h37d81fd_2
-  - libstdcxx-ng=11.2.0=h1234567_1
+  - libnghttp2=1.52.0=h2d74bed_1
+  - libssh2=1.10.0=hdbd6064_2
+  - libstdcxx-ng=13.1.0=hfd8a6a1_0
   - libzlib=1.2.13=hd590300_5
   - ncurses=6.4=h6a678d5_0
-  - openssl=1.1.1u=h7f8727e_0
-  - samtools=1.16.1=h00cdaf9_2
+  - openssl=3.0.9=h7f8727e_0
+  - samtools=1.1=h50ea8bc_8
   - xz=5.2.10=h5eee18b_1
   - zlib=1.2.13=hd590300_5
+

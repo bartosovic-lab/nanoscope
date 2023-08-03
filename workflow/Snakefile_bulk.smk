@@ -35,15 +35,24 @@ rule trim_trim_galore:
         mv $TRIM_OUT_R2 {params.OUT_R2}
         """
 
+rule bowtie2_build_index_from_cellranger:
+    output:
+        'reference/bowtie2/genome'
+    params:
+        cellranger_ref = config['general']['cellranger_ref'] + '/fasta/genome.fa',
+    threads: 20
+    shell:
+        'bowtie2-build --threads {threads} {params.cellranger_ref} {output}; '
+        'touch {output}'
+
 rule map_bowtie2:
     input:
         read1 = lambda wildcards: run.samples[wildcards.sample].trimmed_fastq_dict[wildcards.lane][wildcards.modality]['R1'].path,
-        read2 = lambda wildcards: run.samples[wildcards.sample].trimmed_fastq_dict[wildcards.lane][wildcards.modality]['R3'].path
+        read2 = lambda wildcards: run.samples[wildcards.sample].trimmed_fastq_dict[wildcards.lane][wildcards.modality]['R3'].path,
+        index = 'reference/bowtie2/genome'
     output:
         bam = temp(bowtie2_map_wildcard),
         log = bowtie2_map_wildcard.replace('.bam','.log')
-    params:
-        index = config['general']['bowtie2_index']
     conda: "../envs/bulk/nanoscope_map.yaml"
     threads: 16
     resources:
@@ -52,7 +61,7 @@ rule map_bowtie2:
         """
         bowtie2 --threads {threads} \
                 --dovetail \
-                -x {params.index} \
+                -x {input.index} \
                 -1 {input.read1} \
                 -2 {input.read2} 2> {output.log} | samtools view -bS > {output.bam}
         """
@@ -127,3 +136,21 @@ rule macs_accross_all_bam_files:
         'macs2 callpeak -t {input} -g {params.macs_genome} -f BAMPE -n {wildcards.sample} '
         '--outdir {params.macs_outdir} --llocal 100000 --keep-dup 1 --broad-cutoff 0.1 '
         '--max-gap 1000 --broad 2>&1 '
+
+rule create_fasta_index:
+    output:
+        fasta_index = 'reference/bowtie2/genome.fa.fai'
+    params:
+        fasta       = config['general']['cellranger_ref'] + '/fasta/genome.fa',
+    conda: '../envs/nanoscope_samtools.yaml'
+    shell:
+        'samtools faidx -o {params.fasta_index} {params.fasta}; '
+
+rule peaks_to_3column_bed:
+    input:
+        peaks       = macs_merged_accross_all_wildcard,
+        fasta_index = 'reference/bowtie2/genome.fa.fai'
+    output:
+        macs_merged_accross_all_wildcard + '_3column.bed'
+    shell:
+        'cut -f1-3 {input.peaks} | bedtools sort -faidx {input.fasta_index} -i - > {output}'

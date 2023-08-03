@@ -1,8 +1,11 @@
 include: 'Snakefile_prep.smk'
+include: 'Snakefile_bulk.smk'
 
 rule all_preprocess:
     input:
-        debarcode_out = [run.samples[s].debarcoded_fastq_all[i].path for s in run.samples_list for i,item in enumerate(run.samples[s].debarcoded_fastq_all)]
+        debarcode_out  = [run.samples[s].debarcoded_fastq_all[i].path for s in run.samples_list for i,item in enumerate(run.samples[s].debarcoded_fastq_all)],
+        cellranger_out = [run.samples[s].cellranger_all for s in run.samples_list for i,item in enumerate(run.samples[s].debarcoded_fastq_all)],
+
         # cellranger=[
         #     '{sample}/{modality}_{barcode}/cellranger/outs/possorted_bam.bam'.format(sample=sample,modality=modality,barcode=
         #     barcodes_dict[sample][modality]) for sample in samples_list for modality in barcodes_dict[sample].keys()],
@@ -43,23 +46,24 @@ rule demultiplex:
 
 rule run_cellranger:
     input:
-        lambda wildcards: get_fastq_for_cellranger(config['samples'][wildcards.sample]['fastq_path'],sample=wildcards.sample,modality=wildcards.modality,barcode=wildcards.barcode)
+        read1 = lambda wildcards: [run.samples[wildcards.sample].debarcoded_fastq_dict[l][wildcards.modality]['R1'].path for l in run.samples[wildcards.sample].all_lanes],
+        read2 = lambda wildcards: [run.samples[wildcards.sample].debarcoded_fastq_dict[l][wildcards.modality]['R2'].path for l in run.samples[wildcards.sample].all_lanes],
+        read3 = lambda wildcards: [run.samples[wildcards.sample].debarcoded_fastq_dict[l][wildcards.modality]['R3'].path for l in run.samples[wildcards.sample].all_lanes],
+        bed   = macs_merged_accross_all_wildcard + '_3column.bed'
     output:
-        bam='{sample}/{modality}_{barcode}/cellranger/outs/possorted_bam.bam',
-        frag='{sample}/{modality}_{barcode}/cellranger/outs/fragments.tsv.gz',
-        meta='{sample}/{modality}_{barcode}/cellranger/outs/singlecell.csv',
-        peaks='{sample}/{modality}_{barcode}/cellranger/outs/peaks.bed',
+        cellranger_fragments_wildcard
     params:
-        cellranger_software=config['general']['cellranger_software'],
-        cellranger_ref=config['general']['cellranger_ref'],
-        fastq_folder=lambda wildcards: os.getcwd() + '/{sample}/{modality}_{barcode}/fastq/barcode_{barcode}/'.format(sample=wildcards.sample,modality=wildcards.modality,barcode=wildcards.barcode)
+        cellranger_software = config['general']['cellranger_software'],
+        cellranger_ref      = config['general']['cellranger_ref'],
+        fastq_folder        = str(Path(debarcoded_fastq_wildcard).parents[0].resolve()),
+        bed_with_abspath    = str(Path(macs_merged_accross_all_wildcard + '_3column.bed').resolve())
     threads: 20
     resources:
         mem_mb = 32000
     shell:
         'rm -rf {wildcards.sample}/{wildcards.modality}_{wildcards.barcode}/cellranger/; '
         'cd {wildcards.sample}/{wildcards.modality}_{wildcards.barcode}/; '
-        '{params.cellranger_software} count --id cellranger --reference {params.cellranger_ref} --fastqs {params.fastq_folder}'
+        '{params.cellranger_software} count --id cellranger --reference {params.cellranger_ref} --fastqs {params.fastq_folder} --peaks={params.bed_with_abspath} --force-cells=5000'
 
 rule cellranger_bam_to_namesorted:
     input:

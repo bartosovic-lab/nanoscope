@@ -5,6 +5,7 @@ import re
 import collections
 from pathlib import Path
 
+# Bulk wildcards
 debarcoded_fastq_wildcard          = '{sample}/{modality}_{barcode}/fastq_debarcoded/barcode_{barcode}/{prefix}_{number}_{lane}_{read}_{suffix}'
 trimmed_fastq_wildcard             = '{sample}/{modality}_{barcode}/fastq_trimmed/{prefix}_{number}_{lane}_{read}_{suffix}'
 bowtie2_map_wildcard               = '{sample}/{modality}_{barcode}/bowtie2_out/{sample}_{modality}_{lane}_mapped.bam'
@@ -16,6 +17,10 @@ macs_merged_accross_all_wildcard   = '{sample}/all_modalities_merged/peaks/macs2
 
 debarcoded_fastq_output = {r: '{sample}/{modality}_{barcode}/fastq_debarcoded/barcode_{barcode}/{prefix}_{number}_{lane}_{read}_{suffix}'.replace('{read}',r) for r in ['R1','R2','R3']}
 trimmed_fastq_output    = {r: '{sample}/{modality}_{barcode}/fastq_trimmed/{prefix}_{number}_{lane}_{read}_{suffix}'.replace('{read}',r) for r in ['R1','R2','R3']}
+
+# Single-cell wildcards
+cellranger_fragments_wildcard      = '{sample}/{modality}_{barcode}/cellranger/outs/fragments.tsv.gz'
+
 
 def find_all_fastq_files(path):
     all_fastq = itertools.chain(*[glob.glob(path + x) for x in ['/**/*R*.fastq.gz', '/*R*.fastq.gz']])
@@ -61,7 +66,7 @@ class sample:
         self.generate_debarcoded_output(files_list='debarcoded_fastq_all', files_dict='debarcoded_fastq_dict', wildcard=debarcoded_fastq_wildcard)
         self.generate_debarcoded_output(files_list='trimmed_fastq_all', files_dict='trimmed_fastq_dict',wildcard=trimmed_fastq_wildcard,filter_read = 'R2')
 
-        # Bowtie2 mapping output
+        # Bulk outputs
         self.bowtie2_bam_all  = [bowtie2_map_wildcard.format(sample = self.sample_name,modality=m,barcode=self.barcodes_dict[m],lane=l) for m in self.modality_names for l in self.all_lanes]
         self.bam_sorted_all   = [bam_sorted_wildcard.format(sample = self.sample_name,modality=m,barcode=self.barcodes_dict[m],lane=l) for m in self.modality_names for l in self.all_lanes]
         self.bam_merged_all   = [bam_merged_wildcard.format(sample=self.sample_name,modality=m,barcode=self.barcodes_dict[m]) for m in self.modality_names]
@@ -69,6 +74,8 @@ class sample:
         self.macs_all         = [macs_wildcard.format(sample=self.sample_name,modality=m,barcode=self.barcodes_dict[m]) for m in self.modality_names]
         self.macs_merged_all  = [macs_merged_accross_all_wildcard.format(sample=self.sample_name)]
 
+        # Single-cell outputs
+        self.cellranger_all   = [cellranger_fragments_wildcard.format(sample=self.sample_name,modality=m,barcode=self.barcodes_dict[m]) for m in self.modality_names]
 
     def generate_debarcoded_output(self, files_list, files_dict, wildcard,filter_read = False):
         setattr(self, files_list,[])    # Empty list
