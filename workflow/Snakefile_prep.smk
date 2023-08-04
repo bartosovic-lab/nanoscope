@@ -5,17 +5,21 @@ import re
 import collections
 from pathlib import Path
 
+# Some variable
+bwa_index                          = str(Path(config['general']['cellranger_ref'] + '/fasta/genome.fa'))
+
 # Bulk wildcards
 debarcoded_fastq_wildcard          = '{sample}/{modality}_{barcode}/fastq_debarcoded/barcode_{barcode}/{prefix}_{number}_{lane}_{read}_{suffix}'
 trimmed_fastq_wildcard             = '{sample}/{modality}_{barcode}/fastq_trimmed/{prefix}_{number}_{lane}_{read}_{suffix}'
-bowtie2_map_wildcard               = '{sample}/{modality}_{barcode}/bowtie2_out/{sample}_{modality}_{lane}_mapped.bam'
-bam_sorted_wildcard                = '{sample}/{modality}_{barcode}/bowtie2_out/{sample}_{modality}_{lane}_sorted.bam'
-bam_merged_wildcard                = '{sample}/{modality}_{barcode}/bowtie2_out/{sample}_{modality}_merged.bam'
-bigwig_wildcard                    = '{sample}/{modality}_{barcode}/bowtie2_out/{sample}_{modality}_merged.bw'
+bowtie2_map_wildcard               = '{sample}/{modality}_{barcode}/mapping_out/{sample}_{modality}_{lane}_mapped.bam'
+bwa_map_wildcard                   = '{sample}/{modality}_{barcode}/mapping_out/{sample}_{modality}_{lane}_mapped.bam'
+bam_sorted_wildcard                = '{sample}/{modality}_{barcode}/mapping_out/{sample}_{modality}_{lane}_sorted.bam'
+bam_merged_wildcard                = '{sample}/{modality}_{barcode}/mapping_out/{sample}_{modality}_merged.bam'
+bigwig_wildcard                    = '{sample}/{modality}_{barcode}/mapping_out/{sample}_{modality}_merged.bw'
 macs_wildcard                      = '{sample}/{modality}_{barcode}/peaks/macs2/{sample}_{modality}_peaks.broadPeak'
 macs_merged_accross_all_wildcard   = '{sample}/all_modalities_merged/peaks/macs2/{sample}_peaks.broadPeak'
 fasta_index_wildcard               = '{sample}/all_modalities_merged/peaks/macs2/{sample}_index.fai'
-bowtie2_index_wildcard             = '{sample}/reference/bowtie2/genome'
+# bowtie2_index_wildcard             = '{sample}/reference/bowtie2/genome'
 
 debarcoded_fastq_output = {r: '{sample}/{modality}_{barcode}/fastq_debarcoded/barcode_{barcode}/{prefix}_{number}_{lane}_{read}_{suffix}'.replace('{read}',r) for r in ['R1','R2','R3']}
 trimmed_fastq_output    = {r: '{sample}/{modality}_{barcode}/fastq_trimmed/{prefix}_{number}_{lane}_{read}_{suffix}'.replace('{read}',r) for r in ['R1','R2','R3']}

@@ -1,4 +1,4 @@
-name: bulkCT_trim
+name: nanoscope_trim
 channels:
   - bioconda
   - defaults
