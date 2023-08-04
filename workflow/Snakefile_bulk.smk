@@ -37,10 +37,13 @@ rule trim_trim_galore:
 
 rule bowtie2_build_index_from_cellranger:
     output:
-        'reference/bowtie2/genome'
+        bowtie2_index_wildcard
     params:
         cellranger_ref = config['general']['cellranger_ref'] + '/fasta/genome.fa',
     threads: 20
+    conda: "../envs/bulk/nanoscope_map.yaml"
+    resources:
+        mem_mb=32000
     shell:
         'bowtie2-build --threads {threads} {params.cellranger_ref} {output}; '
         'touch {output}'
@@ -49,7 +52,7 @@ rule map_bowtie2:
     input:
         read1 = lambda wildcards: run.samples[wildcards.sample].trimmed_fastq_dict[wildcards.lane][wildcards.modality]['R1'].path,
         read2 = lambda wildcards: run.samples[wildcards.sample].trimmed_fastq_dict[wildcards.lane][wildcards.modality]['R3'].path,
-        index = 'reference/bowtie2/genome'
+        index = bowtie2_index_wildcard
     output:
         bam = temp(bowtie2_map_wildcard),
         log = bowtie2_map_wildcard.replace('.bam','.log')
@@ -139,17 +142,17 @@ rule macs_accross_all_bam_files:
 
 rule create_fasta_index:
     output:
-        fasta_index = 'reference/bowtie2/genome.fa.fai'
+        fasta_index = fasta_index_wildcard
     params:
         fasta       = config['general']['cellranger_ref'] + '/fasta/genome.fa',
     conda: '../envs/nanoscope_samtools.yaml'
     shell:
-        'samtools faidx -o {params.fasta_index} {params.fasta}; '
+        'samtools faidx -o {output.fasta_index} {params.fasta}; '
 
 rule peaks_to_3column_bed:
     input:
         peaks       = macs_merged_accross_all_wildcard,
-        fasta_index = 'reference/bowtie2/genome.fa.fai'
+        fasta_index = fasta_index_wildcard
     output:
         macs_merged_accross_all_wildcard + '_3column.bed'
     conda: '../envs/nanoscope_samtools.yaml'
