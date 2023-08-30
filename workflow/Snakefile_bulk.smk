@@ -35,39 +35,6 @@ rule trim_trim_galore:
         mv $TRIM_OUT_R2 {params.OUT_R2}
         """
 
-# rule bowtie2_build_index_from_cellranger:
-#     output:
-#         bowtie2_index_wildcard
-#     params:
-#         cellranger_ref = config['general']['cellranger_ref'] + '/fasta/genome.fa',
-#     threads: 20
-#     conda: "../envs/bulk/nanoscope_map.yaml"
-#     resources:
-#         mem_mb=32000
-#     shell:
-#         'bowtie2-build --threads {threads} {params.cellranger_ref} {output}; '
-#         'touch {output}'
-
-# rule map_bowtie2:
-#     input:
-#         read1 = lambda wildcards: run.samples[wildcards.sample].trimmed_fastq_dict[wildcards.lane][wildcards.modality]['R1'].path,
-#         read2 = lambda wildcards: run.samples[wildcards.sample].trimmed_fastq_dict[wildcards.lane][wildcards.modality]['R3'].path,
-#         index = bowtie2_index_wildcard
-#     output:
-#         bam = temp(bowtie2_map_wildcard),
-#         log = bowtie2_map_wildcard.replace('.bam','.log')
-#     conda: "../envs/bulk/nanoscope_map.yaml"
-#     threads: 16
-#     resources:
-#         mem_mb=32000
-#     shell:
-#         """
-#         bowtie2 --threads {threads} \
-#                 --dovetail \
-#                 -x {input.index} \
-#                 -1 {input.read1} \
-#                 -2 {input.read2} 2> {output.log} | samtools view -bS > {output.bam}
-#         """
 rule map_bwa:
     input:
         read1 = lambda wildcards: run.samples[wildcards.sample].trimmed_fastq_dict[wildcards.lane][wildcards.modality]['R1'].path,
@@ -124,8 +91,6 @@ rule bam_to_bigwig:
     mem_mb=16000
   shell:
     "bamCoverage -b {input} -o {output} -p {threads} --normalizeUsing RPKM"
-
-str(Path(debarcoded_fastq_wildcard).parents[1])
 
 rule run_macs_broad_bulk:
     input:

@@ -6,13 +6,27 @@ channels:
   - defaults
 dependencies:
   - _libgcc_mutex=0.1=conda_forge
-  - _openmp_mutex=4.5=2_gnu
+  - _openmp_mutex=4.5=2_kmp_llvm
   - bwa=0.7.17=he4a0461_11
-  - gdbm=1.18=hd4cb3f1_4
+  - bzip2=1.0.8=h7b6447c_0
+  - c-ares=1.19.0=h5eee18b_0
+  - ca-certificates=2023.7.22=hbcca054_0
+  - htslib=1.17=h81da01d_2
+  - krb5=1.20.1=h143b758_1
+  - libcurl=8.1.1=h251f7ec_2
+  - libdeflate=1.18=h0b41bf4_0
+  - libedit=3.1.20221030=h5eee18b_0
+  - libev=4.33=h7f8727e_1
   - libgcc-ng=13.1.0=he5830b7_0
-  - libgomp=13.1.0=he5830b7_0
+  - libnghttp2=1.52.0=h2d74bed_1
+  - libnsl=2.0.0=h7f98852_0
+  - libssh2=1.10.0=hdbd6064_2
+  - libstdcxx-ng=11.2.0=h1234567_1
   - libzlib=1.2.13=hd590300_5
+  - llvm-openmp=14.0.6=h9e868ea_0
   - ncurses=6.4=h6a678d5_0
-  - perl=5.34.0=h5eee18b_2
-  - readline=8.2=h5eee18b_0
+  - openssl=3.1.2=hd590300_0
+  - perl=5.32.1=4_hd590300_perl5
+  - samtools=1.17=hd87286a_1
+  - xz=5.4.2=h5eee18b_0
   - zlib=1.2.13=hd590300_5
