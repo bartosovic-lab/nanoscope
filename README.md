@@ -332,4 +332,3 @@ gunzip -c fragments_noLA_duplicates.tsv.gz | wc -l
 If you see highrer fraction of LA duplicates, consider using fragments_noLA_duplicates.tsv.gz file instead of fragments.tsv.gz in downstream analysis. 
 ```
 
-#Test push
