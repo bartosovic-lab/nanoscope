@@ -89,8 +89,8 @@ rule possort_noLA_bam_file:
     input:
         bam = '{sample}/{modality}_{barcode}/cellranger/outs/namesorted_noLA_duplicates_bam.bam',
     output:
-        bam   = '{sample}/{modality}_{barcode}/cellranger/outs/possorted_noLA_duplicates_bam.bam',
-        index = '{sample}/{modality}_{barcode}/cellranger/outs/possorted_noLA_duplicates_bam.bam.bai',
+        bam   = temp('{sample}/{modality}_{barcode}/cellranger/outs/possorted_noLA_duplicates_bam.bam'),
+        index = temp('{sample}/{modality}_{barcode}/cellranger/outs/possorted_noLA_duplicates_bam.bam.bai'),
     conda: '../envs/nanoscope_samtools.yaml'
     threads: 20
     resources:
@@ -202,8 +202,6 @@ rule cell_selection:
     output:
         '{sample}/{modality}_{barcode}/cell_picking/cells_10x.png',
         '{sample}/{modality}_{barcode}/cell_picking/cells_picked.png',
-        # '{sample}/{modality}_{barcode}/cell_picking/cells_picked.bw',
-        # '{sample}/{modality}_{barcode}/cell_picking/cells_not_picked.bw',
         '{sample}/{modality}_{barcode}/cell_picking/metadata.csv',
     params:
         script=workflow.basedir + '/scripts/pick_cells.R',
