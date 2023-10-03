@@ -61,12 +61,13 @@ git clone https://github.com/bartosovic-lab/nanoscope
 A conda environment will be used to set up an isolated architecture reducing troubleshooting.
 Conda can be installed via miniconda following [miniconda guidelines](https://docs.conda.io/projects/conda/en/latest/user-guide/install/linux.html).
 
-For faster installation consider using mamba instead of conda.
+Createing complex conda environment from a yaml can tak >1h. For faster installation use mamba instead of conda.
 
-### Create conda environment
+### Create the environment
 ```
 conda config --set channel_priority flexible
-conda env create -f nanoscope/envs/nanoscope_base.yaml 
+conda install -c conda-forge mamba
+mamba env create -f nanoscope/envs/nanoscope_base.yaml 
 ```
 
 Sit in your new environment till the end of the procedure.
@@ -233,8 +234,9 @@ general:
 ```
 
 # Preprocessing
-Timing: ~8h on HPC with 16 cores per jobs and up to 100 jobs simultaneously running
-Required storage for processed data: ~150GB
+Timing: ~8h on HPC - 16-20 cores per job and up to 100 jobs simultaneously running.
+
+Required storage for processed data: ~150GB.
 
 The first steps of processing from fastq files to cell picking will be done by the workflow management system, snakemake.
 It will cover the following steps :
@@ -297,7 +299,7 @@ General:            $SAMPLE_ID/$MODALITY_$BARCODE/cellranger/outs/possorted_bam.
 Specific example:   sample_P23209/H3K27ac_ATAGAGGC/cellranger/outs/possorted_bam.bam
 ```
 
-- Cell  picking might be further optimised and other algorithms mighe be used/considered by the user. Cell picking will be under further development and changes might be introduced in the future.
+- Cell  picking might be further optimised and other algorithms might be used/considered by the user. Cell picking will be under further development and changes might be introduced in the future.
 
 
 # Downstream analysis
@@ -315,7 +317,7 @@ Note how the dataset analysed in this vignette is composed by 2 biological repli
 
 
 
-##  fragments.tsv vs fragments_noLA_duplicates.tsv comparison 
+## Difference between fragments.tsv vs fragments_noLA_duplicates.tsv comparison 
 ```
 # Typically the level of LA duplicates is very low and does not need to be considered in the analysis
 
@@ -326,5 +328,7 @@ gunzip -c fragments_noLA_duplicates.tsv.gz | wc -l
 64010202
 
 # LA Duplication rate is (66,284,027 - 64,010,202)/66,284,027 = ~3.4 %
+
+If you see highrer fraction of LA duplicates, consider using fragments_noLA_duplicates.tsv.gz file instead of fragments.tsv.gz in downstream analysis. 
 ```
 
