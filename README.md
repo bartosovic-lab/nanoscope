@@ -329,6 +329,6 @@ gunzip -c fragments_noLA_duplicates.tsv.gz | wc -l
 
 # LA Duplication rate is (66,284,027 - 64,010,202)/66,284,027 = ~3.4 %
 
-If you see highrer fraction of LA duplicates, consider using fragments_noLA_duplicates.tsv.gz file instead of fragments.tsv.gz in downstream analysis. 
+If you see higher fraction of LA duplicates, consider using fragments_noLA_duplicates.tsv.gz file instead of fragments.tsv.gz in downstream analysis. 
 ```
 
