@@ -42,7 +42,7 @@ rule demultiplex:
     conda: '../envs/nanoscope_debarcode.yaml'
     threads: 1
     shell:
-        "python3 {input.script} -i {input.fastq_all} -o {params.out_folder} --single_cell --barcode {wildcards.barcode} 2>&1"
+        "python {input.script} -i {input.fastq_all} -o {params.out_folder} --single_cell --barcode {wildcards.barcode} 2>&1"
 
 rule run_cellranger:
     input:

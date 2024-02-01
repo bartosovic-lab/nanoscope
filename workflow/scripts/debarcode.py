@@ -13,9 +13,9 @@ import Levenshtein
 
 class bcdCT:
     def __init__(self,args):
+        self.single_cell=args.single_cell
         self.detect_input(args.input)
         self.detect_reads()
-        self.single_cell=args.single_cell
         self.out_prefix=args.out_prefix
         if self.single_cell:
             self.out_reads = ['R1','R2','R3']
@@ -60,13 +60,20 @@ class bcdCT:
         Error_message="*** Error: Please specify exactly one _R1_ _R2_ and _R3_ file or folder with exactly one of each files ***\n" + \
                       "e.g. /data/path_to_my_files/*L001*.fastq.gz or /data/path_to_my_files/\n"
         self.path_in = {}
-        self.path_in['R1'] = [x for x in self.input_files if "_R1_" in x]
-        self.path_in['R2'] = [x for x in self.input_files if "_R2_" in x]
-        self.path_in['R3'] = [x for x in self.input_files if "_R3_" in x]
 
-        if len(self.path_in['R1']) != 1 or len(self.path_in['R2']) != 1 or len(self.path_in['R3']) != 1:
-            sys.stderr.write(Error_message)
-            sys.exit(1)
+        if self.single_cell:
+            self.path_in['R1'] = [x for x in self.input_files if "_R1_" in x]
+            self.path_in['R2'] = [x for x in self.input_files if "_R2_" in x]
+            self.path_in['R3'] = [x for x in self.input_files if "_R3_" in x]
+
+            if len(self.path_in['R1']) != 1 or len(self.path_in['R2']) != 1 or len(self.path_in['R3']) != 1:
+                sys.stderr.write(Error_message)
+                sys.exit(1)
+
+        if not self.single_cell:
+            self.path_in['R1'] = [x for x in self.input_files if "_R1_" in x]
+            self.path_in['R2'] = [x for x in self.input_files if "_R2_" in x]
+
 
         self.path_in = {key:self.path_in[key][0] for key in self.path_in.keys()}
 
