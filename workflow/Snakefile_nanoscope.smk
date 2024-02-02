@@ -9,7 +9,7 @@ rule all_preprocess:
         cell_picking_out  = [run.samples[s].cell_picking_all for s in run.samples_list],
 
     # Bulk outputs
-        bigwig_bulk = [run.samples[s].bigwig_all for s in run.samples_list],
+        # bigwig_bulk = [run.samples[s].bigwig_all for s in run.samples_list],
         # peaks_overlap=[
         #     '{sample}/{modality}_{barcode}/barcode_metrics/peaks_barcodes.txt'.format(sample=sample,modality=modality,barcode=
         #     barcodes_dict[sample][modality]) for sample in samples_list for modality in barcodes_dict[sample].keys()],
@@ -41,10 +41,10 @@ rule demultiplex:
 
 rule run_cellranger:
     input:
-        read1 = lambda wildcards: [run.samples[wildcards.sample].debarcoded_fastq_dict[l][wildcards.modality]['R1'].path for l in run.samples[wildcards.sample].all_lanes],
-        read2 = lambda wildcards: [run.samples[wildcards.sample].debarcoded_fastq_dict[l][wildcards.modality]['R2'].path for l in run.samples[wildcards.sample].all_lanes],
-        read3 = lambda wildcards: [run.samples[wildcards.sample].debarcoded_fastq_dict[l][wildcards.modality]['R3'].path for l in run.samples[wildcards.sample].all_lanes],
-        bed   = macs_merged_accross_all_wildcard + '_3column.bed'   # Peaks file comes from the Snakefile_bulk.smk pipeline
+        read1 = lambda wildcards: [run.samples[wildcards.sample].debarcoded_fastq_dict[l][wildcards.barcode]['R1'].path for l in run.samples[wildcards.sample].all_lanes],
+        read2 = lambda wildcards: [run.samples[wildcards.sample].debarcoded_fastq_dict[l][wildcards.barcode]['R2'].path for l in run.samples[wildcards.sample].all_lanes],
+        read3 = lambda wildcards: [run.samples[wildcards.sample].debarcoded_fastq_dict[l][wildcards.barcode]['R3'].path for l in run.samples[wildcards.sample].all_lanes],
+        bed   = macs_merged_per_modality_wildcard + '_3column.bed'   # Peaks file comes from the Snakefile_bulk.smk pipeline
     output:
         fragments = cellranger_fragments_wildcard,
         bam       = cellranger_bam_wildcard,
@@ -53,7 +53,7 @@ rule run_cellranger:
         cellranger_software = config['general']['cellranger_software'],
         cellranger_ref      = config['general']['cellranger_ref'],
         fastq_folder        = str(Path(debarcoded_fastq_wildcard).parents[0].resolve()),
-        bed_with_abspath    = str(Path(macs_merged_accross_all_wildcard + '_3column.bed').resolve())
+        bed_with_abspath    = str(Path(macs_merged_per_modality_wildcard + '_3column.bed').resolve())
     threads: 20
     resources:
         mem_mb = 32000
@@ -65,7 +65,7 @@ rule run_cellranger:
 rule barcode_metrics_peaks:
     input:
         bam   = cellranger_bam_wildcard,
-        peaks = macs_merged_accross_all_wildcard + '_3column.bed'
+        peaks = macs_merged_per_modality_wildcard + '_3column.bed'
     output:
         overlap_file = overlap_file_wildcard
     params:
@@ -104,7 +104,7 @@ rule cell_selection:
     input:
         bcd_all   = overlap_file_wildcard,
         bcd_peak  = bcd_stats_wildcard,
-        peaks     = macs_merged_accross_all_wildcard + '_3column.bed',
+        peaks     = macs_merged_per_modality_wildcard + '_3column.bed',
         metadata  = cellranger_metadata_wildcard,
         fragments = cellranger_fragments_wildcard
     output:

@@ -165,7 +165,7 @@ p2 <- ggplot(data = metadata,aes(x=log10(passed_filters),y=peak_region_fragments
       geom_density2d(col='black')
 
 ggsave(plot = p1+p2,
-       filename=paste0(args$out_prefix,'/cells_picked.png'),width = 20,height = 10,units = 'in')
+       filename=paste0(args$out_prefix,'/cells_nanoscope.png'),width = 20,height = 10,units = 'in')
 
 
 # ################# Export bw selected / unselected

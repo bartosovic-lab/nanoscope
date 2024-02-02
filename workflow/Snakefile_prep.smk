@@ -10,16 +10,16 @@ bwa_index                          = str(Path(config['general']['cellranger_ref'
 
 ########## All of the wildcards used in the pipeline ##########
 # Bulk wildcards
-debarcoded_fastq_wildcard          = '{sample}/{modality}_{barcode}/fastq_debarcoded/barcode_{barcode}/{prefix}_{number}_{lane}_{read}_{suffix}'
-trimmed_fastq_wildcard             = '{sample}/{modality}_{barcode}/fastq_trimmed/{prefix}_{number}_{lane}_{read}_{suffix}'
-bowtie2_map_wildcard               = '{sample}/{modality}_{barcode}/mapping_out/{sample}_{modality}_{lane}_mapped.bam'
-bwa_map_wildcard                   = '{sample}/{modality}_{barcode}/mapping_out/{sample}_{modality}_{lane}_mapped.bam'
-bam_sorted_wildcard                = '{sample}/{modality}_{barcode}/mapping_out/{sample}_{modality}_{lane}_sorted.bam'
-bam_merged_wildcard                = '{sample}/{modality}_{barcode}/mapping_out/{sample}_{modality}_merged.bam'
-bigwig_wildcard                    = '{sample}/{modality}_{barcode}/mapping_out/{sample}_{modality}_merged.bw'
-macs_wildcard                      = '{sample}/{modality}_{barcode}/peaks/macs2/{sample}_{modality}_peaks.broadPeak'
-macs_merged_accross_all_wildcard   = '{sample}/all_modalities_merged/peaks/macs2/{sample}_peaks.broadPeak'
-fasta_index_wildcard               = '{sample}/all_modalities_merged/peaks/macs2/{sample}_index.fai'
+debarcoded_fastq_wildcard               = '{sample}/{modality}_{barcode}/fastq_debarcoded/barcode_{barcode}/{prefix}_{number}_{lane}_{read}_{suffix}'
+trimmed_fastq_wildcard                  = '{sample}/{modality}_{barcode}/fastq_trimmed/{prefix}_{number}_{lane}_{read}_{suffix}'
+bowtie2_map_wildcard                    = '{sample}/{modality}_{barcode}/mapping_out/{sample}_{modality}_{lane}_mapped.bam'
+bwa_map_wildcard                        = '{sample}/{modality}_{barcode}/mapping_out/{sample}_{modality}_{lane}_mapped.bam'
+bam_sorted_wildcard                     = '{sample}/{modality}_{barcode}/mapping_out/{sample}_{modality}_{lane}_sorted.bam'
+macs_wildcard                           = '{sample}/{modality}_{barcode}/peaks/macs2/{sample}_{modality}_peaks.broadPeak'
+bam_merged_wildcard                     = '{sample}/{modality}/mapping_out/{modality}_merged.bam'
+bigwig_wildcard                         = '{sample}/{modality}/mapping_out/{modality}_merged.bw'
+macs_merged_per_modality_wildcard   = '{sample}/{modality}/peaks/macs2/{modality}_peaks.broadPeak'
+fasta_index_wildcard                    = 'fasta_index.fai'
 # bowtie2_index_wildcard             = '{sample}/reference/bowtie2/genome'
 
 debarcoded_fastq_output = {r: '{sample}/{modality}_{barcode}/fastq_debarcoded/barcode_{barcode}/{prefix}_{number}_{lane}_{read}_{suffix}'.replace('{read}',r) for r in ['R1','R2','R3']}
@@ -40,6 +40,14 @@ def find_all_fastq_files(path):
     all_fastq = [fastq_file(x) for x in all_fastq]
     return (all_fastq)
 
+def invert_dict(d):
+    d_new = {}
+    for k,v in d.items():
+        if v not in d_new:
+            d_new[v] = [k]
+        else:
+            d_new[v].append(k)
+    return(d_new)
 
 class snakemake_run:
     def __init__(self,config):
@@ -58,8 +66,12 @@ class sample:
         self.sample_name     = sample_name
         self.fastq_path      = config['samples'][self.sample_name]['fastq_path']
         self.barcodes_dict   = config['samples'][self.sample_name]['barcodes']
-        self.modality_names  = [x for x in config['samples'][self.sample_name]['barcodes'].keys()]
-        self.barcodes_list   = [x for x in config['samples'][self.sample_name]['barcodes'].values()]
+        self.reverse_barcodes_dict = invert_dict(self.barcodes_dict)
+        self.modality_names  = list(set([x for x in config['samples'][self.sample_name]['barcodes'].values()]))       # List of modalities
+        self.barcodes_list   = list(set([x for x in config['samples'][self.sample_name]['barcodes'].keys()]))     # List of barcodes
+
+        # Some checks here
+        self.check_valid_barcodes()
 
         self.all_fastq_files = find_all_fastq_files(self.fastq_path)
         self.all_lanes       = sorted(list(set([x.lane for x in self.all_fastq_files])))
@@ -79,46 +91,52 @@ class sample:
         self.generate_debarcoded_output(files_list='trimmed_fastq_all', files_dict='trimmed_fastq_dict',wildcard=trimmed_fastq_wildcard,filter_read = 'R2')
 
         # Bulk outputs
-        self.bowtie2_bam_all  = [bowtie2_map_wildcard.format(sample = self.sample_name,modality=m,barcode=self.barcodes_dict[m],lane=l) for m in self.modality_names for l in self.all_lanes]
-        self.bam_sorted_all   = [bam_sorted_wildcard.format(sample = self.sample_name,modality=m,barcode=self.barcodes_dict[m],lane=l) for m in self.modality_names for l in self.all_lanes]
-        self.bam_merged_all   = [bam_merged_wildcard.format(sample=self.sample_name,modality=m,barcode=self.barcodes_dict[m]) for m in self.modality_names]
-        self.bigwig_all       = [bigwig_wildcard.format(sample=self.sample_name,modality=m,barcode=self.barcodes_dict[m]) for m in self.modality_names]
-        self.macs_all         = [macs_wildcard.format(sample=self.sample_name,modality=m,barcode=self.barcodes_dict[m]) for m in self.modality_names]
-        self.macs_merged_all  = [macs_merged_accross_all_wildcard.format(sample=self.sample_name)]
+        self.bowtie2_bam_all                    = [bowtie2_map_wildcard.format(sample = self.sample_name,modality=self.barcodes_dict[b],barcode=b,lane=l) for b in self.barcodes_list for l in self.all_lanes]
+        self.bam_sorted_all                     = [bam_sorted_wildcard.format(sample = self.sample_name,modality=self.barcodes_dict[b],barcode=b,lane=l) for b in self.barcodes_list for l in self.all_lanes]
+        self.bam_merged_all                     = [bam_merged_wildcard.format(sample=self.sample_name,modality=self.barcodes_dict[b],barcode=b) for b in self.barcodes_list]
+        self.bigwig_all                         = [bigwig_wildcard.format(sample=self.sample_name,modality=self.barcodes_dict[b],barcode=b) for b in self.barcodes_list]
+        self.macs_all                           = [macs_wildcard.format(sample=self.sample_name,modality=self.barcodes_dict[b],barcode=b) for b in self.barcodes_list]
+        self.macs_merged_accross_modality_all   = [macs_merged_per_modality_wildcard.format(sample=self.sample_name, modality = m) for m in self.modality_names]
 
         # Single-cell outputs
-        self.cellranger_all   = [cellranger_fragments_wildcard.format(sample=self.sample_name,modality=m,barcode=self.barcodes_dict[m]) for m in self.modality_names] + \
-                                [cellranger_bam_wildcard.format(sample=self.sample_name,modality=m,barcode=self.barcodes_dict[m]) for m in self.modality_names]
-        self.cell_picking_all = [cell_picking_metadata_wildcard.format(sample=self.sample_name,modality=m,barcode=self.barcodes_dict[m]) for m in self.modality_names]
+        self.cellranger_all    = [cellranger_fragments_wildcard.format(sample=self.sample_name,modality=self.barcodes_dict[b],barcode=b)  for b in self.barcodes_list] + \
+                                [cellranger_bam_wildcard.format(sample=self.sample_name,modality=self.barcodes_dict[b],barcode=b)  for b in self.barcodes_list]
+        self.cell_picking_all  = [cell_picking_metadata_wildcard.format(sample=self.sample_name,modality=self.barcodes_dict[b],barcode=b)  for b in self.barcodes_list]
 
     def generate_debarcoded_output(self, files_list, files_dict, wildcard,filter_read = False):
         setattr(self, files_list,[])    # Empty list
         setattr(self,files_dict, {l: collections.defaultdict(dict) for l in self.all_lanes})    # Empty dictionary
 
         for f in self.all_fastq_files:                  # For each file in raw input
-            for modality in self.modality_names:        # Multiply for each file by modality
+            for barcode in self.barcodes_list:        # Multiply for each file by barcode
                 if f.read == filter_read:
                     continue
-                fastq_path     = wildcard.format(sample = self.sample_name, modality = modality, barcode = self.barcodes_dict[modality], prefix = f.prefix, number = f.number, lane = f.lane, read = f.read, suffix = f.suffix)
+                fastq_path     = wildcard.format(sample = self.sample_name, modality = self.barcodes_dict[barcode], barcode = barcode, prefix = f.prefix, number = f.number, lane = f.lane, read = f.read, suffix = f.suffix)
 
                 # Dictionary to access the files by lane, modality and read
                 d = getattr(self,files_dict)
-                d[f.lane][modality][f.read] = fastq_file(fastq_path, modality = modality)
+                d[f.lane][barcode][f.read] = fastq_file(fastq_path, modality = self.barcodes_dict[barcode], barcode = barcode)
                 setattr(self,files_dict, d)
 
                 # List of all files generated
                 d=getattr(self,files_list)
-                d.append(getattr(self,files_dict)[f.lane][modality][f.read])
+                d.append(getattr(self,files_dict)[f.lane][barcode][f.read])
                 setattr(self,files_list,d)
         return(self)
 
+    def check_valid_barcodes(self, alphabet = 'ATCG'):
+        for b in self.barcodes_list:
+            if not set(b).issubset(set(alphabet)):
+                raise ValueError('Barcode {b} contains non-ATCG characters\n{barcodes}\n'.format(b=b,barcodes = '\n'.join(self.barcodes_list)))
+
 class fastq_file:
-    def __init__(self,path,modality = False):
+    def __init__(self,path,modality = False,barcode=False):
         self.path     = path
         self.abspath  = os.path.abspath(path)
         self.basename = os.path.basename(self.abspath)
         self.dirname  = os.path.dirname(self.abspath)
         self.modality = modality
+        self.barcode  = barcode
         self.parse_fastq(self.basename)
 
     def parse_fastq(self, path):
