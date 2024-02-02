@@ -87,15 +87,34 @@ bcd$sample <- args$sample
 metadata <- merge(metadata,bcd,by='barcode')
 
 
-metadata$is__cell_barcode <- as.factor(metadata$is__cell_barcode)
+# Update metadata conversion to factor for multispecies compatibility
+
+# Old version
+# metadata$is__cell_barcode <- as.factor(metadata$is__cell_barcode)
+# End of old version
+
+# New version
+
+save(args, file = "args.RData")
+
+which_bcd_column <- grep(pattern='is_.*_cell_barcode',colnames(metadata)) # Find all columns with cell barcodes booleans
+
+metadata$is_any_cell_barcode <- as.factor(as.logical(rowSums(as.matrix(metadata[,which_bcd_column])))) # Create a new column with the logical OR of all cell barcode columns
+for (column in which_bcd_column){
+  metadata[,column] <- as.factor(metadata[,column])
+}
+
+
+# End of new version
+
 
 ################ MB filtering
 cat("*** Filtering cells \n")
 
 # First hard-coded filtration for droplets with super little signal and <0.1 fraction in peaks
-metadata <- metadata[metadata$all_unique_MB > 50 & metadata$peak_ratio_MB > 0.1,]
+# metadata <- metadata[metadata$all_unique_MB > 50 & metadata$peak_ratio_MB > 0.1,]
 
-# Legacy filtering
+# Legacy hard thershold filtering
 metadata[,"passedMB"] <- FALSE
 metadata[metadata$all_unique_MB > 10^cutoff_reads_min &
          metadata$all_unique_MB < 10^cutoff_reads_max &
@@ -116,19 +135,19 @@ metadata$passedMB <- metadata.pick$pass_model
 dir.create(args$out_prefix,recursive=TRUE)
 
 p1 <- ggplot(data = metadata,aes(x=log10(all_unique_MB),y=peak_ratio_MB)) +
-  geom_point(aes(col=is__cell_barcode),size=0.1) +
+  geom_point(aes(col=is_any_cell_barcode),size=0.1) +
   # scale_color_manual(values=c("black","gold"),labels=c(paste("TRUE",sum(as.numeric(as.character(metadata$is__cell_barcode)))),"FALSE")) +
   theme(legend.position="bottom",text=element_text(size=26)) +
   geom_density2d(col='black')
 
 p2 <- ggplot(data = metadata,aes(x=log10(passed_filters),y=peak_region_fragments/passed_filters)) +
-  geom_point(aes(col=is__cell_barcode),size=0.1) +
+  geom_point(aes(col=is_any_cell_barcode),size=0.1) +
   # scale_color_manual(values=c("black","gold"),labels=c(paste("TRUE",sum(as.numeric(as.character(metadata$is__cell_barcode)))),NA)) +
   theme(legend.position="bottom",text=element_text(size=26)) +
   geom_density2d(col='black')
 
 ggsave(plot = p1+p2,
-       filename=paste0(args$out_prefix,'cells_10x.png'),width = 20,height = 10,units = 'in')
+       filename=paste0(args$out_prefix,'/cells_10x.png'),width = 20,height = 10,units = 'in')
 
 
 p1 <- ggplot(data = metadata,aes(x=log10(all_unique_MB),y=peak_ratio_MB)) +
@@ -146,7 +165,7 @@ p2 <- ggplot(data = metadata,aes(x=log10(passed_filters),y=peak_region_fragments
       geom_density2d(col='black')
 
 ggsave(plot = p1+p2,
-       filename=paste0(args$out_prefix,'cells_picked.png'),width = 20,height = 10,units = 'in')
+       filename=paste0(args$out_prefix,'/cells_picked.png'),width = 20,height = 10,units = 'in')
 
 
 # ################# Export bw selected / unselected
@@ -177,4 +196,4 @@ ggsave(plot = p1+p2,
 # rtracklayer::export(object=coverage.nopass,con = paste0(args$out_prefix,'/cells_not_picked.bw'))
 
 cat("*** Writing metadata \n")
-write.csv(x = metadata,file = paste0(args$out_prefix,'metadata.csv'))
+write.csv(x = metadata,file = paste0(args$out_prefix,'/metadata.csv'))

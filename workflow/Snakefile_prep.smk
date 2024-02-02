@@ -8,6 +8,7 @@ from pathlib import Path
 # Some variable
 bwa_index                          = str(Path(config['general']['cellranger_ref'] + '/fasta/genome.fa'))
 
+########## All of the wildcards used in the pipeline ##########
 # Bulk wildcards
 debarcoded_fastq_wildcard          = '{sample}/{modality}_{barcode}/fastq_debarcoded/barcode_{barcode}/{prefix}_{number}_{lane}_{read}_{suffix}'
 trimmed_fastq_wildcard             = '{sample}/{modality}_{barcode}/fastq_trimmed/{prefix}_{number}_{lane}_{read}_{suffix}'
@@ -25,8 +26,14 @@ debarcoded_fastq_output = {r: '{sample}/{modality}_{barcode}/fastq_debarcoded/ba
 trimmed_fastq_output    = {r: '{sample}/{modality}_{barcode}/fastq_trimmed/{prefix}_{number}_{lane}_{read}_{suffix}'.replace('{read}',r) for r in ['R1','R2','R3']}
 
 # Single-cell wildcards
-cellranger_fragments_wildcard      = '{sample}/{modality}_{barcode}/cellranger/outs/fragments.tsv.gz'
-
+cellranger_fragments_wildcard         = '{sample}/{modality}_{barcode}/cellranger/outs/fragments.tsv.gz'
+cellranger_bam_wildcard               = '{sample}/{modality}_{barcode}/cellranger/outs/possorted_bam.bam'
+cellranger_metadata_wildcard          = '{sample}/{modality}_{barcode}/cellranger/outs/singlecell.csv'
+overlap_file_wildcard                 = '{sample}/{modality}_{barcode}/barcode_metrics/peaks_barcodes.txt'
+bcd_stats_wildcard                    = '{sample}/{modality}_{barcode}/barcode_metrics/all_barcodes.txt'
+cell_picking_cells_10x_wildcard       = '{sample}/{modality}_{barcode}/cell_picking/cells_10x.png'
+cell_picking_cells_nanoscope_wildcard = '{sample}/{modality}_{barcode}/cell_picking/cells_nanoscope.png'
+cell_picking_metadata_wildcard        = '{sample}/{modality}_{barcode}/cell_picking/metadata.csv'
 
 def find_all_fastq_files(path):
     all_fastq = itertools.chain(*[glob.glob(path + x) for x in ['/**/*R*.fastq.gz', '/*R*.fastq.gz']])
@@ -57,8 +64,6 @@ class sample:
         self.all_fastq_files = find_all_fastq_files(self.fastq_path)
         self.all_lanes       = sorted(list(set([x.lane for x in self.all_fastq_files])))
         self.all_reads       = sorted(list(set([x.read for x in self.all_fastq_files])))
-        # print(self.all_reads)
-
 
         # Easy access to lane and read information through dictionary
         self.fastq_by_lane = collections.defaultdict(dict)
@@ -68,6 +73,7 @@ class sample:
         ###########
         # OUTPUTS #
         ###########
+        # All outputs are based on wildcards declared above and are generated here
 
         self.generate_debarcoded_output(files_list='debarcoded_fastq_all', files_dict='debarcoded_fastq_dict', wildcard=debarcoded_fastq_wildcard)
         self.generate_debarcoded_output(files_list='trimmed_fastq_all', files_dict='trimmed_fastq_dict',wildcard=trimmed_fastq_wildcard,filter_read = 'R2')
@@ -81,7 +87,9 @@ class sample:
         self.macs_merged_all  = [macs_merged_accross_all_wildcard.format(sample=self.sample_name)]
 
         # Single-cell outputs
-        self.cellranger_all   = [cellranger_fragments_wildcard.format(sample=self.sample_name,modality=m,barcode=self.barcodes_dict[m]) for m in self.modality_names]
+        self.cellranger_all   = [cellranger_fragments_wildcard.format(sample=self.sample_name,modality=m,barcode=self.barcodes_dict[m]) for m in self.modality_names] + \
+                                [cellranger_bam_wildcard.format(sample=self.sample_name,modality=m,barcode=self.barcodes_dict[m]) for m in self.modality_names]
+        self.cell_picking_all = [cell_picking_metadata_wildcard.format(sample=self.sample_name,modality=m,barcode=self.barcodes_dict[m]) for m in self.modality_names]
 
     def generate_debarcoded_output(self, files_list, files_dict, wildcard,filter_read = False):
         setattr(self, files_list,[])    # Empty list
