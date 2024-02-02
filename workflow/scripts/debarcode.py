@@ -278,7 +278,7 @@ if __name__ == '__main__':
 
     parser.add_argument('--Nbarcodes',
                         type=int,
-                        default=3,
+                        default=12,
                         help='Number of barcodes in experiment (Default: %(default)s)')
 
     parser.add_argument('--barcode',
