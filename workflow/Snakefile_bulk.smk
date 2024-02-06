@@ -118,7 +118,7 @@ rule macs_per_modality:
         macs_genome = config['general']['macs_genome']
     conda: '../envs/nanoscope_deeptools.yaml'
     resources:
-        mem_mb = 16000
+        mem_mb = 32000
     shell:
         'macs2 callpeak -t {input} -g {params.macs_genome} -f BAMPE -n {wildcards.modality} '
         '--outdir {params.macs_outdir} --llocal 100000 --keep-dup 1 --broad-cutoff 0.1 '
