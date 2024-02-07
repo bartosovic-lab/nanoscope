@@ -79,6 +79,10 @@ all_barcodes <- read.table(file=all_barcodes_file)
 peak_barcodes <- read.table(file=peak_barcodes_file)
 bcd <- merge(all_barcodes,peak_barcodes,by="V2")  
 colnames(bcd) <- c("barcode","all_unique_MB","peak_MB")
+
+bcd$all_unique_MB[is.na(bcd$all_unique_MB)] <- 0
+bcd$peak_MB[is.na(bcd$peak_MB)] <- 0
+
 bcd$peak_ratio_MB <- bcd$peak_MB/bcd$all_unique_MB
 bcd$sample <- args$sample
 
@@ -95,7 +99,7 @@ metadata <- merge(metadata,bcd,by='barcode')
 
 # New version
 
-save(args, file = "args.RData")
+# save(args, file = "args.RData")
 
 which_bcd_column <- grep(pattern='is_.*_cell_barcode',colnames(metadata)) # Find all columns with cell barcodes booleans
 
@@ -124,7 +128,7 @@ metadata[metadata$all_unique_MB > 10^cutoff_reads_min &
 
 metadata$passedMB_legacy <- metadata$passedMB
 ################ Metadata picking by fiting GMM
-
+# TODO: Implement a different clustering algorithm
 metadata.pick <- pick_cells_MB(log_unique_reads = log10(metadata$all_unique_MB), frip = metadata$peak_ratio_MB)
 
 metadata$class    <- metadata.pick$class
