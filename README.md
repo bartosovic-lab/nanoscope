@@ -8,7 +8,7 @@ Nanoscope is a snakemake-based pipeline for analysis of single-cell nano-CT data
 
 - https://www.nature.com/articles/s41587-022-01535-4
   
-- TODO: ADD Nature Protocols link here
+- https://www.nature.com/articles/s41596-023-00932-6
 ------------------------
 The pipeline is composed of three majors axes, [Set Up](#set-up), [Preprocessing](#preprocessing) and [Downstream Analysis](#downstream-analysis) which will be broken down into sub-units to facilitate the go-through.
 
