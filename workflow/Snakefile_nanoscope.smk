@@ -102,8 +102,8 @@ rule barcode_metrics_all:
 
 rule cell_selection:
     input:
-        bcd_all   = overlap_file_wildcard,
-        bcd_peak  = bcd_stats_wildcard,
+        bcd_all   = bcd_stats_wildcard,
+        bcd_peak  = overlap_file_wildcard,
         peaks     = macs_merged_per_modality_wildcard + '_3column.bed',
         metadata  = cellranger_metadata_wildcard,
         fragments = cellranger_fragments_wildcard
