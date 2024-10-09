@@ -1,6 +1,7 @@
 import itertools
 import os
 import glob
+import sys
 
 # configfile: workflow.basedir + '/../config/config.yaml'
 
@@ -26,8 +27,14 @@ print(features)
 def get_fastq_for_cellranger(fastq_folder,sample,modality,barcode):
     import glob
     result = []
-    all_fastq_files  = glob.glob(fastq_folder + "/**/*.fastq.gz",recursive=True)
+    fastq_folder = fastq_folder + "/**/*.fastq.gz"
+    all_fastq_files  = glob.glob(fastq_folder,recursive=True)
+    sys.stderr.write('Looking for fastq files in folder: {}'.format(fastq_folder))
     all_fastq_parsed = [parse_fastq(x) for x in all_fastq_files]
+    if len(all_fastq_files) == 0:
+        sys.stderr.write('*** Error: Found 0 files in folder {}\n'.format(fastq_folder))
+        sys.stderr.write("*** Aborting now! ")
+        raise Exception('No files found in fastq folder')
     for x in all_fastq_parsed:
         if x['read'] == 'I1':
             continue
