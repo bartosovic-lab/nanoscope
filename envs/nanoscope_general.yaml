@@ -1,0 +1,46 @@
+name: nanoscope_general
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  - _libgcc_mutex=0.1=conda_forge
+  - _openmp_mutex=4.5=2_gnu
+  - bzip2=1.0.8=h4bc722e_7
+  - c-ares=1.33.1=heb4867d_0
+  - ca-certificates=2024.8.30=hbcca054_0
+  - keyutils=1.6.1=h166bdaf_0
+  - krb5=1.20.1=hf9c8cef_0
+  - ld_impl_linux-64=2.43=h712a8e2_1
+  - libcurl=7.87.0=h6312ad2_0
+  - libdeflate=1.21=h4bc722e_0
+  - libedit=3.1.20191231=he28a2e2_2
+  - libev=4.33=hd590300_2
+  - libffi=3.4.2=h7f98852_5
+  - libgcc=14.1.0=h77fa898_1
+  - libgcc-ng=14.1.0=h69a702a_1
+  - libgomp=14.1.0=h77fa898_1
+  - libnghttp2=1.51.0=hdcd2b5c_0
+  - libnsl=2.0.1=hd590300_0
+  - libsqlite=3.46.0=hde9e2c9_0
+  - libssh2=1.10.0=haa6b8db_3
+  - libstdcxx=14.1.0=hc0a3c3a_1
+  - libstdcxx-ng=14.1.0=h4852527_1
+  - libzlib=1.2.13=h4ab18f5_6
+  - ncurses=6.5=he02047a_1
+  - openssl=1.1.1w=hd590300_0
+  - pip=21.3.1=pyhd8ed1ab_0
+  - pysam=0.21.0=py36h50b03f4_0
+  - python=3.6.15=hb7a2778_0_cpython
+  - python-levenshtein=0.12.2=py36h8f6f2f9_0
+  - python_abi=3.6=2_cp36m
+  - pyyaml=5.4.1=py36h8f6f2f9_1
+  - readline=8.2=h8228510_1
+  - regex=2016.06.24=py36_1
+  - setuptools=58.0.4=py36h5fab9bb_2
+  - sqlite=3.46.0=h6d4b2fc_0
+  - tk=8.6.13=noxft_h4845f30_101
+  - wheel=0.37.1=pyhd8ed1ab_0
+  - xz=5.2.6=h166bdaf_0
+  - yaml=0.2.5=h7f98852_2
+  - zlib=1.2.13=h4ab18f5_6
