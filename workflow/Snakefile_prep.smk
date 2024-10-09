@@ -29,12 +29,13 @@ def get_fastq_for_cellranger(fastq_folder,sample,modality,barcode):
     result = []
     fastq_folder = fastq_folder + "/**/*.fastq.gz"
     all_fastq_files  = glob.glob(fastq_folder,recursive=True)
-    sys.stderr.write('Looking for fastq files in folder: {}'.format(fastq_folder))
+    sys.stderr.write('Looking for fastq files in folder: {}\n'.format(fastq_folder))
     all_fastq_parsed = [parse_fastq(x) for x in all_fastq_files]
     if len(all_fastq_files) == 0:
         sys.stderr.write('*** Error: Found 0 files in folder {}\n'.format(fastq_folder))
-        sys.stderr.write("*** Aborting now! ")
-        raise Exception('No files found in fastq folder')
+        sys.stderr.write("*** Aborting now! \n")
+        raise Exception('No files found in fastq folder\n')
+    sys.stderr.write('Found {} fastq files: {}\n'.format(len(all_fastq_files),'\n'.join(all_fastq_files)))
     for x in all_fastq_parsed:
         if x['read'] == 'I1':
             continue
