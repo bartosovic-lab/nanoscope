@@ -142,7 +142,6 @@ dependencies:
   - pysam=0.21.0=py39h9abd093_0
   - python=3.9.15=h47a2c10_0_cpython
   - python-dateutil=2.8.2=pyhd8ed1ab_0
-  - python-levenshtein=0.12.0=0
   - python_abi=3.9=5_cp39
   - pyyaml=6.0.2=py39h8cd3c5a_1
   - qhull=2020.2=h434a139_5
@@ -240,4 +239,8 @@ dependencies:
   - zipp=3.6.0=pyhd8ed1ab_0
   - zlib=1.2.13=h4ab18f5_6
   - zstd=1.5.6=ha6fb4c9_0
+  - pip:
+      - levenshtein==0.26.0
+      - python-levenshtein==0.26.0
+      - rapidfuzz==3.10.0
 prefix: /home/mareba/miniconda3/envs/nanoscope_general
