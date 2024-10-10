@@ -63,6 +63,7 @@ dependencies:
   - gsl=2.7=he838d99_0
   - gxx_impl_linux-64=14.1.0=h8d00ecb_1
   - harfbuzz=6.0.0=h8e241bc_0
+  - htslib=1.17=h6bc39ce_1
   - icu=70.1=h27087fc_0
   - importlib-metadata=8.5.0=pyha770c72_0
   - importlib-resources=6.4.5=pyhd8ed1ab_0
@@ -202,6 +203,7 @@ dependencies:
   - r-yaml=2.3.8=r42h57805ef_0
   - readline=8.2=h8228510_1
   - regex=2024.9.11=py39h8cd3c5a_0
+  - samtools=1.18=hd87286a_0
   - scipy=1.13.1=py39haf93ffa_0
   - sed=4.8=he412f7d_0
   - setuptools=75.1.0=pyhd8ed1ab_0
