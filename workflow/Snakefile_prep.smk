@@ -28,13 +28,16 @@ def get_fastq_for_cellranger(fastq_folder,sample,modality,barcode):
     import glob
     result = []
     fastq_folder = fastq_folder + "/**/*.fastq.gz"
-    all_fastq_files  = glob.glob(fastq_folder,recursive=True)
+    
+    # Find all fastq files in a folder
     sys.stderr.write('Looking for fastq files in folder: {}\n'.format(fastq_folder))
+    all_fastq_files  = glob.glob(fastq_folder,recursive=True)
+    
+    # Check if there are any fastq files and if they exist 
+    check_fastq(all_fastq_files)
+    
+    # Parse
     all_fastq_parsed = [parse_fastq(x) for x in all_fastq_files]
-    if len(all_fastq_files) == 0:
-        sys.stderr.write('*** Error: Found 0 files in folder {}\n'.format(fastq_folder))
-        sys.stderr.write("*** Aborting now! \n")
-        raise Exception('No files found in fastq folder\n')
     sys.stderr.write('Found {} fastq files: {}\n'.format(len(all_fastq_files),'\n'.join(all_fastq_files)))
     for x in all_fastq_parsed:
         if x['read'] == 'I1':
@@ -42,6 +45,18 @@ def get_fastq_for_cellranger(fastq_folder,sample,modality,barcode):
         result.append('{sample}/{modality}_{barcode}/fastq/barcode_{barcode}/{sample}_{number}_{lane}_{read}_{suffix}'.format(\
             sample=sample, modality=modality , barcode=barcode, seq_id=x['id'], number=x['number'], lane=x['lane'], suffix=x['suffix'], read = x['read']))
     return(result)
+
+def check_fastq(all_fastq_files):
+    if len(all_fastq_files) == 0:
+        sys.stderr.write('*** Error: Found 0 files in folder {}\n'.format(fastq_folder))
+        sys.stderr.write('*** Aborting now! \n')
+        raise Exception('No files found in fastq folder\n')
+    for x in all_fastq_files:
+        if not os.path.isfile(x):
+            sys.stderr.write("*** Error: File {} does not exist\n".format(x))
+            sys.stderr.write('*** Aborting now! \n')
+            raise Exception("File does not exist\n")
+    return
 
 def parse_fastq(path):
     import os
