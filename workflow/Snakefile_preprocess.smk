@@ -26,7 +26,6 @@ rule all_preprocess:
         cellranger_cleanup = [
             '{sample}/{modality}_{barcode}/_clean_cellranger.out'.format(sample=sample,modality=modality,barcode=
             barcodes_dict[sample][modality]) for sample in samples_list for modality in barcodes_dict[sample].keys()],
-        all_cells = expand('{sample}/all_cells.txt', sample=samples_list),
         matrix = [generate_matrix_out(sample = sample, modality = modality, barcode = barcodes_dict[sample][modality]) 
             for sample in samples_list for modality in barcodes_dict[sample].keys()],
 
@@ -240,7 +239,7 @@ rule get_cells:
                                                                                             barcode = barcodes_dict[wildcards.sample][modality]) 
             for modality in barcodes_dict[wildcards.sample].keys()]
     output:
-        cells = '{sample}/all_cells.txt'
+        cells = temp('{sample}/all_cells.txt')
     params:
         script = workflow.basedir + '/scripts/get_passed_cells_barcodes.awk'
     shell:
