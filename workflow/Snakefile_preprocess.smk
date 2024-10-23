@@ -26,6 +26,9 @@ rule all_preprocess:
         cellranger_cleanup = [
             '{sample}/{modality}_{barcode}/_clean_cellranger.out'.format(sample=sample,modality=modality,barcode=
             barcodes_dict[sample][modality]) for sample in samples_list for modality in barcodes_dict[sample].keys()],
+        all_cells = expand('{sample}/all_cells.txt', sample=samples_list),
+        matrix = [generate_matrix_out(sample = sample, modality = modality, barcode = barcodes_dict[sample][modality]) 
+            for sample in samples_list for modality in barcodes_dict[sample].keys()],
 
 
 rule demultiplex:
@@ -229,3 +232,52 @@ rule clean_cellranger_output:
         'touch {params.cellranger_folder}/tmp.txt;'                     # Create temp empty file to avoid error if the directory is empty
         'ls -d  {params.cellranger_folder}/* | grep -v outs | xargs rm -r; '
         'touch {output}'
+
+rule get_cells:
+    input:
+        lambda wildcards: ['{sample}/{modality}_{barcode}/cell_picking/metadata.csv'.format(sample = wildcards.sample, 
+                                                                                            modality = modality, 
+                                                                                            barcode = barcodes_dict[wildcards.sample][modality]) 
+            for modality in barcodes_dict[wildcards.sample].keys()]
+    output:
+        cells = '{sample}/all_cells.txt'
+    params:
+        script = workflow.basedir + '/scripts/get_passed_cells_barcodes.awk'
+    shell:
+        "cat {input} | awk -f {params.script} | sed 's/\"//g'| sort | uniq > {output.cells}"
+
+rule create_matrix_peaks:
+    # Requires fragtk installation (https://github.com/stuart-lab/fragtk)
+    input:
+        frag  = '{sample}/{modality}_{barcode}/cellranger/outs/fragments.tsv.gz',
+        peaks = '{sample}/{modality}_{barcode}/peaks/macs_broad/{modality}_peaks.broadPeak',
+        cells = '{sample}/all_cells.txt'
+    output:
+        features = '{sample}/{modality}_{barcode}/matrix/matrix_peaks/features.tsv.gz',
+        matrix   = '{sample}/{modality}_{barcode}/matrix/matrix_peaks/matrix.mtx.gz',
+        barcodes = '{sample}/{modality}_{barcode}/matrix/matrix_peaks/barcodes.tsv',
+        folder   = directory('{sample}/{modality}_{barcode}/matrix/matrix_peaks/'),
+    shell:
+        'fragtk matrix -f {input.frag} -b {input.peaks} -c {input.cells} -o {output.folder}'
+
+rule create_matrix_bins:
+    input:
+        bam   = '{sample}/{modality}_{barcode}/cellranger/outs/possorted_bam.bam',
+        frag  = '{sample}/{modality}_{barcode}/cellranger/outs/fragments.tsv.gz',
+        cells = '{sample}/all_cells.txt'
+    output:
+        features   = '{sample}/{modality}_{barcode}/matrix/matrix_bin_{bins}/features.tsv.gz',
+        matrix     = '{sample}/{modality}_{barcode}/matrix/matrix_bin_{bins}/matrix.mtx.gz',
+        barcodes   = '{sample}/{modality}_{barcode}/matrix/matrix_bin_{bins}/barcodes.tsv',
+        folder     = directory('{sample}/{modality}_{barcode}/matrix/matrix_bin_{bins}/'),
+        chromsizes = temp('{sample}/{modality}_{barcode}/chromsizes_{bins}.txt'),
+        windows    = temp('{sample}/{modality}_{barcode}/windows_{bins}.txt'),
+    conda: '../envs/nanoscope_general.yaml'
+    shell:
+        """
+        samtools idxstats {input.bam} | cut -f1-2 | awk '$2 != 0' > {output.chromsizes}; 
+        bedtools makewindows -g {output.chromsizes} -w {wildcards.bins} > {output.windows}; 
+        fragtk matrix -f {input.frag} -b {output.windows} -c {input.cells} -o {output.folder}; 
+        """
+
+

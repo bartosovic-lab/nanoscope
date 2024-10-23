@@ -22,6 +22,8 @@ print(modalities_combinations)
 
 # Define features
 features = ['peaks']
+bins = [5000,10000]
+
 print(features)
 
 def get_fastq_for_cellranger(fastq_folder,sample,modality,barcode):
@@ -70,3 +72,21 @@ def parse_fastq(path):
     result['suffix']  = re.split('_[RI][0-9]+_',fastq)[1].strip("_")
     return(result)
 
+# Check if program is installed
+
+def check_installed(path):
+    import os
+    if os.system("command -v " + path) == 0:
+        return True
+    else:
+        return False
+
+
+def generate_matrix_out(sample, modality, barcode, bins = bins):
+    if not check_installed('fragtk'):
+        sys.stderr.write('*** Warning: fragtk not installed, the pipeline will not generate matrix files\n')
+        return []
+    
+    matrix_peaks = ['{sample}/{modality}_{barcode}/matrix/matrix_peaks/'.format(sample=sample, modality=modality,barcode=barcode)]
+    matrix_bins  = ['{sample}/{modality}_{barcode}/matrix/matrix_bin_{bins}/'.format(sample=sample, modality=modality,barcode=barcode, bins = b) for b in bins]
+    return matrix_peaks + matrix_bins
