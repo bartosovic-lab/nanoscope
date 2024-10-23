@@ -23,6 +23,9 @@ rule all_preprocess:
         noLA_bam=[
             '{sample}/{modality}_{barcode}/cellranger/outs/fragments_noLA_duplicates.tsv.gz'.format(sample=sample,modality=modality,barcode=
             barcodes_dict[sample][modality]) for sample in samples_list for modality in barcodes_dict[sample].keys()],
+        cellranger_cleanup = [
+            '{sample}/{modality}_{barcode}/_clean_cellranger.out'.format(sample=sample,modality=modality,barcode=
+            barcodes_dict[sample][modality]) for sample in samples_list for modality in barcodes_dict[sample].keys()],
 
 
 rule demultiplex:
@@ -211,3 +214,18 @@ rule cell_selection:
     conda: '../envs/nanoscope_general.yaml'
     shell:
         "Rscript {params.script} --metadata {input.metadata} --fragments {input.fragments} --bcd_all {input.bcd_all} --bcd_peak {input.bcd_peak} --modality {wildcards.modality} --sample {wildcards.sample} --out_prefix {params.out_prefix}"
+
+rule clean_cellranger_output:
+    input:
+        bam = '{sample}/{modality}_{barcode}/cellranger/outs/possorted_bam.bam',
+        frag = '{sample}/{modality}_{barcode}/cellranger/outs/fragments.tsv.gz',
+        meta = '{sample}/{modality}_{barcode}/cellranger/outs/singlecell.csv',
+        peaks = '{sample}/{modality}_{barcode}/cellranger/outs/peaks.bed',
+    output:
+        '{sample}/{modality}_{barcode}/_clean_cellranger.out'
+    params:
+        cellranger_folder = '{sample}/{modality}_{barcode}/cellranger/'
+    shell:
+        'touch {params.cellranger_folder}/tmp.txt;'                     # Create temp empty file to avoid error if the directory is empty
+        'ls -d  {params.cellranger_folder}/* | grep -v outs | xargs rm -r; '
+        'touch {output}'
