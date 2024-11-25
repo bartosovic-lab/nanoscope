@@ -85,7 +85,7 @@ class bcdCT:
 
     def prep_out_filenames(self):
         self.path_out = {barcode: {} for barcode in self.picked_barcodes}
-        self.path_out  = {barcode: {read: "{0}/barcode_{1}/{2}".format(self.out_prefix,barcode,os.path.basename(self.path_in[read])) for read in self.out_reads} for barcode in self.picked_barcodes}
+        self.path_out  = {barcode: {read: "{0}/barcode_{1}/{2}".format(self.out_prefix,barcode,os.path.basename(self.path_in[read]).replace('.gz','')) for read in self.out_reads} for barcode in self.picked_barcodes}
         # If args.name is specified, replace the sample_id prefix with the one specified in args.name
         # e.g. nanoCT_MB22_001_S1_L001_R1_001.fastq.gz is input --name is test
         # Change to test_S1_L001_R1_001.fastq.gz
@@ -110,7 +110,7 @@ class bcdCT:
     def create_out_handles(self,stack):
         for bcd in self.picked_barcodes:
             os.makedirs(self.out_prefix + "/barcode_" + bcd, exist_ok=True)
-        self.out_stack = {barcode: {read: stack.enter_context(gzip.open(self.path_out[barcode][read],'wt'))for read in self.out_reads} for barcode in self.picked_barcodes}
+        self.out_stack = {barcode: {read: stack.enter_context(open(self.path_out[barcode][read],'wt'))for read in self.out_reads} for barcode in self.picked_barcodes}
 
 
     def __iter__(self):
@@ -139,8 +139,8 @@ class bcdCT:
         picked_barcodes = {key: barcodes[key] for key in top_barcodes}
         sys.stderr.write("\nDetected following most abundant barcodes out of first {} barcodes:\n{}\n".format(n, picked_barcodes))
         if args.barcode != "None":
-            self.picked_barcodes = [args.barcode]
-            sys.stderr.write("Barcode specified for demultiplexing [{barcode}] in top found barcodes: {bool} \n".format(bool = args.barcode in picked_barcodes.keys(), barcode = args.barcode))
+            self.picked_barcodes = args.barcode
+            # sys.stderr.write("Barcode specified for demultiplexing [{barcode}] in top found barcodes: {bool} \n".format(bool = args.barcode in picked_barcodes.keys(), barcode = args.barcode))
             return
 
         self.picked_barcodes = picked_barcodes
@@ -184,7 +184,6 @@ def find_seq(pattern, DNA_string, nmismatch=2):
 
 def main(args):
     exp = bcdCT(args)
-
     statistics = {
         "barcode_found": 0,
         "multiple_barcode_matches": 0,
@@ -192,6 +191,7 @@ def main(args):
         "no_spacer_found": 0,
         "too_short_read": 0
     }
+    statistics.update({barcode: 0 for barcode in exp.picked_barcodes})
 
     sys.stderr.write("Creating file output handles \n")
     with ExitStack() as stack:
@@ -201,10 +201,11 @@ def main(args):
         for read1,read2,read3 in exp:
             n+=1
             if n % 5000000 == 0:
+                break
                 sys.stderr.write("{} reads processed\n".format(n))
             assert (read1.name == read2.name == read3.name)                                                 # Make sure the fastq files are ok
 
-            spacer_hit = find_seq(pattern=args.pattern,DNA_string=read2.sequence,nmismatch=2)
+            spacer_hit = find_seq(pattern=args.pattern, DNA_string=read2.sequence, nmismatch=3) # Allow 3 mismatches in the spacer
             if not spacer_hit:
                 statistics["no_spacer_found"] +=1
 
@@ -218,7 +219,9 @@ def main(args):
                     statistics["multiple_barcode_matches"] += 1
                     continue
 
+                # This only continues if there is a single barcode match
                 hit_barcode = min(read_barcode_distance,key=read_barcode_distance.get)
+                statistics[hit_barcode] += 1
 
                 if exp.single_cell:
                     read2 = extract_cell_barcode(read2, spacer_hit)  # Returns the whole read, only the cell barcode part
@@ -238,6 +241,7 @@ def main(args):
     # Write the statistics file
     with open("{0}/{1}_statistics.yaml".format(exp.out_prefix,exp.name), 'w') as f:
         yaml.dump(statistics, f)
+    print(statistics)
 
 
 if __name__ == '__main__':
@@ -281,10 +285,12 @@ if __name__ == '__main__':
                         default=12,
                         help='Number of barcodes in experiment (Default: %(default)s)')
 
+    # --barcode can be one ore more barcodes to demultiplex
     parser.add_argument('--barcode',
                         type=str,
-                        default='None',
-                        help='Specific barcode to be extracted [e.g. ATAGAGGC] (Default: All barcodes [see --Nbarcodes])')
+                        default='None', 
+                        nargs='+',
+                        help='Specific barcodes to demultiplex (Default: Top n barcodes autodetected from the data, see --Nbarcodes)')
 
     args = parser.parse_args()
     main(args)
