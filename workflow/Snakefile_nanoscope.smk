@@ -29,10 +29,11 @@ rule demultiplex:
         script = workflow.basedir + '/scripts/debarcode.py',
         fastq_all = lambda wildcards: [run.samples[wildcards.sample].fastq_by_lane[wildcards.lane][r].path for r in run.samples[wildcards.sample].all_reads]
     output:
-        debarcoded_fastq_all = debarcoded_fastq_output
+        debarcoded_fastq_all = [debarcoded_fastq_wildcard.format(sample = '{sample}', barcode = b, prefix = '{prefix}', number = '{number}', 
+        lane = '{lane}', read = r, suffix = '{suffix}') for s in run.samples_list for b in run.samples[s].barcodes_dict.keys() for r in ['R1','R2','R3']]
     params:
         out_folder = str(Path(debarcoded_fastq_wildcard).parents[1]),
-        all_barcodes = lambda wildcards: ' '.join(run.samples[wildcards.sample].reverse_barcodes_dict[wildcards.modality]),
+        all_barcodes = lambda wildcards: ' '.join(run.samples[wildcards.sample].barcodes_dict.keys()),
     conda: '../envs/nanoscope_general.yaml'
     threads: 1
     shell:

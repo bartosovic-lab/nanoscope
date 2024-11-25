@@ -200,8 +200,7 @@ def main(args):
         sys.stderr.write("Starting demultiplexing \n")
         for read1,read2,read3 in exp:
             n+=1
-            if n % 5000000 == 0:
-                break
+            if n % 500000 == 0:
                 sys.stderr.write("{} reads processed\n".format(n))
             assert (read1.name == read2.name == read3.name)                                                 # Make sure the fastq files are ok
 

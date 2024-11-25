@@ -10,7 +10,7 @@ bwa_index                          = str(Path(config['general']['cellranger_ref'
 
 ########## All of the wildcards used in the pipeline ##########
 # Bulk wildcards
-debarcoded_fastq_wildcard               = '{sample}/{modality}/fastq_debarcoded/barcode_{barcode}/{prefix}_{number}_{lane}_{read}_{suffix}'
+debarcoded_fastq_wildcard               = '{sample}/fastq_debarcoded/barcode_{barcode}/{prefix}_{number}_{lane}_{read}_{suffix}'
 trimmed_fastq_wildcard                  = '{sample}/{modality}_{barcode}/fastq_trimmed/{prefix}_{number}_{lane}_{read}_{suffix}'
 bowtie2_map_wildcard                    = '{sample}/{modality}_{barcode}/mapping_out/{sample}_{modality}_{lane}_mapped.bam'
 bwa_map_wildcard                        = '{sample}/{modality}_{barcode}/mapping_out/{sample}_{modality}_{lane}_mapped.bam'
@@ -18,7 +18,7 @@ bam_sorted_wildcard                     = '{sample}/{modality}_{barcode}/mapping
 macs_wildcard                           = '{sample}/{modality}_{barcode}/peaks/macs2/{sample}_{modality}_peaks.broadPeak'
 bam_merged_wildcard                     = '{sample}/{modality}/mapping_out/{modality}_merged.bam'
 bigwig_wildcard                         = '{sample}/{modality}/mapping_out/{modality}_merged.bw'
-macs_merged_per_modality_wildcard   = '{sample}/{modality}/peaks/macs2/{modality}_peaks.broadPeak'
+macs_merged_per_modality_wildcard       = '{sample}/{modality}/peaks/macs2/{modality}_peaks.broadPeak'
 fasta_index_wildcard                    = 'fasta_index.fai'
 # bowtie2_index_wildcard             = '{sample}/reference/bowtie2/genome'
 
@@ -151,7 +151,7 @@ class fastq_file:
         self.number = re.findall('_S[0-9]+_',path)[0].strip("_")
         self.lane   = re.findall('_L[0-9]+_',path)[0].strip("_")
         self.read   = re.findall('_[RI][0-9]+_',path)[0].strip("_")
-        self.suffix = re.split('_[RI][0-9]+_',path)[1].strip("_")
+        self.suffix = re.split('_[RI][0-9]+_',path)[1].strip("_").replace('.gz','')
 
         return(self)
     
@@ -160,6 +160,6 @@ class fastq_file:
 
 run = snakemake_run(config)
 
-debarcoded_fastq_output = [debarcoded_fastq_wildcard.format(sample = '{sample}', modality = '{modality}', barcode = b, prefix = '{prefix}', number = '{number}', lane = '{lane}', read = r, suffix = '{suffix}') for s in run.samples_list for b in run.samples[s].barcodes_dict.keys() for r in ['R1','R2','R3']]
+debarcoded_fastq_output = [debarcoded_fastq_wildcard.format(sample = '{sample}', barcode = b, prefix = '{prefix}', number = '{number}', lane = '{lane}', read = r, suffix = '{suffix}') for s in run.samples_list for b in run.samples[s].barcodes_dict.keys() for r in ['R1','R2','R3']]
 trimmed_fastq_output    = {r: trimmed_fastq_wildcard.replace('{read}',r) for r in ['R1','R2','R3']}
 
