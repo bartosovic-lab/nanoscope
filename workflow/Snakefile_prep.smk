@@ -10,7 +10,7 @@ bwa_index                          = str(Path(config['general']['cellranger_ref'
 
 ########## All of the wildcards used in the pipeline ##########
 # Bulk wildcards
-debarcoded_fastq_wildcard               = '{sample}/{modality}_{barcode}/fastq_debarcoded/barcode_{barcode}/{prefix}_{number}_{lane}_{read}_{suffix}'
+debarcoded_fastq_wildcard               = '{sample}/{modality}/fastq_debarcoded/barcode_{barcode}/{prefix}_{number}_{lane}_{read}_{suffix}'
 trimmed_fastq_wildcard                  = '{sample}/{modality}_{barcode}/fastq_trimmed/{prefix}_{number}_{lane}_{read}_{suffix}'
 bowtie2_map_wildcard                    = '{sample}/{modality}_{barcode}/mapping_out/{sample}_{modality}_{lane}_mapped.bam'
 bwa_map_wildcard                        = '{sample}/{modality}_{barcode}/mapping_out/{sample}_{modality}_{lane}_mapped.bam'
@@ -21,9 +21,6 @@ bigwig_wildcard                         = '{sample}/{modality}/mapping_out/{moda
 macs_merged_per_modality_wildcard   = '{sample}/{modality}/peaks/macs2/{modality}_peaks.broadPeak'
 fasta_index_wildcard                    = 'fasta_index.fai'
 # bowtie2_index_wildcard             = '{sample}/reference/bowtie2/genome'
-
-debarcoded_fastq_output = {r: '{sample}/{modality}_{barcode}/fastq_debarcoded/barcode_{barcode}/{prefix}_{number}_{lane}_{read}_{suffix}'.replace('{read}',r) for r in ['R1','R2','R3']}
-trimmed_fastq_output    = {r: '{sample}/{modality}_{barcode}/fastq_trimmed/{prefix}_{number}_{lane}_{read}_{suffix}'.replace('{read}',r) for r in ['R1','R2','R3']}
 
 # Single-cell wildcards
 cellranger_fragments_wildcard         = '{sample}/{modality}_{barcode}/cellranger/outs/fragments.tsv.gz'
@@ -89,7 +86,7 @@ class sample:
 
         self.generate_debarcoded_output(files_list='debarcoded_fastq_all', files_dict='debarcoded_fastq_dict', wildcard=debarcoded_fastq_wildcard)
         self.generate_debarcoded_output(files_list='trimmed_fastq_all', files_dict='trimmed_fastq_dict',wildcard=trimmed_fastq_wildcard,filter_read = 'R2')
-
+        
         # Bulk outputs
         self.bowtie2_bam_all                    = [bowtie2_map_wildcard.format(sample = self.sample_name,modality=self.barcodes_dict[b],barcode=b,lane=l) for b in self.barcodes_list for l in self.all_lanes]
         self.bam_sorted_all                     = [bam_sorted_wildcard.format(sample = self.sample_name,modality=self.barcodes_dict[b],barcode=b,lane=l) for b in self.barcodes_list for l in self.all_lanes]
@@ -103,6 +100,7 @@ class sample:
                                 [cellranger_bam_wildcard.format(sample=self.sample_name,modality=self.barcodes_dict[b],barcode=b)  for b in self.barcodes_list]
         self.cell_picking_all  = [cell_picking_metadata_wildcard.format(sample=self.sample_name,modality=self.barcodes_dict[b],barcode=b)  for b in self.barcodes_list]
 
+    # Creates a list of files and returns dictionary of files dict[lane][barcode][read]
     def generate_debarcoded_output(self, files_list, files_dict, wildcard,filter_read = False):
         setattr(self, files_list,[])    # Empty list
         setattr(self,files_dict, {l: collections.defaultdict(dict) for l in self.all_lanes})    # Empty dictionary
@@ -122,6 +120,7 @@ class sample:
                 d=getattr(self,files_list)
                 d.append(getattr(self,files_dict)[f.lane][barcode][f.read])
                 setattr(self,files_list,d)
+
         return(self)
 
     def check_valid_barcodes(self, alphabet = 'ATCG'):
@@ -155,5 +154,12 @@ class fastq_file:
         self.suffix = re.split('_[RI][0-9]+_',path)[1].strip("_")
 
         return(self)
+    
+    def __repr__(self):
+        return(self.path)
 
 run = snakemake_run(config)
+
+debarcoded_fastq_output = [debarcoded_fastq_wildcard.format(sample = '{sample}', modality = '{modality}', barcode = b, prefix = '{prefix}', number = '{number}', lane = '{lane}', read = r, suffix = '{suffix}') for s in run.samples_list for b in run.samples[s].barcodes_dict.keys() for r in ['R1','R2','R3']]
+trimmed_fastq_output    = {r: trimmed_fastq_wildcard.replace('{read}',r) for r in ['R1','R2','R3']}
+

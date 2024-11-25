@@ -1,0 +1,38 @@
+samples:
+  organoids:                                                                         # Change the name of your sample here
+    fastq_path:
+      /home/mareba/P33456/DataDelivery_2024-11-21_16-14-27_ngisthlm01191/files/P33456/P33456_1001/02-FASTQ/20241119_LH00217_0148_B225KTVLT1
+    barcodes:                                                                            # Define your different antibody barcodes here
+      AGGCGAAG: H3K27ac
+      CGTTATCG: H3K27ac
+      GTACATGC: H3K27ac
+      AGCGAACA: H3K27ac
+      AGGTCAAC: H3K27ac
+      ACATCCGT: H3K27ac
+      AGTTCCTG: H3K27ac
+      AGTCTGGT: H3K27ac
+      CCTATAGC: H3K27ac
+      TCCTCTAG: H3K27ac
+      GCAGAGAA: H3K27me3
+      GCCTTCAT: H3K27ac
+      CACTGAGA: H3K27ac
+      CACTCGAT: H3K27ac
+      GTACTGAC: H3K27me3
+      ATCAGCGT: H3K27me3
+      TAATCTTA: H3K27me3
+      ACTCCAGA: H3K27me3
+      GTAGTCCA: H3K27me3
+      GGCTCTGA: H3K27me3
+      GTACGGTT: H3K27me3
+      GAAGGCAT: H3K27me3
+      CTATCAGC: H3K27me3
+      ATAGAGGC: H3K27me3
+      TATAGCCT: H3K27me3
+      ACGACACT: H3K27me3
+      CCTATCCT: H3K27me3
+      GTCTAGCA: H3K27ac
+general:
+  tempdir: /home/mareba/tmp
+  cellranger_software: /opt/cellranger-atac-2.1.0/cellranger-atac
+  cellranger_ref: /home/mareba/references/refdata-cellranger-arc-GRCh38-2020-A-2.0.0
+  macs_genome: hs                                                                       # Modify genome for macs2 callpeak

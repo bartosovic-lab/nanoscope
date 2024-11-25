@@ -29,15 +29,14 @@ rule demultiplex:
         script = workflow.basedir + '/scripts/debarcode.py',
         fastq_all = lambda wildcards: [run.samples[wildcards.sample].fastq_by_lane[wildcards.lane][r].path for r in run.samples[wildcards.sample].all_reads]
     output:
-        debarcoded_fastq_output['R1'],
-        debarcoded_fastq_output['R2'],
-        debarcoded_fastq_output['R3'],
+        debarcoded_fastq_all = debarcoded_fastq_output
     params:
-        out_folder = str(Path(debarcoded_fastq_wildcard).parents[1])
+        out_folder = str(Path(debarcoded_fastq_wildcard).parents[1]),
+        all_barcodes = lambda wildcards: ' '.join(run.samples[wildcards.sample].reverse_barcodes_dict[wildcards.modality]),
     conda: '../envs/nanoscope_debarcode.yaml'
     threads: 1
     shell:
-        "python {input.script} -i {input.fastq_all} -o {params.out_folder} --single_cell --barcode {wildcards.barcode} 2>&1"
+        "python {input.script} -i {input.fastq_all} -o {params.out_folder} --single_cell --barcode {params.all_barcodes}  2>&1"
 
 rule run_cellranger:
     input:
