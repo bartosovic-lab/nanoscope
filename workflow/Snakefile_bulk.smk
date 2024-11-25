@@ -22,7 +22,7 @@ rule trim_trim_galore:
         outdir = str(Path(trimmed_fastq_wildcard).parents[0]),
         OUT_R1 = lambda wildcards: run.samples[wildcards.sample].trimmed_fastq_dict[wildcards.lane][wildcards.barcode]['R1'].path,
         OUT_R2 = lambda wildcards: run.samples[wildcards.sample].trimmed_fastq_dict[wildcards.lane][wildcards.barcode]['R3'].path
-    conda: "../envs/bulk/nanoscope_trim.yaml"
+    conda: "../envs/nanoscope_general.yaml"
     threads: 8
     resources:
         mem_mb=8000
@@ -42,7 +42,7 @@ rule map_bwa:
         index = bwa_index
     output:
         bam = temp(bowtie2_map_wildcard),
-    conda: "../envs/bulk/nanoscope_bwa.yaml"
+    conda: "../envs/nanoscope_general.yaml"
     threads: 20
     resources:
         mem_mb=32000
@@ -62,7 +62,7 @@ rule bam_sort_and_index:
         bam_sorted = temp(bam_sorted_wildcard),
         bam_index  = temp(bam_sorted_wildcard + '.bai')
     threads: 16
-    conda: "../envs/nanoscope_samtools.yaml"
+    conda: "../envs/nanoscope_general.yaml"
     resources:
         mem_mb=32000
     shell:
@@ -74,7 +74,7 @@ rule merge_mapped:
   output:
     bam = bam_merged_wildcard
   threads: 16
-  conda: "../envs/nanoscope_samtools.yaml"
+  conda: "../envs/nanoscope_general.yaml"
   resources:
     mem_mb=32000
   shell:
@@ -85,7 +85,7 @@ rule bam_to_bigwig:
     bam_merged_wildcard
   output:
     bigwig_wildcard
-  conda: "../envs/nanoscope_deeptools.yaml"
+  conda: "../envs/nanoscope_general.yaml"
   threads: 16
   resources:
     mem_mb=16000
@@ -100,7 +100,7 @@ rule run_macs_broad_bulk:
     params:
         macs_outdir = str(Path(macs_wildcard).parents[0]),
         macs_genome = config['general']['macs_genome']
-    conda: '../envs/nanoscope_deeptools.yaml'
+    conda: '../envs/nanoscope_general.yaml'
     resources:
         mem_mb = 16000
     shell:
@@ -116,7 +116,7 @@ rule macs_per_modality:
     params:
         macs_outdir = str(Path(macs_merged_per_modality_wildcard).parents[0]),
         macs_genome = config['general']['macs_genome']
-    conda: '../envs/nanoscope_deeptools.yaml'
+    conda: '../envs/nanoscope_general.yaml'
     resources:
         mem_mb = 32000
     shell:
@@ -129,7 +129,7 @@ rule create_fasta_index:
         fasta_index = fasta_index_wildcard
     params:
         fasta       = config['general']['cellranger_ref'] + '/fasta/genome.fa',
-    conda: '../envs/nanoscope_samtools.yaml'
+    conda: '../envs/nanoscope_general.yaml'
     shell:
         'samtools faidx -o {output.fasta_index} {params.fasta}; '
 
@@ -139,6 +139,6 @@ rule peaks_to_3column_bed:
         fasta_index = fasta_index_wildcard
     output:
         macs_merged_per_modality_wildcard + '_3column.bed'
-    conda: '../envs/nanoscope_samtools.yaml'
+    conda: '../envs/nanoscope_general.yaml'
     shell:
         'cut -f1-3 {input.peaks} | bedtools sort -faidx {input.fasta_index} -i - > {output}'
