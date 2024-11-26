@@ -43,7 +43,7 @@ rule map_bwa:
     output:
         bam = temp(bowtie2_map_wildcard),
     conda: "../envs/nanoscope_general.yaml"
-    threads: 20
+    threads: 16
     resources:
         mem_mb=32000
     shell:
@@ -110,7 +110,7 @@ rule run_macs_broad_bulk:
 
 rule macs_per_modality:
     input:
-        lambda wildcards: [bam_merged_wildcard.format(sample = wildcards.sample, modality = run.samples[wildcards.sample].barcodes_dict[b], barcode = b) for b in run.samples[wildcards.sample].barcodes_list]
+        bam_merged_wildcard
     output:
         macs_merged_per_modality_wildcard
     params:

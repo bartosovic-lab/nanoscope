@@ -24,13 +24,15 @@ rule all_preprocess:
         #     barcodes_dict[sample][modality]) for sample in samples_list for modality in barcodes_dict[sample].keys()],
 
 
+
 rule demultiplex:
     input:
         script = workflow.basedir + '/scripts/debarcode.py',
         fastq_all = lambda wildcards: [run.samples[wildcards.sample].fastq_by_lane[wildcards.lane][r].path for r in run.samples[wildcards.sample].all_reads]
     output:
-        debarcoded_fastq_all = [debarcoded_fastq_wildcard.format(sample = '{sample}', barcode = b, prefix = '{prefix}', number = '{number}', 
-        lane = '{lane}', read = r, suffix = '{suffix}') for s in run.samples_list for b in run.samples[s].barcodes_dict.keys() for r in ['R1','R2','R3']]
+        # Expand the wildcard barcode to all barcodes within the sample and modality
+        # Mask all other wildcards except for the barcode
+        debarcoded_fastq_wildcard = expand(mask_wildcards(debarcoded_fastq_wildcard,['barcode'], invert=True), barcode = lambda wildcards: [ x for x in run.samples[wildcards.sample].barcodes_dict.keys() if run.samples[wildcards.sample].barcodes_dict[x] == wildcards.modality])
     params:
         out_folder = str(Path(debarcoded_fastq_wildcard).parents[1]),
         all_barcodes = lambda wildcards: ' '.join(run.samples[wildcards.sample].barcodes_dict.keys()),

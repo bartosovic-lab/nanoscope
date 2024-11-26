@@ -46,6 +46,17 @@ def invert_dict(d):
             d_new[v].append(k)
     return(d_new)
 
+def mask_wildcards(wildcard_string, list_of_wildcards, invert=False):
+    all_wildcards = re.findall('{(.*?)}',wildcard_string)
+    for wildcard in all_wildcards:
+        # Forward masking - only the ones in the list
+        if wildcard in list_of_wildcards and not invert:
+            wildcard_string = wildcard_string.replace('{' + wildcard + '}', '{{' + wildcard + '}}')
+        # Invert masking - all but the ones in the list
+        elif wildcard not in list_of_wildcards and invert:
+            wildcard_string = wildcard_string.replace('{' + wildcard + '}', '{{' + wildcard + '}}')            
+    return wildcard_string
+
 class snakemake_run:
     def __init__(self,config):
         self.tempdir = config['general']['tempdir']
@@ -62,9 +73,13 @@ class sample:
     def __init__(self,config,sample_name):
         self.sample_name     = sample_name
         self.fastq_path      = config['samples'][self.sample_name]['fastq_path']
+        # barcodes_dict = { barcode1: modality1, barcode2: modality1, ...}
         self.barcodes_dict   = config['samples'][self.sample_name]['barcodes']
+        # reverese_barcodes_dict = {modality1: [barcode1, barcode2, ...], modality2: [barcode1, barcode2, ...]}
         self.reverse_barcodes_dict = invert_dict(self.barcodes_dict)
+        # modality_names = [modality1, modality2, ...]
         self.modality_names  = list(set([x for x in config['samples'][self.sample_name]['barcodes'].values()]))       # List of modalities
+        # barcodes_list = [barcode1, barcode2, ...]
         self.barcodes_list   = list(set([x for x in config['samples'][self.sample_name]['barcodes'].keys()]))     # List of barcodes
 
         # Some checks here
@@ -84,9 +99,17 @@ class sample:
         ###########
         # All outputs are based on wildcards declared above and are generated here
 
-        self.generate_debarcoded_output(files_list='debarcoded_fastq_all', files_dict='debarcoded_fastq_dict', wildcard=debarcoded_fastq_wildcard)
-        self.generate_debarcoded_output(files_list='trimmed_fastq_all', files_dict='trimmed_fastq_dict',wildcard=trimmed_fastq_wildcard,filter_read = 'R2')
+        self.generate_debarcoded_output(files_list='debarcoded_fastq_all', files_dict='debarcoded_fastq_dict', files_by_modality = 'debarcoded_fastq_by_modality', wildcard=debarcoded_fastq_wildcard)
+        self.generate_debarcoded_output(files_list='trimmed_fastq_all', files_dict='trimmed_fastq_dict', files_by_modality = 'trimmed_fastq_by_modality', wildcard=trimmed_fastq_wildcard,filter_read = 'R2')
         
+        # Creates following: 
+        # debarcoded_fastq_all = [fastq_debarcoded_1.fastq, fastq_debarcoded_2.fastq, ...]
+        # debracoded_fastq_dict = {lane: {barcode: {read: fastq_file1, fastq_file2, ...}, barcode2: {read: fastq_file1, fastq_file2, ...}}, lane2: ...}
+        # debarcoded_fastq_by_modality = {modality1: [fastq_file1, fastq_file2, ...], modality2: [fastq_file1, fastq_file2, ...]}
+
+
+        # Debarcoded fastq files by modality
+
         # Bulk outputs
         self.bowtie2_bam_all                    = [bowtie2_map_wildcard.format(sample = self.sample_name,modality=self.barcodes_dict[b],barcode=b,lane=l) for b in self.barcodes_list for l in self.all_lanes]
         self.bam_sorted_all                     = [bam_sorted_wildcard.format(sample = self.sample_name,modality=self.barcodes_dict[b],barcode=b,lane=l) for b in self.barcodes_list for l in self.all_lanes]
@@ -95,13 +118,14 @@ class sample:
         self.macs_all                           = [macs_wildcard.format(sample=self.sample_name,modality=self.barcodes_dict[b],barcode=b) for b in self.barcodes_list]
         self.macs_merged_accross_modality_all   = [macs_merged_per_modality_wildcard.format(sample=self.sample_name, modality = m) for m in self.modality_names]
 
+
         # Single-cell outputs
         self.cellranger_all    = [cellranger_fragments_wildcard.format(sample=self.sample_name,modality=self.barcodes_dict[b],barcode=b)  for b in self.barcodes_list] + \
                                 [cellranger_bam_wildcard.format(sample=self.sample_name,modality=self.barcodes_dict[b],barcode=b)  for b in self.barcodes_list]
         self.cell_picking_all  = [cell_picking_metadata_wildcard.format(sample=self.sample_name,modality=self.barcodes_dict[b],barcode=b)  for b in self.barcodes_list]
 
-    # Creates a list of files and returns dictionary of files dict[lane][barcode][read]
-    def generate_debarcoded_output(self, files_list, files_dict, wildcard,filter_read = False):
+    # Takes a list of files and returns dictionary of files dict[lane][barcode][read]
+    def generate_debarcoded_output(self, files_list, files_dict, files_by_modality, wildcard,filter_read = False):
         setattr(self, files_list,[])    # Empty list
         setattr(self,files_dict, {l: collections.defaultdict(dict) for l in self.all_lanes})    # Empty dictionary
 
@@ -120,6 +144,7 @@ class sample:
                 d=getattr(self,files_list)
                 d.append(getattr(self,files_dict)[f.lane][barcode][f.read])
                 setattr(self,files_list,d)
+                setattr(self, files_by_modality, {m: [x for x in getattr(self,files_list) if x.modality == m] for m in self.modality_names})
 
         return(self)
 
