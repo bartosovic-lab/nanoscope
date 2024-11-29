@@ -36,3 +36,4 @@ general:
   cellranger_software: /opt/cellranger-atac-2.1.0/cellranger-atac
   cellranger_ref: /home/mareba/references/refdata-cellranger-arc-GRCh38-2020-A-2.0.0
   macs_genome: hs                                                                       # Modify genome for macs2 callpeak
+  gtf: https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_47/gencode.v47.annotation.gtf.gz  # Modify path to gtf file here

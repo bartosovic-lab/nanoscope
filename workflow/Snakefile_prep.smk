@@ -31,6 +31,8 @@ bcd_stats_wildcard                    = '{sample}/{modality}_{barcode}/barcode_m
 cell_picking_cells_10x_wildcard       = '{sample}/{modality}_{barcode}/cell_picking/cells_10x.png'
 cell_picking_cells_nanoscope_wildcard = '{sample}/{modality}_{barcode}/cell_picking/cells_nanoscope.png'
 cell_picking_metadata_wildcard        = '{sample}/{modality}_{barcode}/cell_picking/metadata.csv'
+matrix_bins_wildcard                  = '{sample}/{modality}_{barcode}/matrix/matrix_bin_{bins}/matrix.mtx.gz'
+matrix_genebody_promoter_wildcard     = '{sample}/{modality}_{barcode}/matrix/matrix_genebody_promoter/matrix.mtx.gz'
 
 def find_all_fastq_files(path):
     all_fastq = itertools.chain(*[glob.glob(path + x) for x in ['/**/*R*.fastq.gz', '/*R*.fastq.gz']])
@@ -81,6 +83,7 @@ class sample:
         self.modality_names  = list(set([x for x in config['samples'][self.sample_name]['barcodes'].values()]))       # List of modalities
         # barcodes_list = [barcode1, barcode2, ...]
         self.barcodes_list   = list(set([x for x in config['samples'][self.sample_name]['barcodes'].keys()]))     # List of barcodes
+        self.bins = ['5000','10000','25000','50000','100000']
 
         # Some checks here
         self.check_valid_barcodes()
@@ -123,6 +126,8 @@ class sample:
         self.cellranger_all    = [cellranger_fragments_wildcard.format(sample=self.sample_name,modality=self.barcodes_dict[b],barcode=b)  for b in self.barcodes_list] + \
                                 [cellranger_bam_wildcard.format(sample=self.sample_name,modality=self.barcodes_dict[b],barcode=b)  for b in self.barcodes_list]
         self.cell_picking_all  = [cell_picking_metadata_wildcard.format(sample=self.sample_name,modality=self.barcodes_dict[b],barcode=b)  for b in self.barcodes_list]
+        self.matrix_bins_all        = [matrix_bins_wildcard.format(sample=self.sample_name,modality=self.barcodes_dict[b],barcode=b,bins=bin)  for b in self.barcodes_list for bin in self.bins]
+        self.matrix_genebody_all = [matrix_genebody_promoter_wildcard.format(sample=self.sample_name,modality=self.barcodes_dict[b],barcode=b)  for b in self.barcodes_list]
 
     # Takes a list of files and returns dictionary of files dict[lane][barcode][read]
     def generate_debarcoded_output(self, files_list, files_dict, files_by_modality, wildcard,filter_read = False):

@@ -7,6 +7,8 @@ rule all_preprocess:
         debarcode_out     = [run.samples[s].debarcoded_fastq_all[i].path for s in run.samples_list for i,item in enumerate(run.samples[s].debarcoded_fastq_all)],
         cellranger_out    = [run.samples[s].cellranger_all for s in run.samples_list],
         cell_picking_out  = [run.samples[s].cell_picking_all for s in run.samples_list],
+        matrix_bins_out   = [run.samples[s].matrix_bins_all for s in run.samples_list],
+        genebody_matrix   = [run.samples[s].matrix_genebody_all for s in run.samples_list],
 
     # Bulk outputs
         # bigwig_bulk = [run.samples[s].bigwig_all for s in run.samples_list],
@@ -32,7 +34,8 @@ rule demultiplex:
     output:
         # Expand the wildcard barcode to all barcodes within the sample and modality
         # Mask all other wildcards except for the barcode
-        debarcoded_fastq_wildcard = expand(mask_wildcards(debarcoded_fastq_wildcard,['barcode'], invert=True), barcode = lambda wildcards: [ x for x in run.samples[wildcards.sample].barcodes_dict.keys() if run.samples[wildcards.sample].barcodes_dict[x] == wildcards.modality])
+        # debarcoded_fastq_wildcard = expand(mask_wildcards(debarcoded_fastq_wildcard,['barcode'], invert=True), barcode = lambda wildcards: [ x for x in run.samples[wildcards.sample].barcodes_dict.keys() if run.samples[wildcards.sample].barcodes_dict[x] == wildcards.modality])
+        debarcoded_fastq_wildcard = debarcoded_fastq_wildcard, # This is probably wrong and won't work, it should be fixed i alla fall
     params:
         out_folder = str(Path(debarcoded_fastq_wildcard).parents[1]),
         all_barcodes = lambda wildcards: ' '.join(run.samples[wildcards.sample].barcodes_dict.keys()),
@@ -99,8 +102,6 @@ rule barcode_metrics_all:
         ' samtools view -f2 {input.bam}| '
         'awk -f {params.get_cell_barcode} | sed "s/CB:Z://g" |  '
         'sort -T {params.tmpdir} | uniq -c > {output.all_bcd} && [[ -s {output.all_bcd} ]] ; '
-
-
 
 rule cell_selection:
     input:
@@ -192,6 +193,69 @@ rule sort_sinto_output:
     shell:
         'sort -k1,1 -k2,2n {input.fragments} | bgzip > {output.fragments}; '
         'tabix -p bed {output.fragments} '
+
+rule get_cells:
+    input:
+        metadata = '{sample}/{modality}_{barcode}/cell_picking/metadata.csv',
+    output:
+        cells = temp('{sample}/{modality}_{barcode}/matrix/all_cells.txt')
+    params:
+        script = workflow.basedir + '/scripts/get_passed_cells_barcodes.awk'
+    shell:
+        "cat {input} | awk -f {params.script} | sed 's/\"//g'| sort | uniq > {output.cells}"
+        
+rule create_matrix_bins:
+    input:
+        bam   = '{sample}/{modality}_{barcode}/cellranger/outs/possorted_bam.bam',
+        frag  = '{sample}/{modality}_{barcode}/cellranger/outs/fragments.tsv.gz',
+        cells = '{sample}/{modality}_{barcode}/matrix/all_cells.txt',
+    output:
+        features   = '{sample}/{modality}_{barcode}/matrix/matrix_bin_{bins}/features.tsv.gz',
+        matrix     = '{sample}/{modality}_{barcode}/matrix/matrix_bin_{bins}/matrix.mtx.gz',
+        barcodes   = '{sample}/{modality}_{barcode}/matrix/matrix_bin_{bins}/barcodes.tsv',
+        folder     = directory('{sample}/{modality}_{barcode}/matrix/matrix_bin_{bins}/'),
+        chromsizes = temp('{sample}/{modality}_{barcode}/chromsizes_{bins}.txt'),
+        windows    = temp('{sample}/{modality}_{barcode}/windows_{bins}.txt'),
+    conda: '../envs/nanoscope_general.yaml'
+    shell:
+        """
+        samtools idxstats {input.bam} | cut -f1-2 | awk '$2 != 0' > {output.chromsizes}; 
+        bedtools makewindows -g {output.chromsizes} -w {wildcards.bins} > {output.windows}; 
+        fragtk matrix -f {input.frag} -b {output.windows} -c {input.cells} -o {output.folder}; 
+        """
+
+rule download_annotation_and_get_genebody_and_promoter_gtf:
+    output:
+        gencode_gtf  = 'annotation/gencode.full.gtf.gz',
+        genebody_gtf = 'annotation/genebody_and_promoter.gtf',
+        gene_names   = 'annotation/gene_names.txt'
+    params:
+        url = config['general']['gtf'],
+        script = workflow.basedir + '/scripts/get_filtered_genebody_promoter_from_gencode_gtf.awk',
+        script2 = workflow.basedir + '/scripts/get_gene_name_from_gencode_gtf.awk'
+    shell:
+        "wget {params.url} -O {output.gencode_gtf}; "
+        " gunzip -c {output.gencode_gtf} | awk -f {params.script} | cut -f1,4,5  > {output.genebody_gtf}; "
+        " gunzip -c {output.gencode_gtf} | awk -f {params.script} | awk -f {params.script2} | sed 's/;//g' | sed 's/\"//g' > {output.gene_names} "
+
+rule create_genebody_and_promoter_matrix:
+    input:
+        gtf   = 'annotation/genebody_and_promoter.gtf',
+        frag  = '{sample}/{modality}_{barcode}/cellranger/outs/fragments.tsv.gz',
+        cells = '{sample}/{modality}_{barcode}/matrix/all_cells.txt',
+    output:
+        features   = '{sample}/{modality}_{barcode}/matrix/matrix_genebody_promoter/features.tsv.gz',
+        matrix     = '{sample}/{modality}_{barcode}/matrix/matrix_genebody_promoter/matrix.mtx.gz',
+        barcodes   = '{sample}/{modality}_{barcode}/matrix/matrix_genebody_promoter/barcodes.tsv',
+        folder     = directory('{sample}/{modality}_{barcode}/matrix/matrix_genebody_promoter/'),
+    conda: '../envs/nanoscope_general.yaml'
+    shell:
+        'fragtk matrix -f {input.frag} -b {input.gtf} -c {input.cells} -o {output.folder}; '
+        ''    
+        
+
+
+
 
 # rule bam_to_bw: # For QC reasons
 #     input:
