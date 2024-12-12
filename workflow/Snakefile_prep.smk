@@ -26,6 +26,7 @@ fasta_index_wildcard                    = 'fasta_index.fai'
 cellranger_fragments_wildcard         = '{sample}/{modality}_{barcode}/cellranger/outs/fragments.tsv.gz'
 cellranger_bam_wildcard               = '{sample}/{modality}_{barcode}/cellranger/outs/possorted_bam.bam'
 cellranger_metadata_wildcard          = '{sample}/{modality}_{barcode}/cellranger/outs/singlecell.csv'
+cellranger_cleanup_wildcard           = '{sample}/{modality}_{barcode}/cellranger/outs/_cellranger_cleanup'
 overlap_file_wildcard                 = '{sample}/{modality}_{barcode}/barcode_metrics/peaks_barcodes.txt'
 bcd_stats_wildcard                    = '{sample}/{modality}_{barcode}/barcode_metrics/all_barcodes.txt'
 cell_picking_cells_10x_wildcard       = '{sample}/{modality}_{barcode}/cell_picking/cells_10x.png'
@@ -123,11 +124,12 @@ class sample:
 
 
         # Single-cell outputs
-        self.cellranger_all    = [cellranger_fragments_wildcard.format(sample=self.sample_name,modality=self.barcodes_dict[b],barcode=b)  for b in self.barcodes_list] + \
-                                [cellranger_bam_wildcard.format(sample=self.sample_name,modality=self.barcodes_dict[b],barcode=b)  for b in self.barcodes_list]
-        self.cell_picking_all  = [cell_picking_metadata_wildcard.format(sample=self.sample_name,modality=self.barcodes_dict[b],barcode=b)  for b in self.barcodes_list]
+        self.cellranger_all         = [cellranger_fragments_wildcard.format(sample=self.sample_name,modality=self.barcodes_dict[b],barcode=b)  for b in self.barcodes_list] + \
+                                      [cellranger_bam_wildcard.format(sample=self.sample_name,modality=self.barcodes_dict[b],barcode=b)  for b in self.barcodes_list]
+        self.cellranger_cleanup_all = [cellranger_cleanup_wildcard.format(sample=self.sample_name,modality=self.barcodes_dict[b],barcode=b)  for b in self.barcodes_list]
+        self.cell_picking_all       = [cell_picking_metadata_wildcard.format(sample=self.sample_name,modality=self.barcodes_dict[b],barcode=b)  for b in self.barcodes_list]
         self.matrix_bins_all        = [matrix_bins_wildcard.format(sample=self.sample_name,modality=self.barcodes_dict[b],barcode=b,bins=bin)  for b in self.barcodes_list for bin in self.bins]
-        self.matrix_genebody_all = [matrix_genebody_promoter_wildcard.format(sample=self.sample_name,modality=self.barcodes_dict[b],barcode=b)  for b in self.barcodes_list]
+        self.matrix_genebody_all    = [matrix_genebody_promoter_wildcard.format(sample=self.sample_name,modality=self.barcodes_dict[b],barcode=b)  for b in self.barcodes_list]
 
     # Takes a list of files and returns dictionary of files dict[lane][barcode][read]
     def generate_debarcoded_output(self, files_list, files_dict, files_by_modality, wildcard,filter_read = False):

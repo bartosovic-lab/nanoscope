@@ -4,11 +4,12 @@ include: 'Snakefile_bulk.smk'
 rule all_preprocess:
     input:
     # Single-cell outputs
-        debarcode_out     = [run.samples[s].debarcoded_fastq_all[i].path for s in run.samples_list for i,item in enumerate(run.samples[s].debarcoded_fastq_all)],
-        cellranger_out    = [run.samples[s].cellranger_all for s in run.samples_list],
-        cell_picking_out  = [run.samples[s].cell_picking_all for s in run.samples_list],
-        matrix_bins_out   = [run.samples[s].matrix_bins_all for s in run.samples_list],
-        genebody_matrix   = [run.samples[s].matrix_genebody_all for s in run.samples_list],
+        debarcode_out        = [run.samples[s].debarcoded_fastq_all[i].path for s in run.samples_list for i,item in enumerate(run.samples[s].debarcoded_fastq_all)],
+        cellranger_out       = [run.samples[s].cellranger_all for s in run.samples_list],
+        cellranger_clean_out = [run.samples[s].cellranger_cleanup_all for s in run.samples_list],
+        cell_picking_out     = [run.samples[s].cell_picking_all for s in run.samples_list],
+        matrix_bins_out      = [run.samples[s].matrix_bins_all for s in run.samples_list],
+        genebody_matrix      = [run.samples[s].matrix_genebody_all for s in run.samples_list],
 
     # Bulk outputs
         # bigwig_bulk = [run.samples[s].bigwig_all for s in run.samples_list],
@@ -66,6 +67,20 @@ rule run_cellranger:
         'rm -rf {wildcards.sample}/{wildcards.modality}_{wildcards.barcode}/cellranger/; '
         'cd {wildcards.sample}/{wildcards.modality}_{wildcards.barcode}/; '
         '{params.cellranger_software} count --id cellranger --reference {params.cellranger_ref} --fastqs {params.fastq_folder} --peaks={params.bed_with_abspath} --force-cells=5000'
+
+rule clean_cellranger_output:
+    input:
+        bam  = cellranger_bam_wildcard,
+        frag = cellranger_fragments_wildcard,
+        meta = cellranger_metadata_wildcard,
+    output:
+        cellranger_cleanup_wildcard
+    params:
+        cellranger_folder = str(Path(cellranger_bam_wildcard).parents[1].resolve())
+    shell:
+        'touch {params.cellranger_folder}/tmp.txt;'                     # Create temp empty file to avoid error if the directory is empty
+        'ls -d  {params.cellranger_folder}/* | grep -v outs | xargs rm -r; '
+        'touch {output}'
 
 rule barcode_metrics_peaks:
     input:
