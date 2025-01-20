@@ -234,7 +234,14 @@ def main(args):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='')
+    parser = argparse.ArgumentParser(description="DESCRIPTION: \n\nThis script demultiplexes Nano-CT sequencing data by extracting and matching modality barcodes from the R2 read based on a specified spacer sequence.\nThe script supports both bulk and single-cell data and writes sorted reads into separate output files for each detected barcode\n""" + 
+                                     """The script works with a standard 36-8-48-36 read structure but may also be compatible with other setups where the spacer sequence is similarly arranged.\n\n""" + 
+                                     """AATGATACGGCGACCACCGAGATCTACAC-NNNNNNNNNNNNNNNN-TCGTCGGCAGCGTCTCCACGC-NNNNNNNN-GCGATCGAGGACGGCAGATGTGTATAAGAGACAG\n"""+
+                                     """            P5                |  sc-barcode   |  Linker sequence   | Modality |        Mosaic end               \n """ + 
+                                     """\n""" +
+                                     """ Note: If demultiplexing multiple lanes, run for each lane separetely and then merge the output files before or after alignment\n""",
+                                     usage="python debarcode.py -i /path/to/input_R1.fastq.gz /path/to/input_R2.fastq.gz /path/to/input_R3.fastq.gz -o /path/to/output_folder --single_cell --barcode ATAGAGGC",
+                                     formatter_class=argparse.RawTextHelpFormatter)
 
     parser.add_argument('-i', '--input',
                         required=True,
