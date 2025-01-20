@@ -242,7 +242,11 @@ if __name__ == '__main__':
                                      """            P5                |  sc-barcode   |  Linker sequence   | Modality |        Mosaic end               \n """ + 
                                      """\n""" +
                                      """ Note: If demultiplexing multiple lanes, run for each lane separetely and then merge the output files before or after alignment\n""",
-                                     usage="python debarcode.py -i /path/to/input_R1.fastq.gz /path/to/input_R2.fastq.gz /path/to/input_R3.fastq.gz -o /path/to/output_folder --single_cell --barcode ATAGAGGC",
+                                     usage="\n"
+                                           "python debarcode.py -i /path/to/input_R1.fastq.gz /path/to/input_R2.fastq.gz /path/to/input_R3.fastq.gz -o /path/to/output_folder --single_cell --barcode ATAGAGGC                      # One specific barcode from single-cell data \n" 
+                                           "python debarcode.py -i /path/to/input_R1.fastq.gz /path/to/input_R2.fastq.gz /path/to/input_R3.fastq.gz -o /path/to/output_folder --single_cell --barcode ATAGAGGC TATAGCCT             # Two specific barcodes from single-cell data \n"
+                                           "python debarcode.py -i /path/to/input_R1.fastq.gz /path/to/input_R2.fastq.gz /path/to/input_R3.fastq.gz -o /path/to/output_folder --single_cell --Nbarcodes 3                           # Top 3 barcodes from single-cell data without specifying the barcodes - use carefuly and double check\n"
+                                           "python debarcode.py -i /path/to/input_R1.fastq.gz /path/to/input_R2.fastq.gz /path/to/input_R3.fastq.gz -o /path/to/output_folder --Nbarcodes 3                                         # Top 3 barcodes from bulk data \n", 
                                      formatter_class=argparse.RawTextHelpFormatter)
 
     parser.add_argument('-i', '--input',
