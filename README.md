@@ -28,6 +28,9 @@ conda config --set channel_priority flexible
 conda env create -f nanoscope/envs/nanoscope_base.yaml 
 conda activate nanoscope_base
 
+# Install fragtk
+Install [fragth](https://github.com/stuart-lab/fragtk) which is used to create the count matrices 
+
 # Change file paths and other parameters in pipeline config file 
 vim nanoscope/config/config.yaml
 
@@ -56,6 +59,9 @@ mkdir ~/nanoCT_project
 cd ~/nanoCT_project
 git clone https://github.com/bartosovic-lab/nanoscope
 ```
+## Dependencies
+
+[fragtk v1.0](https://github.com/stuart-lab/fragtk) is used to generate count matrices. Please install according to the instructions on the [github page](https://github.com/stuart-lab/fragtk) and add fragtk to your $PATH. 
 
 ### Prepare environment
 A conda environment will be used to set up an isolated architecture reducing troubleshooting.

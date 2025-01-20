@@ -41,6 +41,10 @@ rule demultiplex:
     params:
         nbarcodes=lambda wildcards: len(config['samples'][wildcards.sample]['barcodes']),
         out_folder=lambda wildcards: '{sample}/{modality}_{barcode}/fastq/'.format(sample=wildcards.sample,modality=wildcards.modality,barcode=wildcards.barcode),
+    threads: 1
+    resources:
+        mem_mb = 8000
+        runtime = 480 # 8 hours should be enough for most reasonable single-cell data, if the command timeouts, increase this value
     conda: '../envs/nanoscope_general.yaml'
     shell:
         "python3 {input.script} -i {input.fastq} -o {params.out_folder} --single_cell --barcode {wildcards.barcode} --name {wildcards.sample} 2>&1"
@@ -87,6 +91,8 @@ rule remove_LA_duplicates:
     params:
         script = workflow.basedir + '/scripts/remove_LA_duplicates.py',
     conda: '../envs/nanoscope_general.yaml'
+    resources:
+        mem_mb = 32000
     shell:
         'python3 {params.script} {input.bam} {output.bam}'
 
