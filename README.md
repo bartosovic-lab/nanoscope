@@ -59,7 +59,7 @@ mkdir ~/nanoCT_project
 cd ~/nanoCT_project
 git clone https://github.com/bartosovic-lab/nanoscope
 ```
-## Dependencies
+### Dependencies
 
 [fragtk v1.0](https://github.com/stuart-lab/fragtk) is used to generate count matrices. Please install according to the instructions on the [github page](https://github.com/stuart-lab/fragtk) and add fragtk to your $PATH. 
 

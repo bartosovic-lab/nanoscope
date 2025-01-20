@@ -132,11 +132,13 @@ class bcdCT:
         picked_barcodes = {key: barcodes[key] for key in top_barcodes}
         sys.stderr.write("\nDetected following most abundant barcodes out of first {} barcodes:\n{}\n".format(n, picked_barcodes))
         if args.barcode != "None":
-            self.picked_barcodes = [args.barcode]
-            sys.stderr.write("Barcode specified for demultiplexing [{barcode}] in top found barcodes: {bool} \n".format(bool = args.barcode in picked_barcodes.keys(), barcode = args.barcode))
-            return
-
-        self.picked_barcodes = picked_barcodes
+            self.picked_barcodes = args.barcode
+            sys.stderr.write("Barcode specified for demultiplexing [{barcode}] in top found barcodes: {bool} \n".format(bool = [x in picked_barcodes.keys() for x in args.barcode], barcode = args.barcode))
+        else:
+            self.picked_barcodes = [i for i in picked_barcodes.keys()]
+        print('final barcodes:')
+        print(self.picked_barcodes)
+        
 
 def get_read_barcode(string,index):
     read_barcode = revcompl(string.sequence[index - 8:index])  # Get the barcode sequence
@@ -282,8 +284,10 @@ if __name__ == '__main__':
 
     parser.add_argument('--barcode',
                         type=str,
+                        nargs="+",
                         default='None',
                         help='Specific barcode to be extracted [e.g. ATAGAGGC] (Default: All barcodes [see --Nbarcodes])')
 
     args = parser.parse_args()
+    print(args.barcode)
     main(args)
