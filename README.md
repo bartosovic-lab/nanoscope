@@ -61,7 +61,7 @@ git clone https://github.com/bartosovic-lab/nanoscope
 ```
 ## Dependencies
 
-fragtk v1.0 https://github.com/stuart-lab/fragtk) is used to generate count matrices. Please install according to the instructions on the [github page](https://github.com/stuart-lab/fragtk) and add fragtk to your $PATH. 
+[fragtk v1.0](https://github.com/stuart-lab/fragtk) is used to generate count matrices. Please install according to the instructions on the [github page](https://github.com/stuart-lab/fragtk) and add fragtk to your $PATH. 
 
 ### Prepare environment
 A conda environment will be used to set up an isolated architecture reducing troubleshooting.
