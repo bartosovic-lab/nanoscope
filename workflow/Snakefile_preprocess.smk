@@ -293,31 +293,25 @@ rule create_matrix_bins:
         bedtools makewindows -g {output.chromsizes} -w {wildcards.bins} > {output.windows}; 
         fragtk matrix -f {input.frag} -b {output.windows} -c {input.cells} -o {output.folder}; 
         """
+    
 
-
-rule download_annotation_and_get_genebody_and_promoter_gtf:
+rule create_genebody_and_promoter_matrix:
     input:
-        cellranger_gtf = config['general']['cellranger_ref'] + 'genes/genes.gtf.gz'
+        cellranger_gtf = config['general']['cellranger_ref'] + 'genes/genes.gtf.gz',
+        frag           = '{sample}/{modality}_{barcode}/cellranger/outs/fragments.tsv.gz',
+        cells          = '{sample}/all_cells.txt',
     output:
-        genebody_gtf = 'annotation/genebody_and_promoter.gtf',
-        genebody_bed = 'annotation/genebody_and_promoter.bed',
-        gene_names   = 'annotation/gene_names.txt'
+        genebody_gtf = '{sample}/{modality}_{barcode}/matrix/matrix_genes/genebody_and_promoter.gtf',
+        genebody_bed = '{sample}/{modality}_{barcode}/matrix/matrix_genes/genebody_and_promoter.bed',
+        gene_names   = '{sample}/{modality}_{barcode}/matrix/matrix_genes/gene_names.txt',
+        features     = '{sample}/{modality}_{barcode}/matrix/matrix_genes/features.tsv.gz',
+        matrix       = '{sample}/{modality}_{barcode}/matrix/matrix_genes/matrix.mtx.gz',
+        barcodes     = '{sample}/{modality}_{barcode}/matrix/matrix_genes/barcodes.tsv',
+        folder       = directory('{sample}/{modality}_{barcode}/matrix/matrix_genes/'),
+    conda: '../envs/nanoscope_general.yaml'
     params:
         script = workflow.basedir + '/scripts/filter_cellranger_gtf_file.py',
     shell:
         'python3 {params.script} -i {input.cellranger_gtf} -o {output.genebody_gtf} -n {output.gene_names};'
-        'cut -f 1,4,5 {output.genebody_gtf} > {output.genebody_bed}'
-
-rule create_genebody_and_promoter_matrix:
-    input:
-        bed   = 'annotation/genebody_and_promoter.bed',
-        frag  = '{sample}/{modality}_{barcode}/cellranger/outs/fragments.tsv.gz',
-        cells = '{sample}/all_cells.txt',
-    output:
-        features   = '{sample}/{modality}_{barcode}/matrix/matrix_genes/features.tsv.gz',
-        matrix     = '{sample}/{modality}_{barcode}/matrix/matrix_genes/matrix.mtx.gz',
-        barcodes   = '{sample}/{modality}_{barcode}/matrix/matrix_genes/barcodes.tsv',
-        folder     = directory('{sample}/{modality}_{barcode}/matrix/matrix_genes/'),
-    conda: '../envs/nanoscope_general.yaml'
-    shell:
-        'fragtk matrix -f {input.frag} -b {input.bed} -c {input.cells} -o {output.folder}; '
+        'cut -f 1,4,5 {output.genebody_gtf} > {output.genebody_bed};'
+        'fragtk matrix -f {input.frag} -b {output.genebody_bed} -c {input.cells} -o {output.folder}; '
