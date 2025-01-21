@@ -26,8 +26,17 @@ rule all_preprocess:
         cellranger_cleanup = [
             '{sample}/{modality}_{barcode}/_clean_cellranger.out'.format(sample=sample,modality=modality,barcode=
             barcodes_dict[sample][modality]) for sample in samples_list for modality in barcodes_dict[sample].keys()],
-        matrix = [generate_matrix_out(sample = sample, modality = modality, barcode = barcodes_dict[sample][modality]) 
-            for sample in samples_list for modality in barcodes_dict[sample].keys()],
+        matrix_peaks = [
+            '{sample}/{modality}_{barcode}/matrix/matrix_peaks/'.format(sample=sample,modality=modality,barcode=
+            barcodes_dict[sample][modality]) for sample in samples_list for modality in barcodes_dict[sample].keys()],
+        matrix_bins = [
+            '{sample}/{modality}_{barcode}/matrix/matrix_bin_{binsize}/'.format(sample=sample,modality=modality,barcode=
+            barcodes_dict[sample][modality],binsize = binsize) for sample in samples_list for modality in barcodes_dict[sample].keys() for binsize in bins], 
+        matrix_genes = [
+            '{sample}/{modality}_{barcode}/matrix/matrix_genes/'.format(sample=sample,modality=modality,barcode=
+            barcodes_dict[sample][modality]) for sample in samples_list for modality in barcodes_dict[sample].keys()],
+        
+        
 
 
 rule demultiplex:
@@ -43,7 +52,7 @@ rule demultiplex:
         out_folder=lambda wildcards: '{sample}/{modality}_{barcode}/fastq/'.format(sample=wildcards.sample,modality=wildcards.modality,barcode=wildcards.barcode),
     threads: 1
     resources:
-        mem_mb = 8000
+        mem_mb = 8000,
         runtime = 480 # 8 hours should be enough for most reasonable single-cell data, if the command timeouts, increase this value
     conda: '../envs/nanoscope_general.yaml'
     shell:
@@ -245,7 +254,7 @@ rule get_cells:
                                                                                             barcode = barcodes_dict[wildcards.sample][modality]) 
             for modality in barcodes_dict[wildcards.sample].keys()]
     output:
-        cells = temp('{sample}/all_cells.txt')
+        cells = '{sample}/all_cells.txt'
     params:
         script = workflow.basedir + '/scripts/get_passed_cells_barcodes.awk'
     shell:
@@ -286,3 +295,29 @@ rule create_matrix_bins:
         """
 
 
+rule download_annotation_and_get_genebody_and_promoter_gtf:
+    input:
+        cellranger_gtf = config['general']['cellranger_ref'] + 'genes/genes.gtf.gz'
+    output:
+        genebody_gtf = 'annotation/genebody_and_promoter.gtf',
+        genebody_bed = 'annotation/genebody_and_promoter.bed',
+        gene_names   = 'annotation/gene_names.txt'
+    params:
+        script = workflow.basedir + '/scripts/filter_cellranger_gtf_file.py',
+    shell:
+        'python3 {params.script} -i {input.cellranger_gtf} -o {output.genebody_gtf} -n {output.gene_names};'
+        'cut -f 1,4,5 {output.genebody_gtf} > {output.genebody_bed}'
+
+rule create_genebody_and_promoter_matrix:
+    input:
+        bed   = 'annotation/genebody_and_promoter.bed',
+        frag  = '{sample}/{modality}_{barcode}/cellranger/outs/fragments.tsv.gz',
+        cells = '{sample}/all_cells.txt',
+    output:
+        features   = '{sample}/{modality}_{barcode}/matrix/matrix_genes/features.tsv.gz',
+        matrix     = '{sample}/{modality}_{barcode}/matrix/matrix_genes/matrix.mtx.gz',
+        barcodes   = '{sample}/{modality}_{barcode}/matrix/matrix_genes/barcodes.tsv',
+        folder     = directory('{sample}/{modality}_{barcode}/matrix/matrix_genes/'),
+    conda: '../envs/nanoscope_general.yaml'
+    shell:
+        'fragtk matrix -f {input.frag} -b {input.bed} -c {input.cells} -o {output.folder}; '

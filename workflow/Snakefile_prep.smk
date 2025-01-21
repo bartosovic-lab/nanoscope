@@ -89,4 +89,6 @@ def generate_matrix_out(sample, modality, barcode, bins = bins):
     
     matrix_peaks = ['{sample}/{modality}_{barcode}/matrix/matrix_peaks/'.format(sample=sample, modality=modality,barcode=barcode)]
     matrix_bins  = ['{sample}/{modality}_{barcode}/matrix/matrix_bin_{bins}/'.format(sample=sample, modality=modality,barcode=barcode, bins = b) for b in bins]
-    return matrix_peaks + matrix_bins
+    matrix_genes = ['{sample}/{modality}_{barcode}/matrix/matrix_genes/'.format(sample=sample, modality=modality,barcode=barcode)]
+    print(matrix_genes)
+    return matrix_peaks + matrix_bins + matrix_genes
