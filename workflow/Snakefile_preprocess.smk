@@ -5,6 +5,9 @@ rule all_preprocess:
         cellranger=[
             '{sample}/{modality}_{barcode}/cellranger/outs/possorted_bam.bam'.format(sample=sample,modality=modality,barcode=
             barcodes_dict[sample][modality]) for sample in samples_list for modality in barcodes_dict[sample].keys()],
+        saturation_curves=[
+            '{sample}/{modality}_{barcode}/saturation/saturation_curves.pdf'.format(sample=sample,modality=modality,barcode=
+            barcodes_dict[sample][modality]) for sample in samples_list for modality in barcodes_dict[sample].keys()],
         bigwig_all=[
             '{sample}/{modality}_{barcode}/bigwig/all_reads.bw'.format(sample=sample,modality=modality,barcode=
             barcodes_dict[sample][modality]) for sample in samples_list for modality in barcodes_dict[sample].keys()],
@@ -231,6 +234,32 @@ rule cell_selection:
     conda: '../envs/nanoscope_general.yaml'
     shell:
         "Rscript {params.script} --metadata {input.metadata} --fragments {input.fragments} --bcd_all {input.bcd_all} --bcd_peak {input.bcd_peak} --modality {wildcards.modality} --sample {wildcards.sample} --out_prefix {params.out_prefix}"
+
+rule generate_saturation_curves:
+    input:
+        bam='{sample}/{modality}_{barcode}/cellranger/outs/possorted_bam.bam'
+    output:
+        pdf='{sample}/{modality}_{barcode}/saturation/saturation_curves.pdf',
+        csv='{sample}/{modality}_{barcode}/saturation/saturation_metrics.csv'
+    params:
+        script='/Users/yiquanlu/saturation_curves.py',
+        output_dir=lambda wildcards: os.getcwd(),
+        modalities=lambda wildcards: [wildcards.modality],
+        temp_dir=lambda wildcards: '{sample}/{modality}_{barcode}/saturation/temp'.format(
+            sample=wildcards.sample, modality=wildcards.modality, barcode=wildcards.barcode)
+    conda: '../envs/nanoscope_general.yaml'
+    resources:
+        mem_mb = 16000,
+        threads = 4
+    shell:
+        """
+        mkdir -p {wildcards.sample}/{wildcards.modality}_{wildcards.barcode}/saturation;
+        python3 {params.script} --output_dir {params.output_dir} \
+            --samples {wildcards.sample} \
+            --modalities {wildcards.modality} \
+            --output_file {output.pdf} \
+            --temp_dir {params.temp_dir}
+        """
 
 rule clean_cellranger_output:
     input:

@@ -129,6 +129,7 @@ dependencies:
   - openjpeg=2.4.0=hb52868f_1
   - openssl=1.1.1w=hd590300_0
   - packaging=21.3=pyhd8ed1ab_0
+  - pandas=2.2.3=py39h3b40f6f_2
   - pango=1.50.14=hd33c08f_0
   - pcre2=10.40=hc3806b6_0
   - pillow=9.2.0=py39hae2aec6_1
