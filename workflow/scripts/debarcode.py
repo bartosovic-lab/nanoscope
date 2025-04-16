@@ -61,9 +61,24 @@ class BcdCT:
         return os.path.basename(prefixes.pop())
 
     def _validate_provided_barcodes(self):
-        self.provided_barcodes = [
-            b for b in self.provided_barcodes if all(c in "ATCGN" for c in b)
-        ]
+        allowed_special = {"MeA"}
+        valid = []
+        for b in self.provided_barcodes:
+            if all(c in "ATCGN" for c in b) or b in allowed_special:
+                valid.append(b)
+            else:
+                sys.stderr.write(f"*** Warning: Invalid barcode '{b}' ignored. Must be A/T/C/G/N or allowed keyword like 'MeA'. ***\n")
+        self.provided_barcodes = valid
+
+    def _filter_valid_barcodes(self):
+        allowed_special = {"MeA", "no_hit"}
+        self.valid_barcodes = {
+            b for b in self.picked_barcodes
+            if all(c in "ATCGN" for c in b) or b in allowed_special
+        }
+
+        if not self.valid_barcodes:
+            sys.exit("*** Error: No valid barcodes found. ***")
 
     def _autodetect_barcodes(self):
         log("Detecting barcodes...")
@@ -74,7 +89,7 @@ class BcdCT:
                 barcode = revcompl(r2.sequence[hit - 8:hit])
                 counts[barcode] += 1
             elif find_seq(self.args.no_barcode_seq, r2.sequence, 0):
-                counts['short_MeA'] += 1
+                counts['MeA'] += 1
             else:
                 counts['no_hit'] += 1
             if i >= 50000:
@@ -83,15 +98,12 @@ class BcdCT:
         self.picked_barcodes = (
             list(self.provided_barcodes) if self.provided_barcodes else list(self.top_barcodes.keys())
         )
-        if self.args.report_no_hit:
+        if self.args.report_no_hit and 'no_hit' not in self.picked_barcodes:
             self.picked_barcodes.append('no_hit')
-        if self.args.report_MeA:
-            self.picked_barcodes.append('short_MeA')
+        if self.args.report_MeA and 'MeA' not in self.picked_barcodes:
+            self.picked_barcodes.append('MeA')
 
-    def _filter_valid_barcodes(self):
-        self.valid_barcodes = {b for b in self.picked_barcodes if all(c in "ATCGN" for c in b)}
-        if not self.valid_barcodes:
-            sys.exit("*** Error: No valid barcodes found. ***")
+    
 
     def _prepare_output_paths(self):
         log("Preparing output paths...")
@@ -141,7 +153,7 @@ def main(args):
         exp.create_output_handles(stack)
         for i, (r1, r2, r3) in enumerate(exp._read_triplets()):
             if i % 5_000_000 == 0:
-                log(f"{i} reads processed")
+                log(f"{i:,} reads processed")
 
             if r1.name != r2.name or r2.name != r3.name:
                 continue
@@ -151,12 +163,13 @@ def main(args):
 
             if hit is None:
                 if find_seq(args.no_barcode_seq, r2.sequence, 0):
-                    stats["short_MeA"] += 1
-                    matched_barcode = 'short_MeA'
+                    stats["MeA"] += 1
+                    matched_barcode = 'MeA'
                     hit = 0
                 else:
                     stats["no_hit"] += 1
                     matched_barcode = 'no_hit'
+                    continue
 
             if hit:
                 barcode = revcompl(r2.sequence[hit - 8:hit])
@@ -166,17 +179,28 @@ def main(args):
                     continue
                 if len(close) > 1:
                     stats["ambiguous_barcode_matches"] += 1
-                    continue
                 matched_barcode = min(close, key=close.get)
 
             if matched_barcode in exp.picked_barcodes:
                 if exp.single_cell:
-                    if hit is not None and len(r2.sequence) >= 16:
-                        r2 = extract_cell_barcode(r2, hit)
-                        exp.out_stack[matched_barcode]['R2'].write(f"{r2}\n")
+                    if matched_barcode == "MeA":
+                        if len(r2.sequence) >= 16:
+                            r2 = extract_cell_barcode(r2, 0)
+                        else:
+                            stats["too_short_read"] += 1
+                            continue
+                    elif hit is not None:
+                        start = hit + len(exp.args.pattern)
+                        if len(r2.sequence) >= start + 16:
+                            r2 = extract_cell_barcode(r2, start)
+                        else:
+                            stats["too_short_read"] += 1
+                            continue
                     else:
                         stats["too_short_read"] += 1
                         continue
+                    r2.sequence = revcompl(r2.sequence)
+                    exp.out_stack[matched_barcode]['R2'].write(f"{r2}\n")
                 exp.out_stack[matched_barcode]['R1'].write(f"{r1}\n")
                 exp.out_stack[matched_barcode]['R3'].write(f"{r3}\n")
 
@@ -186,7 +210,7 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Demultiplex Nano-CT sequencing data using modality barcodes in R2 read.",
-                                     formatter_class=argparse.RawTextHelpFormatter)
+                                    formatter_class=argparse.RawTextHelpFormatter)
 
     parser.add_argument('-i', '--input', type=str, nargs='+', required=True, help='Input R1, R2, R3 .fastq.gz files or input folder')
     parser.add_argument('-o', '--out_prefix', type=str, required=True, help='Output folder prefix')
