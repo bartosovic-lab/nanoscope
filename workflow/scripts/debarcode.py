@@ -151,7 +151,7 @@ def main(args):
 
     with ExitStack() as stack:
         exp.create_output_handles(stack)
-        for i, (r1, r2, r3) in enumerate(exp._read_triplets()):
+        for i, (r1, r2, r3) in enumerate(exp._read_triplets(),start=1):
             if i % 5_000_000 == 0:
                 log(f"{i:,} reads processed")
 
