@@ -1,239 +1,202 @@
 import os
-import argparse
-from glob import glob
 import sys
+import argparse
+import gzip
+from glob import glob
+from contextlib import ExitStack
+from collections import defaultdict
 from re import split
 import regex
-import gzip
-from contextlib import ExitStack
-
 import yaml
 from pysam import FastxFile
 import Levenshtein
 
-class bcdCT:
-    def __init__(self,args):
+class BcdCT:
+    def __init__(self, args):
+        self.args = args
         self.detect_input(args.input)
         self.detect_reads()
-        self.single_cell=args.single_cell
-        self.out_prefix=args.out_prefix
-        if self.single_cell:
-            self.out_reads = ['R1','R2','R3']
+
+        self.single_cell = args.single_cell
+        self.out_reads = ['R1', 'R2', 'R3'] if self.single_cell else ['R1', 'R3']
+        self.name = args.name or self.autodetect_name()
+
+        self.autodetect_barcodes()
+        self.prepare_output_filenames()
+
+    def detect_input(self, input_paths):
+        input_paths = [os.path.abspath(path) for path in input_paths]
+        error_message = (
+            "*** Error: Wrong input files specified. The input must be a folder or paths to fastq.gz files. ***\n"
+            "Expecting _R1_, _R2_, _R3_ in filenames.\n"
+        )
+
+        if len(input_paths) == 1 and os.path.isdir(input_paths[0]):
+            self.input_dir = input_paths[0]
+            self.input_files = glob(os.path.join(self.input_dir, '*.fastq.gz')) + \
+                               glob(os.path.join(self.input_dir, '*.fq.gz'))
+        elif len(input_paths) > 1:
+            self.input_files = input_paths
+            self.input_dir = os.path.dirname(input_paths[0])
+            if not all(f.endswith(('.fastq.gz', '.fq.gz')) for f in self.input_files):
+                sys.exit(error_message)
         else:
-            self.out_reads = ['R1','R3']
-
-        if args.name:
-            self.name = args.name
-        else:
-            self.autodetect_name()
-
-
-        self.autodetect_barcodes(args)
-        self.prep_out_filenames()
-
-    def detect_input(self,input):
-        Error_message="*** Error: Wrong input files specified. The input must be either folder with _R1_*.fastq.gz _R2_*.fastq.gz _R3_*.fastq.gz files or paths to the files themselves ***\n" +\
-        "The files should be placed in the same folder\n" +\
-        "e.g. /data/path_to_my_files/*L001*.fastq.gz or /data/path_to_my_files/\n"
-
-        input = [os.path.abspath(x) for x in input]
-        if len(input) == 1 and os.path.isdir(input[0]):     # Case input is single directory
-            self.input_dir = input[0]
-            self.input_files = []
-            self.input_files.extend(glob(self.input_dir + "/*.fastq.gz"))
-            self.input_files.extend(glob(self.input_dir + "/*.fq.gz"))
-
-        elif len(input) > 1:                                  # Case input are multiple files
-            self.input_files = input
-            self.input_dir = list(set([os.path.dirname(x) for x in self.input_files]))
-            if not len(self.input_dir) == 1:
-                sys.stderr.write(Error_message)
-                sys.exit(1)
-            if not sum([x.endswith('.fastq.gz') or x.endswith('.fq.gz') for x in self.input_files]) == len(self.input_files):
-                sys.exit(1)
-                sys.stderr.write(Error_message)
-        else:
-            sys.exit(1)
-            sys.stderr.write(Error_message)
+            sys.exit(error_message)
 
     def detect_reads(self):
-        Error_message="*** Error: Please specify exactly one _R1_ _R2_ and _R3_ file or folder with exactly one of each files ***\n" + \
-                      "e.g. /data/path_to_my_files/*L001*.fastq.gz or /data/path_to_my_files/\n"
-        self.path_in = {}
-        self.path_in['R1'] = [x for x in self.input_files if "_R1_" in x]
-        self.path_in['R2'] = [x for x in self.input_files if "_R2_" in x]
-        self.path_in['R3'] = [x for x in self.input_files if "_R3_" in x]
+        """Identify and verify R1, R2, and R3 FASTQ files from input files."""
+        self.path_in = {
+            read: [f for f in self.input_files if f"_{read}_" in f]
+            for read in ['R1', 'R2', 'R3']
+        }
 
-        if len(self.path_in['R1']) != 1 or len(self.path_in['R2']) != 1 or len(self.path_in['R3']) != 1:
-            sys.stderr.write(Error_message)
-            sys.exit(1)
+        missing = [read for read in self.path_in if len(self.path_in[read]) != 1]
+        if missing:
+            sys.exit(f"*** Error: Must have exactly one file for each of R1, R2, and R3. Missing or ambiguous: {missing} ***\n")
 
-        self.path_in = {key:self.path_in[key][0] for key in self.path_in.keys()}
+        # Flatten each list to a single path
+        self.path_in = {read: files[0] for read, files in self.path_in.items()}
 
+    def prepare_output_filenames(self):
+        self.path_out = {
+            barcode: {
+                read: os.path.join(self.args.out_prefix, f"barcode_{barcode}", os.path.basename(self.path_in[read]))
+                for read in self.out_reads
+            } for barcode in self.picked_barcodes
+        }
 
-
-    def in_handles(self,stack):
-        in_stack = {x: stack.enter_context(FastxFile(self.path_in[x],'r')) for x in ['R1','R2','R3']}
-        return in_stack
-
-    def prep_out_filenames(self):
-        self.path_out = {barcode: {} for barcode in self.picked_barcodes}
-        self.path_out  = {barcode: {read: "{0}/barcode_{1}/{2}".format(self.out_prefix,barcode,os.path.basename(self.path_in[read])) for read in self.out_reads} for barcode in self.picked_barcodes}
-        # If args.name is specified, replace the sample_id prefix with the one specified in args.name
-        # e.g. nanoCT_MB22_001_S1_L001_R1_001.fastq.gz is input --name is test
-        # Change to test_S1_L001_R1_001.fastq.gz
-        if args.name:
-            for barcode in self.path_out:
-                for read in self.path_out[barcode]:
-                    sample_id = split('_S[0-9]+_', os.path.basename(self.path_out[barcode][read]))[0].strip("_")
-                    self.path_out[barcode][read] = self.path_out[barcode][read].replace(sample_id,args.name)
+        if self.args.name:
+            for barcode, reads in self.path_out.items():
+                for read_type, path in reads.items():
+                    sample_id = split('_S[0-9]+_', os.path.basename(path))[0].strip("_")
+                    self.path_out[barcode][read_type] = path.replace(sample_id, self.args.name)
 
     def autodetect_name(self):
-        Error_message = "*** Error: Prefix for R1 R2 R3 files not the same. Please use the same prefix for all the files or specify experiment name ***\n"
+        prefixes = [split("_R[0-9]_", f)[0] for f in self.path_in.values()]
+        unique_prefixes = set(prefixes)
+        if len(unique_prefixes) > 1:
+            sys.exit("*** Error: Input files do not share the same prefix. Use --name to specify one. ***\n")
+        return os.path.basename(prefixes[0])
 
-        self.name = [split("_R[0-9]_", str(x)) for x in self.path_in.values()]
-        self.name = [x[0] for x in self.name]
+    def in_handles(self, stack):
+        return {read: stack.enter_context(FastxFile(self.path_in[read], 'r')) for read in ['R1', 'R2', 'R3']}
 
-        if len(list(set(self.name))) > 1:
-            sys.stderr.write(Error_message)
-            sys.exit(1)
+    def create_output_handles(self, stack):
+        for barcode in self.picked_barcodes:
+            os.makedirs(os.path.join(self.args.out_prefix, f"barcode_{barcode}"), exist_ok=True)
+        self.out_stack = {
+            barcode: {
+                read: stack.enter_context(gzip.open(self.path_out[barcode][read], 'wt'))
+                for read in self.out_reads
+            } for barcode in self.picked_barcodes
+        }
 
-        self.name = self.name[0].split("/")[-1]
+    def autodetect_barcodes(self):
+        barcode_counts = defaultdict(int)
+        barcode_counts['no_barcode'] = 0
+        barcode_counts['no_hit'] = 0
 
-    def create_out_handles(self,stack):
-        for bcd in self.picked_barcodes:
-            os.makedirs(self.out_prefix + "/barcode_" + bcd, exist_ok=True)
-        self.out_stack = {barcode: {read: stack.enter_context(gzip.open(self.path_out[barcode][read],'wt'))for read in self.out_reads} for barcode in self.picked_barcodes}
+        for n, (r1, r2, r3) in enumerate(self):
+            hit = find_seq(self.args.pattern, r2.sequence, nmismatch=0)
+            if not hit:
+                if find_seq(self.args.no_barcode_seq, r2.sequence, nmismatch=0):
+                    barcode_counts['no_barcode'] += 1
+                else:
+                    barcode_counts['no_hit'] += 1
+            else:
+                barcode = get_read_barcode(r2, hit)
+                barcode_counts[barcode] += 1
+            if n >= 50000:
+                break
 
+        sorted_barcodes = sorted(barcode_counts.items(), key=lambda x: x[1], reverse=True)
+        top_barcodes = dict(sorted_barcodes[:self.args.Nbarcodes])
+
+        print(f"Top barcodes (n={n}): {top_barcodes}")
+        if self.args.barcode != "None":
+            self.picked_barcodes = self.args.barcode
+        else:
+            self.picked_barcodes = list(top_barcodes.keys())
+        # Always include 'no_barcode' and 'no_hit' in the outputs
+        if 'no_hit' not in self.picked_barcodes:
+            self.picked_barcodes.append('no_hit')
+        if 'no_barcode' not in self.picked_barcodes:
+            self.picked_barcodes.append('no_barcode')
+        print(f"Picked barcodes: {self.picked_barcodes}")
 
     def __iter__(self):
         with FastxFile(self.path_in['R1']) as f1, FastxFile(self.path_in['R2']) as f2, FastxFile(self.path_in['R3']) as f3:
-            for r1,r2,r3 in zip(f1,f2,f3):
-                yield r1, r2, r3
+            yield from zip(f1, f2, f3)
 
-    def autodetect_barcodes(self,args):
-        barcodes = {}
-        n=0
-        for read1,read2,read3 in self:
-            hit = find_seq(args.pattern, read2.sequence, nmismatch=0)
-            if not hit or hit == 'Multiple':
-                continue
-            hit = int(hit)
-            read_barcode = get_read_barcode(read2, hit)
-            try:
-                barcodes[read_barcode] += 1
-            except KeyError:
-                barcodes[read_barcode] = 1
-            n += 1
-            if n == 50000:
-                break
+# === Helper functions ===
 
-        top_barcodes = sorted(barcodes, key=barcodes.get, reverse=True)[:args.Nbarcodes]
-        picked_barcodes = {key: barcodes[key] for key in top_barcodes}
-        sys.stderr.write("\nDetected following most abundant barcodes out of first {} barcodes:\n{}\n".format(n, picked_barcodes))
-        if args.barcode != "None":
-            self.picked_barcodes = args.barcode
-            sys.stderr.write("Barcode specified for demultiplexing [{barcode}] in top found barcodes: {bool} \n".format(bool = [x in picked_barcodes.keys() for x in args.barcode], barcode = args.barcode))
-        else:
-            self.picked_barcodes = [i for i in picked_barcodes.keys()]
-        print('final barcodes:')
-        print(self.picked_barcodes)
-        
+def get_read_barcode(read, index):
+    return revcompl(read.sequence[index - 8:index])
 
-def get_read_barcode(string,index):
-    read_barcode = revcompl(string.sequence[index - 8:index])  # Get the barcode sequence
-    return read_barcode
-
-def extract_cell_barcode(read,index):
-    cell_bcd_start = index + len(args.pattern)
-    read.sequence = read.sequence[cell_bcd_start:cell_bcd_start + 16]  # Get the cell barcode
-    read.quality  = read.quality[cell_bcd_start:cell_bcd_start + 16]   # Get corresponding Quality score
+def extract_cell_barcode(read, index, pattern):
+    start = index + len(pattern)
+    read.sequence = read.sequence[start:start + 16]
+    read.quality = read.quality[start:start + 16]
     return read
 
 def revcompl(seq):
-    revcomp_table = {
-        "A": "T",
-        "G": "C",
-        "C": "G",
-        "T": "A",
-        "N": "N"
-    }
-    complement = "".join([revcomp_table[letter] for letter in seq.upper()])  # Complement
-    return complement[::-1]  # Reverse
+    rev_table = str.maketrans("ACGTN", "TGCAN")
+    return seq.upper().translate(rev_table)[::-1]
 
-def rev(seq):
-    return seq[::-1]
-
-def find_seq(pattern, DNA_string, nmismatch=2):
-    for n in range(0,nmismatch + 1):
-        r = regex.compile('({0}){{e<={1}}}'.format(pattern, n))
-        res = r.finditer(DNA_string)
-        hit = [x.start() for x in res]
-        if len(hit) == 0:
-            continue
-        if len(hit) > 1:
+def find_seq(pattern, sequence, nmismatch=2):
+    for n in range(nmismatch + 1):
+        matches = list(regex.finditer(f'({pattern}){{e<={n}}}', sequence))
+        if len(matches) == 1:
+            return matches[0].start()
+        elif len(matches) > 1:
             return None
-        if len(hit) == 1:
-            return int(hit[0])
     return None
 
+# === Main ===
+
 def main(args):
-    exp = bcdCT(args)
+    exp = BcdCT(args)
+    stats = defaultdict(int)
 
-    statistics = {
-        "barcode_found": 0,
-        "multiple_barcode_matches": 0,
-        "no_barcode_match": 0,
-        "no_spacer_found": 0,
-        "too_short_read": 0
-    }
-
-    sys.stderr.write("Creating file output handles \n")
     with ExitStack() as stack:
-        exp.create_out_handles(stack)
-        n = 0
-        sys.stderr.write("Starting demultiplexing \n")
-        for read1,read2,read3 in exp:
-            n+=1
-            if n % 5000000 == 0:
-                sys.stderr.write("{} reads processed\n".format(n))
-            assert (read1.name == read2.name == read3.name)                                                 # Make sure the fastq files are ok
+        exp.create_output_handles(stack)
+        for n, (r1, r2, r3) in enumerate(exp):
+            if n % 5_000_000 == 0:
+                print(f"{n} reads processed", file=sys.stderr)
+            if r1.name != r2.name or r2.name != r3.name:
+                continue
 
-            spacer_hit = find_seq(pattern=args.pattern,DNA_string=read2.sequence,nmismatch=2)
-            if not spacer_hit:
-                statistics["no_spacer_found"] +=1
+            hit = find_seq(args.pattern, r2.sequence, nmismatch=2)
+            if not hit and find_seq(args.no_barcode_seq, r2.sequence, nmismatch=0):
+                hit = 0
+                stats["no_barcode"] += 1
 
-            if spacer_hit:
-                read_barcode = get_read_barcode(read2, spacer_hit)                                               # Returns only barcode e.g. ACTGACTG
-                read_barcode_distance = {barcode: Levenshtein.distance(read_barcode,barcode) for barcode in exp.picked_barcodes}
-                if sum([x <= int(args.mismatch) for x in read_barcode_distance.values()]) == 0:
-                    statistics["no_barcode_match"] += 1
+            if hit is not None:
+                barcode = get_read_barcode(r2, hit)
+                distances = {b: Levenshtein.distance(barcode, b) for b in exp.picked_barcodes}
+                close_matches = [b for b, d in distances.items() if d <= args.mismatch]
+
+                if not close_matches:
+                    stats["no_barcode_match"] += 1
                     continue
-                if sum([x <= args.mismatch for x in read_barcode_distance.values()]) > 1:
-                    statistics["multiple_barcode_matches"] += 1
+                if len(close_matches) > 1:
+                    stats["multiple_barcode_matches"] += 1
                     continue
 
-                hit_barcode = min(read_barcode_distance,key=read_barcode_distance.get)
+                matched_barcode = close_matches[0]
 
                 if exp.single_cell:
-                    read2 = extract_cell_barcode(read2, spacer_hit)  # Returns the whole read, only the cell barcode part
-                    if len(read2.sequence) < 16:
-                        statistics["too_short_read"] += 1
+                    r2 = extract_cell_barcode(r2, hit, args.pattern)
+                    if len(r2.sequence) < 16:
+                        stats["too_short_read"] += 1
                         continue
-                    exp.out_stack[hit_barcode]['R2'].write('{}\n'.format(str(read2)))
+                    exp.out_stack[matched_barcode]['R2'].write(f"{r2}\n")
 
-                # Write the outputs
-                exp.out_stack[hit_barcode]['R1'].write('{}\n'.format(str(read1)))
-                exp.out_stack[hit_barcode]['R3'].write('{}\n'.format(str(read3)))
+                exp.out_stack[matched_barcode]['R1'].write(f"{r1}\n")
+                exp.out_stack[matched_barcode]['R3'].write(f"{r3}\n")
 
-
-                statistics["barcode_found"] += 1
-
-
-    # Write the statistics file
-    with open("{0}/{1}_statistics.yaml".format(exp.out_prefix,exp.name), 'w') as f:
-        yaml.dump(statistics, f)
-
+    with open(os.path.join(args.out_prefix, f"{exp.name}_statistics.yaml"), 'w') as f:
+        yaml.dump(dict(stats), f)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="DESCRIPTION: \n\nThis script demultiplexes Nano-CT sequencing data by extracting and matching modality barcodes from the R2 read based on a specified spacer sequence.\nThe script supports both bulk and single-cell data and writes sorted reads into separate output files for each detected barcode\n""" + 
@@ -291,7 +254,10 @@ if __name__ == '__main__':
                         nargs="+",
                         default='None',
                         help='Specific barcode to be extracted [e.g. ATAGAGGC] (Default: All barcodes [see --Nbarcodes])')
-
+    parser.add_argument('--no_barcode_seq',default = 'GTGTAGATCTCGGTGGTCGCCGTATCATTAAA',
+                        type=str,
+                        help='Sequence to be used for demultiplexing of unbarcoded reads (Default: %(default)s)')
+    
     args = parser.parse_args()
     print(args.barcode)
     main(args)
