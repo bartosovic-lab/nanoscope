@@ -37,6 +37,10 @@ class BcdCT:
         print(f"Provided barcodes: {self.provided_barcodes}")
         print(f"Top barcodes (n={args.Nbarcodes}): {self.top_barcodes}")
         print(f"Picked barcodes: {self.picked_barcodes}")
+        if self.provided_barcodes:
+            self._provided_in_top = [bcd in self.top_barcodes for bcd in self.provided_barcodes]
+            print(f'"Provided barcodes {self.provided_barcodes} are in top {args.Nbarcodes} autodetected barcodes: {self._provided_in_top}')
+
 
     def _detect_input(self, paths):
         paths = [os.path.abspath(p) for p in paths]
@@ -55,7 +59,7 @@ class BcdCT:
         self.path_in = {r: f[0] for r, f in self.path_in.items()}
 
     def _infer_name(self):
-        prefixes = {split("_R[0-9]_", f)[0] for f in self.input_files}
+        prefixes = {split("_S[0-9]+_", f)[0] for f in self.input_files}
         if len(prefixes) > 1:
             sys.exit("*** Error: Input files do not share a common prefix. Use --name. ***")
         return os.path.basename(prefixes.pop())
@@ -102,7 +106,8 @@ class BcdCT:
             self.picked_barcodes.append('no_hit')
         if self.args.report_MeA and 'MeA' not in self.picked_barcodes:
             self.picked_barcodes.append('MeA')
-
+        # Check if provided barcodes are in the autodetected barcodes
+        
     
 
     def _prepare_output_paths(self):
@@ -158,18 +163,18 @@ def main(args):
             if r1.name != r2.name or r2.name != r3.name:
                 continue
 
-            hit = find_seq(args.pattern, r2.sequence, 2)
+            hit = find_seq(args.pattern, r2.sequence, args.mismatch)
             matched_barcode = None
 
             if hit is None:
-                if find_seq(args.no_barcode_seq, r2.sequence, 0):
+                if find_seq(args.no_barcode_seq, r2.sequence, args.mismatch):
                     stats["MeA"] += 1
                     matched_barcode = 'MeA'
                     hit = 0
                 else:
                     stats["no_hit"] += 1
                     matched_barcode = 'no_hit'
-                    continue
+                    
 
             if hit:
                 barcode = revcompl(r2.sequence[hit - 8:hit])
@@ -189,10 +194,17 @@ def main(args):
                         else:
                             stats["too_short_read"] += 1
                             continue
+                    elif matched_barcode == "no_hit":
+                        if len(r2.sequence) >= 16:
+                            r2 = extract_cell_barcode(r2, 0)
+                        else:
+                            stats["too_short_read"] += 1
+                            continue
                     elif hit is not None:
                         start = hit + len(exp.args.pattern)
                         if len(r2.sequence) >= start + 16:
                             r2 = extract_cell_barcode(r2, start)
+                            stats[r2.name] += 1
                         else:
                             stats["too_short_read"] += 1
                             continue
@@ -218,9 +230,9 @@ if __name__ == '__main__':
     parser.add_argument('--single_cell', action='store_true', help='Enable single-cell mode')
     parser.add_argument('--name', type=str, help='Custom experiment name (default: inferred)')
     parser.add_argument('--mismatch', type=int, default=2, help='Max barcode mismatches')
-    parser.add_argument('--Nbarcodes', type=int, default=6, help='Number of top barcodes to select')
+    parser.add_argument('--Nbarcodes', type=int, default=10, help='Number of top barcodes to select')
     parser.add_argument('--barcode', nargs='+', default='None', help='Specific barcodes to extract')
-    parser.add_argument('--no_barcode_seq', type=str, default='GTGTAGATCTCGGTGGTCGCCGTATCATTAAA', help='Sequence indicating unbarcoded reads')
+    parser.add_argument('--no_barcode_seq', type=str, default='GTGTAGATCTCGGTGGTCGCCGTATCATT', help='Sequence indicating unbarcoded reads')
     parser.add_argument('--report_MeA', action='store_true', help='Include short MeA reads in output')
     parser.add_argument('--report_no_hit', action='store_true', help='Include reads with no barcode hit')
 
