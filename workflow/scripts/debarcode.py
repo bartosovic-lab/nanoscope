@@ -6,10 +6,15 @@ from re import split
 import regex
 import gzip
 from contextlib import ExitStack
+from collections import defaultdict
+import time
 
 import yaml
 from pysam import FastxFile
 import Levenshtein
+
+def log(message):
+    sys.stderr.write(time.strftime("%Y-%m-%d %H:%M:%S") + " " + message + "\n")
 
 class bcdCT:
     def __init__(self,args):
@@ -32,9 +37,9 @@ class bcdCT:
         self.prep_out_filenames()
 
     def detect_input(self,input):
-        Error_message="*** Error: Wrong input files specified. The input must be either folder with _R1_*.fastq.gz _R2_*.fastq.gz _R3_*.fastq.gz files or paths to the files themselves ***\n" +\
-        "The files should be placed in the same folder\n" +\
-        "e.g. /data/path_to_my_files/*L001*.fastq.gz or /data/path_to_my_files/\n"
+        Error_message="*** Error: Wrong input files specified. The input must be either folder with _R1_*.fastq.gz _R2_*.fastq.gz _R3_*.fastq.gz files or paths to the files themselves ***" +\
+        "The files should be placed in the same folder" +\
+        "e.g. /data/path_to_my_files/*L001*.fastq.gz or /data/path_to_my_files/"
 
         input = [os.path.abspath(x) for x in input]
         if len(input) == 1 and os.path.isdir(input[0]):     # Case input is single directory
@@ -47,25 +52,25 @@ class bcdCT:
             self.input_files = input
             self.input_dir = list(set([os.path.dirname(x) for x in self.input_files]))
             if not len(self.input_dir) == 1:
-                sys.stderr.write(Error_message)
+                log(Error_message)
                 sys.exit(1)
             if not sum([x.endswith('.fastq.gz') or x.endswith('.fq.gz') for x in self.input_files]) == len(self.input_files):
                 sys.exit(1)
-                sys.stderr.write(Error_message)
+                log(Error_message)
         else:
             sys.exit(1)
-            sys.stderr.write(Error_message)
+            log(Error_message)
 
     def detect_reads(self):
-        Error_message="*** Error: Please specify exactly one _R1_ _R2_ and _R3_ file or folder with exactly one of each files ***\n" + \
-                      "e.g. /data/path_to_my_files/*L001*.fastq.gz or /data/path_to_my_files/\n"
+        Error_message="*** Error: Please specify exactly one _R1_ _R2_ and _R3_ file or folder with exactly one of each files ***" + \
+                      "e.g. /data/path_to_my_files/*L001*.fastq.gz or /data/path_to_my_files/"
         self.path_in = {}
         self.path_in['R1'] = [x for x in self.input_files if "_R1_" in x]
         self.path_in['R2'] = [x for x in self.input_files if "_R2_" in x]
         self.path_in['R3'] = [x for x in self.input_files if "_R3_" in x]
 
         if len(self.path_in['R1']) != 1 or len(self.path_in['R2']) != 1 or len(self.path_in['R3']) != 1:
-            sys.stderr.write(Error_message)
+            log(Error_message)
             sys.exit(1)
 
         self.path_in = {key:self.path_in[key][0] for key in self.path_in.keys()}
@@ -89,13 +94,13 @@ class bcdCT:
                     self.path_out[barcode][read] = self.path_out[barcode][read].replace(sample_id,args.name)
 
     def autodetect_name(self):
-        Error_message = "*** Error: Prefix for R1 R2 R3 files not the same. Please use the same prefix for all the files or specify experiment name ***\n"
+        Error_message = "*** Error: Prefix for R1 R2 R3 files not the same. Please use the same prefix for all the files or specify experiment name ***"
 
         self.name = [split("_R[0-9]_", str(x)) for x in self.path_in.values()]
         self.name = [x[0] for x in self.name]
 
         if len(list(set(self.name))) > 1:
-            sys.stderr.write(Error_message)
+            log(Error_message)
             sys.exit(1)
 
         self.name = self.name[0].split("/")[-1]
@@ -104,6 +109,7 @@ class bcdCT:
         for bcd in self.picked_barcodes:
             os.makedirs(self.out_prefix + "/barcode_" + bcd, exist_ok=True)
         self.out_stack = {barcode: {read: stack.enter_context(gzip.open(self.path_out[barcode][read],'wt'))for read in self.out_reads} for barcode in self.picked_barcodes}
+        log("Output files created for barcodes\n{b}\n  {f1}\n  {f2}\n  {f3}".format(b = self.picked_barcodes, f1 = [self.path_out[barcode]['R1'] for barcode in self.picked_barcodes], f2 = [self.path_out[barcode]['R2'] for barcode in self.picked_barcodes], f3 = [self.path_out[barcode]['R3'] for barcode in self.picked_barcodes]))
 
 
     def __iter__(self):
@@ -130,13 +136,21 @@ class bcdCT:
 
         top_barcodes = sorted(barcodes, key=barcodes.get, reverse=True)[:args.Nbarcodes]
         picked_barcodes = {key: barcodes[key] for key in top_barcodes}
-        sys.stderr.write("\nDetected following most abundant barcodes out of first {} barcodes:\n{}\n".format(n, picked_barcodes))
+        log("Detected following most abundant barcodes out of first {} barcodes:\n{}".format(n, picked_barcodes))
         if args.barcode != "None":
             self.picked_barcodes = args.barcode
-            sys.stderr.write("Barcode specified for demultiplexing [{barcode}] in top found barcodes: {bool} \n".format(bool = [x in picked_barcodes.keys() for x in args.barcode], barcode = args.barcode))
+            log("Barcode specified for demultiplexing [{barcode}] in top found barcodes: {bool} ".format(bool = [(x,x in picked_barcodes.keys()) for x in args.barcode], barcode = args.barcode))
         else:
             self.picked_barcodes = [i for i in picked_barcodes.keys()]
-        print('final barcodes:')
+
+        if args.report_MeA:
+            self.picked_barcodes.append('MeA')
+            log("MeA sequence will be reported in the output files due to --report_MeA flag")
+        if args.report_no_hit:
+            self.picked_barcodes.append('no_spacer')
+            log("No spacer sequence will be reported in the output files due to --report_no_hit flag")
+        
+        print('final barcodes used for demultiplexing:')
         print(self.picked_barcodes)
         
 
@@ -145,9 +159,8 @@ def get_read_barcode(string,index):
     return read_barcode
 
 def extract_cell_barcode(read,index):
-    cell_bcd_start = index + len(args.pattern)
-    read.sequence = read.sequence[cell_bcd_start:cell_bcd_start + 16]  # Get the cell barcode
-    read.quality  = read.quality[cell_bcd_start:cell_bcd_start + 16]   # Get corresponding Quality score
+    read.sequence = read.sequence[index:index + 16]  # Get the cell barcode
+    read.quality  = read.quality[index:index + 16]   # Get corresponding Quality score
     return read
 
 def revcompl(seq):
@@ -179,55 +192,66 @@ def find_seq(pattern, DNA_string, nmismatch=2):
 
 def main(args):
     exp = bcdCT(args)
-
-    statistics = {
-        "barcode_found": 0,
-        "multiple_barcode_matches": 0,
-        "no_barcode_match": 0,
-        "no_spacer_found": 0,
-        "too_short_read": 0
-    }
-
-    sys.stderr.write("Creating file output handles \n")
+    statistics = defaultdict(int)
+    log("Creating file output handles ")
     with ExitStack() as stack:
         exp.create_out_handles(stack)
         n = 0
-        sys.stderr.write("Starting demultiplexing \n")
+        log("Starting demultiplexing ")
         for read1,read2,read3 in exp:
             n+=1
             if n % 5000000 == 0:
-                sys.stderr.write("{} reads processed\n".format(n))
+                log("{} reads processed".format(n))
             assert (read1.name == read2.name == read3.name)                                                 # Make sure the fastq files are ok
 
             spacer_hit = find_seq(pattern=args.pattern,DNA_string=read2.sequence,nmismatch=2)
-            if not spacer_hit:
-                statistics["no_spacer_found"] +=1
+            MeA_hit = find_seq(pattern = args.no_barcode_seq, DNA_string=read2.sequence, nmismatch=2)
+            
+            if not spacer_hit and MeA_hit:
+                read_barcode = get_read_barcode(read2, MeA_hit)                                               # Returns only barcode e.g. ACTGACTG
+                hit_barcode  = 'MeA'
+                if exp.single_cell:
+                    read2 = extract_cell_barcode(read2, MeA_hit-16)     # The cell barcode is 16bp long and is positioned before the MeA spacer
 
-            if spacer_hit:
+            elif spacer_hit:
                 read_barcode = get_read_barcode(read2, spacer_hit)                                               # Returns only barcode e.g. ACTGACTG
                 read_barcode_distance = {barcode: Levenshtein.distance(read_barcode,barcode) for barcode in exp.picked_barcodes}
                 if sum([x <= int(args.mismatch) for x in read_barcode_distance.values()]) == 0:
+                    # Spacer hit but no barcode match
                     statistics["no_barcode_match"] += 1
                     continue
                 if sum([x <= args.mismatch for x in read_barcode_distance.values()]) > 1:
+                    # Spacer hit but multiple barcode matches
                     statistics["multiple_barcode_matches"] += 1
                     continue
 
                 hit_barcode = min(read_barcode_distance,key=read_barcode_distance.get)
 
                 if exp.single_cell:
-                    read2 = extract_cell_barcode(read2, spacer_hit)  # Returns the whole read, only the cell barcode part
-                    if len(read2.sequence) < 16:
-                        statistics["too_short_read"] += 1
-                        continue
-                    exp.out_stack[hit_barcode]['R2'].write('{}\n'.format(str(read2)))
+                    read2 = extract_cell_barcode(read2, spacer_hit + len(args.pattern))     # The cell barcode is 16bp long and is positioned after the spacer
+            
+            elif not spacer_hit and not MeA_hit:
+                statistics["no_spacer_found"] += 1
+                # No hit, no spacer not nothing found
+                if args.report_no_hit:
+                    hit_barcode = 'no_spacer'
+                else:
+                    continue        
+            
+            # Now continue in the loop
+            if len(read2.sequence) < 16:
+                    statistics["too_short_read"] += 1
+                    continue
+            
+            statistics[hit_barcode] += 1
+            if hit_barcode in exp.picked_barcodes:
+                
+                exp.out_stack[hit_barcode]['R2'].write('{}\n'.format(str(read2)))
 
                 # Write the outputs
                 exp.out_stack[hit_barcode]['R1'].write('{}\n'.format(str(read1)))
                 exp.out_stack[hit_barcode]['R3'].write('{}\n'.format(str(read3)))
-
-
-                statistics["barcode_found"] += 1
+                           
 
 
     # Write the statistics file
@@ -236,17 +260,17 @@ def main(args):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="DESCRIPTION: \n\nThis script demultiplexes Nano-CT sequencing data by extracting and matching modality barcodes from the R2 read based on a specified spacer sequence.\nThe script supports both bulk and single-cell data and writes sorted reads into separate output files for each detected barcode\n""" + 
-                                     """The script works with a standard 36-8-48-36 read structure but may also be compatible with other setups where the spacer sequence is similarly arranged.\n\n""" + 
-                                     """AATGATACGGCGACCACCGAGATCTACAC-NNNNNNNNNNNNNNNN-TCGTCGGCAGCGTCTCCACGC-NNNNNNNN-GCGATCGAGGACGGCAGATGTGTATAAGAGACAG\n"""+
+    parser = argparse.ArgumentParser(description="DESCRIPTION: \n\nThis script demultiplexes Nano-CT sequencing data by extracting and matching modality barcodes from the R2 read based on a specified spacer sequence.\nThe script supports both bulk and single-cell data and writes sorted reads into separate output files for each detected barcode""" + 
+                                     """The script works with a standard 36-8-48-36 read structure but may also be compatible with other setups where the spacer sequence is similarly arranged.\n""" + 
+                                     """AATGATACGGCGACCACCGAGATCTACAC-NNNNNNNNNNNNNNNN-TCGTCGGCAGCGTCTCCACGC-NNNNNNNN-GCGATCGAGGACGGCAGATGTGTATAAGAGACAG"""+
                                      """            P5                |  sc-barcode   |  Linker sequence   | Modality |        Mosaic end               \n """ + 
-                                     """\n""" +
-                                     """ Note: If demultiplexing multiple lanes, run for each lane separetely and then merge the output files before or after alignment\n""",
-                                     usage="\n"
-                                           "python debarcode.py -i /path/to/input_R1.fastq.gz /path/to/input_R2.fastq.gz /path/to/input_R3.fastq.gz -o /path/to/output_folder --single_cell --barcode ATAGAGGC                      # One specific barcode from single-cell data \n" 
-                                           "python debarcode.py -i /path/to/input_R1.fastq.gz /path/to/input_R2.fastq.gz /path/to/input_R3.fastq.gz -o /path/to/output_folder --single_cell --barcode ATAGAGGC TATAGCCT             # Two specific barcodes from single-cell data \n"
-                                           "python debarcode.py -i /path/to/input_R1.fastq.gz /path/to/input_R2.fastq.gz /path/to/input_R3.fastq.gz -o /path/to/output_folder --single_cell --Nbarcodes 3                           # Top 3 barcodes from single-cell data without specifying the barcodes - use carefuly and double check\n"
-                                           "python debarcode.py -i /path/to/input_R1.fastq.gz /path/to/input_R2.fastq.gz /path/to/input_R3.fastq.gz -o /path/to/output_folder --Nbarcodes 3                                         # Top 3 barcodes from bulk data \n", 
+                                     """""" +
+                                     """ Note: If demultiplexing multiple lanes, run for each lane separetely and then merge the output files before or after alignment""",
+                                     usage=""
+                                           "python debarcode.py -i /path/to/input_R1.fastq.gz /path/to/input_R2.fastq.gz /path/to/input_R3.fastq.gz -o /path/to/output_folder --single_cell --barcode ATAGAGGC                      # One specific barcode from single-cell data " 
+                                           "python debarcode.py -i /path/to/input_R1.fastq.gz /path/to/input_R2.fastq.gz /path/to/input_R3.fastq.gz -o /path/to/output_folder --single_cell --barcode ATAGAGGC TATAGCCT             # Two specific barcodes from single-cell data "
+                                           "python debarcode.py -i /path/to/input_R1.fastq.gz /path/to/input_R2.fastq.gz /path/to/input_R3.fastq.gz -o /path/to/output_folder --single_cell --Nbarcodes 3                           # Top 3 barcodes from single-cell data without specifying the barcodes - use carefuly and double check"
+                                           "python debarcode.py -i /path/to/input_R1.fastq.gz /path/to/input_R2.fastq.gz /path/to/input_R3.fastq.gz -o /path/to/output_folder --Nbarcodes 3                                         # Top 3 barcodes from bulk data ", 
                                      formatter_class=argparse.RawTextHelpFormatter)
 
     parser.add_argument('-i', '--input',
@@ -283,7 +307,7 @@ if __name__ == '__main__':
 
     parser.add_argument('--Nbarcodes',
                         type=int,
-                        default=3,
+                        default=10,
                         help='Number of barcodes in experiment (Default: %(default)s)')
 
     parser.add_argument('--barcode',
@@ -292,6 +316,26 @@ if __name__ == '__main__':
                         default='None',
                         help='Specific barcode to be extracted [e.g. ATAGAGGC] (Default: All barcodes [see --Nbarcodes])')
 
+    parser.add_argument('--no_barcode_seq', type=str, 
+                        default='GTGTAGATCTCGGTGGTCGCCGTATCATT', 
+                        help='Sequence indicating unbarcoded reads')
+    
+    parser.add_argument('--report_MeA', 
+                        action='store_true', 
+                        help='Include reads with no barcode and standard MeA sequence in the output')
+    
+    parser.add_argument('--report_no_hit', 
+                        action='store_true', 
+                        help='Include reads with no barcode or spacer whatsoever hit in the output')
+
+
+
+
     args = parser.parse_args()
-    print(args.barcode)
+    log("Starting debarcode.py script ")
+    log("Input files: \n{}".format("".join(["    " + i + "\n" for i in args.input])))
+    if args.barcode != "None":
+        log("Provided barcodes to demultiplex: \n{}".format(args.barcode))
+    log("Output prefix: {}/".format(args.out_prefix))
+    
     main(args)
