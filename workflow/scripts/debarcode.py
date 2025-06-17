@@ -109,7 +109,6 @@ class bcdCT:
         for bcd in self.picked_barcodes:
             os.makedirs(self.out_prefix + "/barcode_" + bcd, exist_ok=True)
         self.out_stack = {barcode: {read: stack.enter_context(gzip.open(self.path_out[barcode][read],'wt'))for read in self.out_reads} for barcode in self.picked_barcodes}
-        log("Output files created for barcodes\n{b}\n  {f1}\n  {f2}\n  {f3}".format(b = self.picked_barcodes, f1 = [self.path_out[barcode]['R1'] for barcode in self.picked_barcodes], f2 = [self.path_out[barcode]['R2'] for barcode in self.picked_barcodes], f3 = [self.path_out[barcode]['R3'] for barcode in self.picked_barcodes]))
 
 
     def __iter__(self):
@@ -118,18 +117,22 @@ class bcdCT:
                 yield r1, r2, r3
 
     def autodetect_barcodes(self,args):
-        barcodes = {}
+        barcodes = defaultdict(int)
         n=0
         for read1,read2,read3 in self:
-            hit = find_seq(args.pattern, read2.sequence, nmismatch=0)
-            if not hit or hit == 'Multiple':
+            hit     = find_seq(args.pattern, read2.sequence, nmismatch=0)
+            MeA_hit = find_seq(pattern = args.no_barcode_seq, DNA_string=read2.sequence, nmismatch=2)
+            if MeA_hit:
+                barcodes['MeA'] += 1
+            elif not hit or hit == 'Multiple':
                 continue
-            hit = int(hit)
-            read_barcode = get_read_barcode(read2, hit)
-            try:
-                barcodes[read_barcode] += 1
-            except KeyError:
-                barcodes[read_barcode] = 1
+            else:
+                hit = int(hit)
+                read_barcode = get_read_barcode(read2, hit)
+                try:
+                    barcodes[read_barcode] += 1
+                except KeyError:
+                    barcodes[read_barcode] = 1
             n += 1
             if n == 50000:
                 break
@@ -205,7 +208,7 @@ def main(args):
             assert (read1.name == read2.name == read3.name)                                                 # Make sure the fastq files are ok
 
             spacer_hit = find_seq(pattern=args.pattern,DNA_string=read2.sequence,nmismatch=2)
-            MeA_hit = find_seq(pattern = args.no_barcode_seq, DNA_string=read2.sequence, nmismatch=2)
+            MeA_hit    = find_seq(pattern = args.no_barcode_seq, DNA_string=read2.sequence, nmismatch=2)
             
             if not spacer_hit and MeA_hit:
                 read_barcode = get_read_barcode(read2, MeA_hit)                                               # Returns only barcode e.g. ACTGACTG
@@ -245,12 +248,13 @@ def main(args):
             
             statistics[hit_barcode] += 1
             if hit_barcode in exp.picked_barcodes:
-                
-                exp.out_stack[hit_barcode]['R2'].write('{}\n'.format(str(read2)))
-
                 # Write the outputs
                 exp.out_stack[hit_barcode]['R1'].write('{}\n'.format(str(read1)))
                 exp.out_stack[hit_barcode]['R3'].write('{}\n'.format(str(read3)))
+                if args.single_cell:
+                    exp.out_stack[hit_barcode]['R2'].write('{}\n'.format(str(read2)))
+
+                
                            
 
 
