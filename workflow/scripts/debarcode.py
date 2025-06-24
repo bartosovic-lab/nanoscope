@@ -122,9 +122,13 @@ class bcdCT:
         for read1,read2,read3 in self:
             hit     = find_seq(args.pattern, read2.sequence, nmismatch=0)
             MeA_hit = find_seq(pattern = args.no_barcode_seq, DNA_string=read2.sequence, nmismatch=2)
+            n += 1
+            if n == 100000:
+                break
             if MeA_hit:
                 barcodes['MeA'] += 1
             elif not hit or hit == 'Multiple':
+                barcodes['no_spacer'] += 1
                 continue
             else:
                 hit = int(hit)
@@ -133,9 +137,6 @@ class bcdCT:
                     barcodes[read_barcode] += 1
                 except KeyError:
                     barcodes[read_barcode] = 1
-            n += 1
-            if n == 50000:
-                break
 
         top_barcodes = sorted(barcodes, key=barcodes.get, reverse=True)[:args.Nbarcodes]
         picked_barcodes = {key: barcodes[key] for key in top_barcodes}
