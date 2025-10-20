@@ -1,4 +1,4 @@
-include: 'Snakefile_prep.smk'
+include: 'Snakefile_prep2.smk'
 include: 'Snakefile_nanoscope.smk'
 
 rule all:
