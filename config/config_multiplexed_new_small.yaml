@@ -1,0 +1,60 @@
+name: Pepe_organoids_round2_develop_small
+fastq_path: /data/mareba/DataDelivery_2025-08-12_09-03-59_ngisthlm01776/files/P36559/P36559_1001/02-FASTQ/small_test/
+barcodes:
+  GTGTGTGA:  ATAC
+  AGTTCCTG:  ATAC
+  GTCTAGCA:  ATAC
+  GAAGGCAT:  ATAC
+  ACGACACT:  ATAC
+  CTATCAGC:  ATAC
+  ATCAGCGT:  ATAC
+  TCTGCCAA:  ATAC
+  AGCTAGAG:  ATAC
+  GAGCACTT:  ATAC
+  TCGCAAGT:  ATAC
+  ACAGCAAG:  ATAC
+  GTGATGCT:  ATAC
+  TGATACGC:  ATAC
+  TGCGTGTT:  ATAC
+  GGCATCAA:  ATAC
+  AGGAGTCA:  ATAC
+  TATAGCCT:  H3K27me3
+  ATAGAGGC:  H3K27me3
+  GGCTCTGA:  H3K27me3
+  AGGCGAAG:  H3K27me3
+  TAATCTTA:  H3K27me3
+  GTACTGAC:  H3K27me3
+  ACTCCAGA:  H3K27me3
+  GCAGAGAA:  H3K27me3
+  GTACGGTT:  H3K27me3
+  GTAGTCCA:  H3K27me3
+  GTTGACTC:  H3K27me3
+  GGTAAGTG:  H3K27me3
+  CTGTCCAA:  H3K27me3
+  CTAGGTGT:  H3K27me3
+  CAGGACGT:  H3K27me3
+  AAGGCGAA:  H3K27me3
+  CCTATCCT:  H3K27me3
+  CCTATAGC:  H3K27ac
+  AGGTCAAC:  H3K27ac
+  CACTCGAT:  H3K27ac
+  ACATCCGT:  H3K27ac
+  CGTTATCG:  H3K27ac
+  AGCGAACA:  H3K27ac
+  AGTCTGGT:  H3K27ac
+  GTACATGC:  H3K27ac
+  ACGCACAA:  H3K27ac
+  GCCTTCAT:  H3K27ac
+  CACTGAGA:  H3K27ac
+  CTAACCTG:  H3K27ac
+  GAGTTACG:  H3K27ac
+  TCTGTACG:  H3K27ac
+  CAACGACT:  H3K27ac
+  AGGTTGCA:  H3K27ac
+  TCCTCTAG:  H3K27ac
+general:
+  tempdir: /data/tmp/                                                        # Modify path to a tmp folder already created here
+  cellranger_software: /opt/cellranger-atac-2.1.0/cellranger-atac                                        # Modify the path to cellranger binaries here
+  cellranger_ref: /home/mareba/references/refdata-cellranger-arc-GRCh38-2020-A-2.0.0/   # Modify the path to cellranger reference here
+  macs_genome: hs                                                                        # Modify genome for macs2 callpeak
+  gtf: https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_47/gencode.v47.annotation.gtf.gz  # Modify path to gtf file here

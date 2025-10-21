@@ -1,56 +1,31 @@
 include: 'Snakefile_prep2.smk'
-# include: 'Snakefile_bulk.smk'
+include: 'Snakefile_bulk.smk'
 
-barcodes_table_wildcard = '{sample}/general/{sample}_barcodes_table.txt'
-cellranger_fragments_wildcard         = '{sample}/{modality}_{barcode}/cellranger/outs/fragments.tsv.gz'
-cellranger_bam_wildcard               = '{sample}/{modality}_{barcode}/cellranger/outs/possorted_bam.bam'
-cellranger_metadata_wildcard          = '{sample}/{modality}_{barcode}/cellranger/outs/singlecell.csv'
-cellranger_cleanup_wildcard           = '{sample}/{modality}_{barcode}/cellranger/outs/_cellranger_cleanup'
+# barcodes_table_wildcard = '{sample}/general/{sample}_barcodes_table.txt'
+# cellranger_fragments_wildcard         = '{sample}/{modality}_{barcode}/cellranger/outs/fragments.tsv.gz'
+# cellranger_bam_wildcard               = '{sample}/{modality}_{barcode}/cellranger/outs/possorted_bam.bam'
+# cellranger_metadata_wildcard          = '{sample}/{modality}_{barcode}/cellranger/outs/singlecell.csv'
+# cellranger_cleanup_wildcard           = '{sample}/{modality}_{barcode}/cellranger/outs/_cellranger_cleanup'
 
 
 rule all_preprocess:
     input:
     # Single-cell outputs
-        cellranger=['{sample}/{modality}_{barcode}/cellranger/outs/possorted_bam.bam'.format(sample=config['name'], modality=barcodes_dict[barcode],barcode=barcode) for barcode in barcodes_dict.keys()],
-        # debarcode_out        = [run.samples[s].debarcoded_fastq_all[i].path for s in run.samples_list for i,item in enumerate(run.samples[s].debarcoded_fastq_all)],
-        # cellranger_out       = [run.samples[s].cellranger_all for s in run.samples_list],
+        cellranger = ['{sample}/{modality}_{barcode}/cellranger/outs/possorted_bam.bam'.format(sample=config['name'], modality=barcodes_dict[barcode],barcode=barcode) for barcode in barcodes_dict.keys()],
         # cellranger_clean_out = [run.samples[s].cellranger_cleanup_all for s in run.samples_list],
         # cell_picking_out     = [run.samples[s].cell_picking_all for s in run.samples_list],
         # matrix_bins_out      = [run.samples[s].matrix_bins_all for s in run.samples_list],
         # genebody_matrix      = [run.samples[s].matrix_genebody_all for s in run.samples_list],
-
     # Bulk outputs
-        # bigwig_bulk = [run.samples[s].bigwig_all for s in run.samples_list],
-        # peaks_overlap=[
-        #     '{sample}/{modality}_{barcode}/barcode_metrics/peaks_barcodes.txt'.format(sample=sample,modality=modality,barcode=
-        #     barcodes_dict[sample][modality]) for sample in samples_list for modality in barcodes_dict[sample].keys()],
-        # barcodes_sum=[
-        #     '{sample}/{modality}_{barcode}/barcode_metrics/all_barcodes.txt'.format(sample=sample,modality=modality,barcode=
-        #     barcodes_dict[sample][modality]) for sample in samples_list for modality in barcodes_dict[sample].keys()],
-        # cell_pick=[
-        #     '{sample}/{modality}_{barcode}/cell_picking/metadata.csv'.format(sample=sample,modality=modality,barcode=
-        #     barcodes_dict[sample][modality]) for sample in samples_list for modality in barcodes_dict[sample].keys()],
-        # noLA_bam=[
-        #     '{sample}/{modality}_{barcode}/cellranger/outs/fragments_noLA_duplicates.tsv.gz'.format(sample=sample,modality=modality,barcode=
-        #     barcodes_dict[sample][modality]) for sample in samples_list for modality in barcodes_dict[sample].keys()],
-
-def find_fastq_in_folder(path,filters = ['']):
-    import glob
-    all_fastq = glob.glob(path + "/**/*.fastq.gz", recursive=True)
-    matched = [f for f in all_fastq if all(x in f for x in filters)]
-    if len(matched) == 1:
-        return matched[0]
-    elif len(matched) > 1:
-        raise ValueError(f"Multiple files matched for filters {filters}, found: {matched}, path: {path}")
-    else:
-        raise ValueError(f"No files matched for filters {filters}, found: {matched}, path: {path}")
+        bigwig       = expand('{sample}/{modality}/mapping_out/{modality}_merged.bw',sample = config['name'], modality = list(set(barcodes_dict.values()))),
+        macs_3column = expand('{sample}/{modality}/peaks/macs2/{modality}_peaks.broadPeak',sample = config['name'], modality = list(set(barcodes_dict.values())))
 
 
 rule create_barcodes_table:
     input:
         script = workflow.basedir + '/scripts/config2barcodes_table.py',
     output:
-        barcodes_table = barcodes_table_wildcard
+        barcodes_table = '{sample}/general/{sample}_barcodes_table.txt'
     params:
         sample_name = config['name'],
         config_path = workflow.configfiles[0], # assuming 1 configfile
@@ -81,7 +56,7 @@ rule demultiplex:
         R2_modality   = '{sample}/fastq_split_R2/{prefix}_{number}_{lane}_R2_001_modality.fastq.gz',
         R2_singlecell = '{sample}/fastq_split_R2/{prefix}_{number}_{lane}_R2_001_singlecell.fastq.gz',
         R3            = lambda wildcards: find_fastq_in_folder(path=config['fastq_path'], filters = [wildcards.lane, 'R3']),
-        barcodes_table = barcodes_table_wildcard,
+        barcodes_table = '{sample}/general/{sample}_barcodes_table.txt',
     output:
         output = expand('{{sample}}/fastq_debarcoded/barcode_{barcode}/{{prefix}}_{{number}}_{{lane}}_{read}_{{suffix}}', barcode = config['barcodes'].keys(), 
                                                                                                                           read = ['R1','R2','R3']),
@@ -112,11 +87,12 @@ rule demultiplex:
 rule run_cellranger:
     input:
         reads_list = lambda wildcards: get_fastq_for_cellranger(fastq_folder = config['fastq_path'], sample=config['name'], modality=wildcards.modality, barcode=wildcards.barcode),
+        peaks      = '{sample}/{modality}/peaks/macs2/{modality}_peaks' + '_3column.bed'
     output:
-        bam='{sample}/{modality}_{barcode}/cellranger/outs/possorted_bam.bam',
-        frag='{sample}/{modality}_{barcode}/cellranger/outs/fragments.tsv.gz',
-        meta='{sample}/{modality}_{barcode}/cellranger/outs/singlecell.csv',
-        peaks='{sample}/{modality}_{barcode}/cellranger/outs/peaks.bed',
+        bam   = '{sample}/{modality}_{barcode}/cellranger/outs/possorted_bam.bam',
+        frag  = '{sample}/{modality}_{barcode}/cellranger/outs/fragments.tsv.gz',
+        meta  = '{sample}/{modality}_{barcode}/cellranger/outs/singlecell.csv',
+        # peaks = '{sample}/{modality}_{barcode}/cellranger/outs/peaks.bed',
     params:
         cellranger_software = config['general']['cellranger_software'],
         cellranger_ref      = config['general']['cellranger_ref'],
@@ -124,23 +100,21 @@ rule run_cellranger:
         sample_names        = lambda wildcards: ','.join(get_sample_names_for_cellranger(fastq_folder = config['fastq_path'])),
     threads: 8
     resources:
-        mem_mb = 32000
+        mem_gb = 32
     shell:
         'rm -rf {wildcards.sample}/{wildcards.modality}_{wildcards.barcode}/cellranger/; '
         'cd {wildcards.sample}/{wildcards.modality}_{wildcards.barcode}/; '
-        '{params.cellranger_software} count --id cellranger --reference {params.cellranger_ref} --fastqs {params.fastq_folder} --sample {params.sample_names} --localcores {threads} --localmem {resources.mem_mb}  2>&1 ; '
-
-
+        '{params.cellranger_software} count --id cellranger --reference {params.cellranger_ref} --fastqs {params.fastq_folder} --sample {params.sample_names} --peaks ../../{input.peaks} --localcores {threads} --localmem {resources.mem_gb}  2>&1 ; '
 
 rule clean_cellranger_output:
     input:
-        bam  = cellranger_bam_wildcard,
-        frag = cellranger_fragments_wildcard,
-        meta = cellranger_metadata_wildcard,
+        bam   = '{sample}/{modality}_{barcode}/cellranger/outs/possorted_bam.bam',
+        frag  = '{sample}/{modality}_{barcode}/cellranger/outs/fragments.tsv.gz',
+        meta  = '{sample}/{modality}_{barcode}/cellranger/outs/singlecell.csv',
     output:
-        cellranger_cleanup_wildcard
+        '{sample}/{modality}_{barcode}/cellranger/outs/_cellranger_cleanup'
     params:
-        cellranger_folder = str(Path(cellranger_bam_wildcard).parents[1].resolve())
+        cellranger_folder = str(Path('{sample}/{modality}_{barcode}/cellranger/outs/possorted_bam.bam').parents[1].resolve())
     shell:
         'touch {params.cellranger_folder}/tmp.txt;'                     # Create temp empty file to avoid error if the directory is empty
         'ls -d  {params.cellranger_folder}/* | grep -v outs | xargs rm -r; '

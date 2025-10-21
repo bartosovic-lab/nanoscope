@@ -24,6 +24,35 @@ bins = [5000,10000]
 
 print(features)
 
+def find_fastq_in_folder(path,filters = ['']):
+    import glob
+    all_fastq = glob.glob(path + "/**/*.fastq.gz", recursive=True)
+    matched = [f for f in all_fastq if all(x in f for x in filters)]
+    if len(matched) == 1:
+        return matched[0]
+    elif len(matched) > 1:
+        raise ValueError(f"Multiple files matched for filters {filters}, found: {matched}, path: {path}")
+    else:
+        raise ValueError(f"No files matched for filters {filters}, found: {matched}, path: {path}")
+
+def merge_bam_inputs(fastq_folder,sample,modality,barcodes_dict):
+    import glob
+    result = []
+    fastq_folder = fastq_folder + "/**/*.fastq.gz"
+    all_fastq_files = glob.glob(fastq_folder,recursive=True)
+    check_fastq(all_fastq_files)
+    all_fastq_parsed = [parse_fastq(x) for x in all_fastq_files]
+    for x in all_fastq_parsed:
+        if x['read'] != 'R1':
+            continue
+        for barcode in barcodes_dict:
+            if barcodes_dict[barcode] != modality:
+                continue
+            result.append('{sample}/{modality}_{barcode}/mapping_out/{prefix}_{number}_{lane}_{suffix}_sorted.bam'.format(\
+                sample=sample, modality=modality , barcode=barcode, prefix=x['id'], number=x['number'], lane=x['lane'], suffix=x['suffix']))
+    return(result)
+
+
 def parse_fastq(path):
     import os
     import re
