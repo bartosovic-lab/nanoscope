@@ -58,3 +58,4 @@ general:
   cellranger_ref: /home/mareba/references/refdata-cellranger-arc-GRCh38-2020-A-2.0.0/   # Modify the path to cellranger reference here
   macs_genome: hs                                                                        # Modify genome for macs2 callpeak
   gtf: https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_47/gencode.v47.annotation.gtf.gz  # Modify path to gtf file here
+  bin_sizes: [5000,10000]                                                         # Define desired bin sizes here

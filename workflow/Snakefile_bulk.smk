@@ -135,7 +135,7 @@ rule peaks_to_3column_bed:
         peaks       = '{sample}/{modality}/peaks/macs2/{modality}_peaks.broadPeak',
         fasta_index = os.path.normpath(config['general']['cellranger_ref'] + '/fasta/genome.fa.fai'),
     output:
-        '{sample}/{modality}/peaks/macs2/{modality}_peaks' + '_3column.bed'
+        '{sample}/{modality}/peaks/macs2/{modality}_peaks_3column.bed'
     conda: '../envs/nanoscope_general.yaml'
     shell:
         'cut -f1-3 {input.peaks} | bedtools sort -faidx {input.fasta_index} -i - > {output}'
