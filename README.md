@@ -1,256 +1,178 @@
-# Nanoscope 
-# Analysis pipeline for single-cell nano-CUT&Tag data
-### Federico Ansaloni, Bastien Hervé, Marek Bartosovic
+# Nanoscope-mx
+# Pipeline for analysis of multiplexed nano-CT data with overloading
+### Marek Bartosovic
 <hr>
 
-# Overview
-This documentation will cover the Single cell nanoCut&Tag, Nature Protocols 2023, in deepth to successfully reproduce step by step bioinformatic workflow described in the paper.
-The pipeline is composed of three majors axes, [Set Up](#set-up), [Preprocessing](#preprocessing) and [Downstream Analysis](#downstream-analysis) which will be broken down into sub-units to facilitate the go-through.
 
-# Quick use
+Snakemake workflow for processing single-cell nano-CT libraries with 10x-style barcodes into:
 
-If you wish to quickly use the pipeline follow these steps:
+1) demultiplexed FASTQs per barcode/modality
+
+2) bulk alignments, and broad MACS2 peaks - this is later used for cellranger and cell calling
+
+3) single-cell Cell Ranger ATAC outputs (BAM, fragments, singlecell.csv) using bulk peaks
+
+4) QC and cell picking
+
+5) count matrices (fixed genomic bins and gene body+promoter features)
+
+## Quick start 
 
 ```
-mkdir my_new_project
-cd my_new_project
+# 1) Clone
+git clone https://github.com/bartosovic-lab/nanoscope-mx
 
-# Clone the git repo
-git clone https://github.com/bartosovic-lab/nanoscope
+# 2) (Recommended) use conda/mamba and let Snakemake manage envs
 
-# Create conda environment
-conda config --set channel_priority flexible
-conda env create -f nanoscope/envs/nanoscope_base.yaml 
+conda env create -f envs/nanoscope_base.yaml
 conda activate nanoscope_base
 
-# Change file paths and other parameters in pipeline config file 
-vim nanoscope/config/config.yaml
+# 3) Edit the config with your details
 
-# Run the pipeline
-snakemake --snakefile nanoscope/workflow/Smalefile_nanoscope.smk.smk --configfile nanoscope/config/config.yaml --cores 20 --jobs 20 -p --use-conda --rerun-incomplete --profile slurm
+# 4) Run the pipeline 
+mamba create -f env
+snakemake -s Snakefile_nanoscope.smk \
+  --use-conda --cores 16 \
+  --configfile config/config.yaml
+  ```
+
+## Inputs 
+
+FASTQ files
+
+•	Libraries have three reads: R1, R2, R3 with read lengths 36, 48 and 36 respectively.
+
+•	R2 contains barcodes - modality and single-cell barcode with the following arrangement.
+
+It is assumed that sequencing is done using the nextera primer and bases 1-8 correspond to modality barcode and bases 30-45 correspond to the single-cell index. 
+
+The barcodes are separated by linker sequence of fixed length TCGTCGGCAGCGTCTCCACGC
+
+AATGATACGGCGACCACCGAGATCTACAC-NNNNNNNNNNNNNNNN-TCGTCGGCAGCGTCTCCACGC-NNNNNNNN-GCGATCGAGGACGGCAGATGTGTATAAGAGACAG
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;P5 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  sc-barcode  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  Linker sequence  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  | &nbsp;&nbsp;Modality &nbsp;&nbsp;&nbsp;| &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;       Mosaic end 
+
+
+
+•	File naming assumes the standard illumina pattern:   
+  
+  \<PREFIX>_S\<NUMBER>_L\<LANE>_\<READ>_\<SUFFIX>.
+  fastq.gz
+
+•	If a library was re-sequenced, all files present in fastq folder will be used in analysis and reads merged for each modality barcode. e.g. 
+
+``` 
+# Single sequencing lane
+lrwxrwxrwx 1 mareba mareba 117 Oct 21 11:13 P37356_1014_S11_L001_R1_001.fastq.gz
+lrwxrwxrwx 1 mareba mareba 117 Oct 21 11:13 P37356_1014_S11_L001_R2_001.fastq.gz
+lrwxrwxrwx 1 mareba mareba 117 Oct 21 11:13 P37356_1014_S11_L001_R3_001.fastq.gz
 ```
 
-
-# Data availability
-All raw and processed files can be found as supplementary files in the [GEO repository](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE198467).
-`seurat.rds` object can also be used to start the analysis from [Downstream Analysis](#downstream-analysis).
-
-> In this tutorial, only [GSM5949206](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE198467) (SRR18305888 and SRR18305889) and [GSM5949208](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE198467) (SRR18305884, SRR18305885) will be processed
-
-# Set up
-The whole project has been tested on 
-- High Performance Computing (HPC) linux cluster under CentOS (release:7.9.2009) with htcondor workflow management system 
-- HPC linux cluster under CentOS (release:7.9.2009) with slurm workflow management system
-
-
-If you fancy using MacOS, Windows or another linux distro, please design your set up accordingly.
-
-## Clone github repository
-```
-mkdir ~/nanoCT_project
-cd ~/nanoCT_project
-git clone https://github.com/bartosovic-lab/nanoscope
+``` 
+# Two lanes - usual for NovaSeq X 1.5B
+lrwxrwxrwx 1 mareba mareba 117 Oct 21 11:13 P37356_1014_S11_L001_R1_001.fastq.gz
+lrwxrwxrwx 1 mareba mareba 117 Oct 21 11:13 P37356_1014_S11_L001_R2_001.fastq.gz
+lrwxrwxrwx 1 mareba mareba 117 Oct 21 11:13 P37356_1014_S11_L001_R3_001.fastq.gz
+lrwxrwxrwx 1 mareba mareba 117 Oct 21 11:13 P37356_1014_S11_L002_R1_001.fastq.gz
+lrwxrwxrwx 1 mareba mareba 117 Oct 21 11:13 P37356_1014_S11_L002_R2_001.fastq.gz
+lrwxrwxrwx 1 mareba mareba 117 Oct 21 11:13 P37356_1014_S11_L002_R3_001.fastq.gz
 ```
 
-## Prepare environment
-A conda environment will be used to set up an isolated architecture reducing troubleshooting.
-Conda can be installed via miniconda following [miniconda guidelines](https://docs.conda.io/projects/conda/en/latest/user-guide/install/linux.html).
-
-### Create conda environment
-```
-conda config --set channel_priority flexible
-conda env create -f nanoscope/envs/nanoscope_base.yaml 
-```
-Sit in your new environment till the end of the procedure.
-```
-conda activate nanoscope_base
-```
-
-## Download the raw data
-The raw data as fastq files can be downloaded throughout the [SRA-Toolkit](https://github.com/ncbi/sra-tools/wiki/HowTo:-fasterq-dump).
-
-SRA tools can be installed using ```conda install -c bioconda sra-tools```
-
-### Navigate to a new directory to store the data
-```
-mkdir -p ~/nanoCT_project/Data
-cd ~/nanoCT_project/Data
-```
-### Download SRA
-```
-fasterq-dump -f -e 8 --split-files --include-technical -o SRR18305888.fastq SRR18305888
-fasterq-dump -f -e 8 --split-files --include-technical -o SRR18305889.fastq SRR18305889
-
-mv SRR18305888_1.fastq sample_P23209_001_1001_S1_L001_I1_001.fastq
-mv SRR18305888_2.fastq sample_P23209_001_1001_S1_L001_R1_001.fastq
-mv SRR18305888_3.fastq sample_P23209_001_1001_S1_L001_R2_001.fastq
-mv SRR18305888_4.fastq sample_P23209_001_1001_S1_L001_R3_001.fastq
-mv SRR18305889_1.fastq sample_P23209_001_1001_S1_L002_I1_001.fastq
-mv SRR18305889_2.fastq sample_P23209_001_1001_S1_L002_R1_001.fastq
-mv SRR18305889_3.fastq sample_P23209_001_1001_S1_L002_R2_001.fastq
-mv SRR18305889_4.fastq sample_P23209_001_1001_S1_L002_R3_001.fastq
-
-gzip *.fastq
-mkdir -p ./fastq/sample_P23209/
-mv *.fastq.gz ./fastq/sample_P23209/
+``` 
+# Multiple lanes from different sequencing runs
+lrwxrwxrwx 1 mareba mareba 137 Oct 21 11:15 P33456_1001_S1_L001_I1_001.fastq.gz
+lrwxrwxrwx 1 mareba mareba 137 Oct 21 11:15 P33456_1001_S1_L001_R1_001.fastq.gz
+lrwxrwxrwx 1 mareba mareba 137 Oct 21 11:15 P33456_1001_S1_L001_R2_001.fastq.gz
+lrwxrwxrwx 1 mareba mareba 137 Oct 21 11:15 P33456_1001_S1_L001_R3_001.fastq.gz
+lrwxrwxrwx 1 mareba mareba 137 Oct 21 11:15 P33456_1001_S1_L002_I1_001.fastq.gz
+lrwxrwxrwx 1 mareba mareba 137 Oct 21 11:15 P33456_1001_S1_L002_R1_001.fastq.gz
+lrwxrwxrwx 1 mareba mareba 137 Oct 21 11:15 P33456_1001_S1_L002_R2_001.fastq.gz
+lrwxrwxrwx 1 mareba mareba 137 Oct 21 11:15 P33456_1001_S1_L002_R3_001.fastq.gz
+lrwxrwxrwx 1 mareba mareba 117 Oct 21 11:13 P37356_1014_S11_L006_I1_001.fastq.gz
+lrwxrwxrwx 1 mareba mareba 117 Oct 21 11:13 P37356_1014_S11_L006_R1_001.fastq.gz
+lrwxrwxrwx 1 mareba mareba 117 Oct 21 11:13 P37356_1014_S11_L006_R2_001.fastq.gz
+lrwxrwxrwx 1 mareba mareba 117 Oct 21 11:13 P37356_1014_S11_L006_R3_001.fastq.gz
+lrwxrwxrwx 1 mareba mareba 117 Oct 21 11:13 P37356_1014_S11_L007_I1_001.fastq.gz
+lrwxrwxrwx 1 mareba mareba 117 Oct 21 11:13 P37356_1014_S11_L007_R1_001.fastq.gz
+lrwxrwxrwx 1 mareba mareba 117 Oct 21 11:13 P37356_1014_S11_L007_R2_001.fastq.gz
+lrwxrwxrwx 1 mareba mareba 117 Oct 21 11:13 P37356_1014_S11_L007_R3_001.fastq.gz
+lrwxrwxrwx 1 mareba mareba 117 Oct 21 11:13 P37356_1014_S11_L008_I1_001.fastq.gz
+lrwxrwxrwx 1 mareba mareba 117 Oct 21 11:13 P37356_1014_S11_L008_R1_001.fastq.gz
+lrwxrwxrwx 1 mareba mareba 117 Oct 21 11:13 P37356_1014_S11_L008_R2_001.fastq.gz
+lrwxrwxrwx 1 mareba mareba 117 Oct 21 11:13 P37356_1014_S11_L008_R3_001.fastq.gz
 ```
 
-```
-fasterq-dump -f -e 8 --split-files --include-technical -o SRR18305884.fastq SRR18305884
-fasterq-dump -f -e 8 --split-files --include-technical -o SRR18305885.fastq SRR18305885
+In all cases - all the fastq files will be used in by the pipeline nad merged. If you wish to run independent samples, then put .fastq files in different folders and use multiple configs. 
 
-mv SRR18305884_1.fastq sample_P24004_002_1001_S1_L001_I1_001.fastq
-mv SRR18305884_2.fastq sample_P24004_002_1001_S1_L001_R1_001.fastq
-mv SRR18305884_3.fastq sample_P24004_002_1001_S1_L001_R2_001.fastq
-mv SRR18305884_4.fastq sample_P24004_002_1001_S1_L001_R3_001.fastq
-mv SRR18305885_1.fastq sample_P24004_002_1001_S1_L002_I1_001.fastq
-mv SRR18305885_2.fastq sample_P24004_002_1001_S1_L002_R1_001.fastq
-mv SRR18305885_3.fastq sample_P24004_002_1001_S1_L002_R2_001.fastq
-mv SRR18305885_4.fastq sample_P24004_002_1001_S1_L002_R3_001.fastq
+## Pipeline config file 
 
-gzip *.fastq
-mkdir -p ./fastq/sample_P24004/
-mv *.fastq.gz ./fastq/sample_P24004/
-```
+Example minimal config
 
-This step takes a while...
+```{yaml}
+# Required
+name: "NanoCT_run1"               # sample/run name (used as top-level folder)
+fastq_path: "/path/to/fastqs"     # root folder with FASTQs (recursive search)
 
-> Note: The file names should follow the standard illumina .fastq naming convention having for example the following format:
-
->SampleID_S1_L001_R1_001.fastq
-
-> Otherwise the pipeline probably won't work. For more details on illumina fastq file naming please see: https://support.illumina.com/help/BaseSpace_OLH_009008/Content/Source/Informatics/BS/NamingConvention_FASTQ-files-swBS.htm
-
-
-## Install cellranger
-Cellranger is a bit more complex to fit inside a conda environment and is generally heavy to store.
-On most HPCs running bioinformatic pipelines, Cellranger is already installed.
-However if you wish to run the pipeline on a separated workstation, you can follow [10Xgenomics guidelines](https://support.10xgenomics.com/single-cell-atac/software/pipelines/latest/installation).
-
-> If cellranger is not installed on your favorite HPC, please contact your HPC support.
-
-Pre compiled references for cellranger-atac for some species are available [here](https://support.10xgenomics.com/single-cell-atac/software/downloads/latest)
-
-To generate cellranger-atac reference please follow [here](https://support.10xgenomics.com/single-cell-atac/software/pipelines/latest/advanced/references)
-
-## HPC profiles
-The pipeline is implemented in workflow management software known as snakemake.
-It communicates with HPCs to run parallelized jobs to speed up the process.
-Like previously mentioned at the beginning of the [Set Up](#set-up), the conda environment has been built to create a communication between snakemake and htcordor/slurm scheduler, therefore, htcondor package has been installed in the conda environment.
-
-For htcondor workflow management, we will follow these [guidelines](https://github.com/Snakemake-Profiles/htcondor)
-```
-mkdir -p ~/.config/snakemake
-cd ~/.config/snakemake
-
-cookiecutter https://github.com/Snakemake-Profiles/htcondor.git
-```
-
-> At `profile_name [htcondor]` press `enter` and select a path for your log files, something like `~/condor_jobs`
-
-
-For slurm workflow management, follow these [guidelines](https://github.com/Snakemake-Profiles/slurm)
-```
-mkdir -p ~/.config/snakemake
-cd ~/.config/snakemake
-
-template="gh:Snakemake-Profiles/slurm"
-cookiecutter --output-dir ~/.config/snakemake "$template"
-```
-
-> If you do not have access to an HPC, you can simply remove the profile options from the snakemake command line and ignore this section.
-
-## Changing parameters
-
-### Creation of temporary folder
-This temporary directory will be given to the config file to handle snakemake temporary outputs
-```
-mkdir -p ~/tmp/nanoCT_project
-```
-### Modify config.yaml
-The config.yaml file in the github repository will tailored the workflow according to its content.
-Here is showned the config file for the [downloaded fastq files](#download-sra).
-
-One can change the name of the samples as well as the path of the fastq files and the associated modalities. General information can also be tweaked, such as the temporary directory and parameters related to cellranger binary and reference location.
-
-**NB**: this tutorial assumes the cellranger-atac reference has already been generated. If not, please follow cellranger instructions [here](https://support.10xgenomics.com/single-cell-atac/software/pipelines/latest/advanced/references) or download it directly from [cellranger website](https://support.10xgenomics.com/single-cell-atac/software/downloads/latest?).
-
-
-Go back to the git directory
-```
-cd ~/nanoCT_project/nanoscope
-```
-
-You can find the config.yaml file in `config/config.yaml`
-
-```
-samples:
-  sample_P23209:
-    fastq_path:
-      ~/nanoCT_project/Data/fastq/sample_P23209/
-    barcodes:
-      ATAC: TATAGCCT
-      H3K27ac: ATAGAGGC
-      H3K27me3: CCTATCCT
-
-  sample_P24004:
-    fastq_path:
-      ~/nanoCT_project/Data/fastq/sample_P24004/
-    barcodes:
-      ATAC: TATAGCCT
-      H3K27ac: ATAGAGGC
-      H3K27me3: CCTATCCT
+barcodes:                         # barcode sequence => modality label
+  ACGTAC: H3K27ac
+  TGCATG: H3K4me3
+  GATCTA: Input
 
 general:
-  tempdir: ~/tmp/nanoCT_project
-  cellranger_software: /data/bin/cellranger-atac
-  cellranger_ref: /data/ref/cellranger-atac/refdata-cellranger-atac-mm10-2020-A-2.0.0/
-  macs_genome: mm
+  cellranger_software: "cellranger-atac"    # path or name in $PATH
+  cellranger_ref: "/refs/cellranger-atac/refdata"  # has fasta/genome.fa etc.
+  macs_genome: "hs"                          # MACS2 -g (e.g., hs, mm, 2.7e9)
+  tempdir: "/tmp"                            # for sorting/uniqs
+  gtf: "https://.../gencode.vXX.annotation.gtf.gz" # used for gene bodies/promoters
+  bin_sizes: [5000, 10000]                   # fixed bin matrices to generate
+  ```
+
+- name - arbitrary filesystem-safe 
+- fastq_path - path to folder that contain .fastq.gz files from Illumina sequencing
+- barcodes - mapping of barcodes to their respective modalities
+- general - general parameters, like cellranger bin $PATH, cellranger ref path, macs genome (hs,mm,ce, dm) - see macs help, tempdir - path to temporary directory used in read sorting, gtf - url to gtf file containing gene annotations (gencode supported), bin_sizes - sizes of bins for which to construct the bin x cell matrix. 
+
+
+## Outputs
 ```
-
-# Preprocessing
-The first steps of processing from fastq files to cell picking will be done by the workflow management system, snakemake.
-It will cover the following steps :
- - Modality Demultiplexing
- - Reads alignment with Cellranger
- - Create pseudobulk bigwig tracks for all cells (for QC purposes) 
- - Call peaks with Macs2
- - Create summary files with number of reads per cell (including PCR duplicates) and number of reads in peak regions
- - Redo cell selection, based on the summary files
-
-All outputed files will be automatically generated and will be used to run the R markdown vignette below.
-
-cd into project directory
+NanoCT_run1/
+  general/
+    NanoCT_run1_barcodes_table.txt
+    NanoCT_run1_genome_index.fa.fai
+  fastq_split_R2/                          # R2 split into modality/singlecell
+  fastq_debarcoded/
+    barcode_<BARCODE>/                     # demultiplexed FASTQs per barcode
+      <PREFIX>_S##_L###_R1_...
+      <PREFIX>_S##_L###_R2_...             # single-cell R2 part
+      <PREFIX>_S##_L###_R3_...
+  <MODALITY>/                              # bulk per modality
+    mapping_out/
+      <MODALITY>_merged.bam
+      <MODALITY>_merged.bam.bai
+      <MODALITY>_merged.bw
+    peaks/macs2/
+      <MODALITY>_peaks.broadPeak
+      <MODALITY>_peaks_3column.bed
+  <MODALITY>_<BARCODE>/                    # single-cell per (modality, barcode)
+    cellranger/outs/
+      possorted_bam.bam
+      fragments.tsv.gz
+      singlecell.csv
+      fragments_noLA_duplicates.tsv.gz(.tbi)   # after LA duplicate removal
+      possorted_noLA_duplicates_bam.bam(.bai)
+    barcode_metrics/
+      peaks_barcodes.txt                    # reads per cell overlapping MACS peaks
+      all_barcodes.txt                      # reads per cell overall
+    cell_picking/
+      cells_10x.png                         # Cell picking scatterplot using cellranger default
+      cells_nanoscope.png                   # Cell picking scatterplot using nanoscope picker  
+      metadata.csv                          # selected cells - replaces 10x cellranger metadata
+    matrix/
+      all_cells.txt
+      matrix_bin_5000/ (or configured sizes)
+        features.tsv.gz  barcodes.tsv  matrix.mtx.gz
+      matrix_genebody_promoter/
+        features.tsv.gz  barcodes.tsv  matrix.mtx.gz
 ```
-cd ~/nanoCT_project/
-```
-Run snakemake with htcondor profile
-
-```
-snakemake --snakefile nanoscope/workflow/Smalefile_nanoscope.smk.smk --cores 16 --jobs 100 --profile htcondor -p --use-conda --configfile nanoscope/config/config.yaml
-```
-Slurm profile
-```
-snakemake --snakefile nanoscope/workflow/Smalefile_nanoscope.smk.smk --cores 16 --jobs 100 --profile slurm -p --use-conda --configfile nanoscope/config/config.yaml
-```
-
-In interactive shell
-```
-snakemake --snakefile nanoscope/workflow/Smalefile_nanoscope.smk.smk --cores 16 --jobs 100 -p --use-conda --configfile nanoscope/config/config.yaml
-```
-
-# Downstream analysis
-Once that the [Set Up](#set-up) and [Preprocessing](#preprocessing) steps are succcesfully completed, data is ready for downstream analysis. In this part of the documentation we provide a vignette on how to perform the downstream analyses, from raw data to identification and annotation of the different cell states in the dataset in analysis.
-
-If you prefer to perform the analysis by using **peaks**, please, follow this [vignette](https://fansalon.github.io/vignette_single-cell-nanoCT.html).\
-If you prefer to perform the analysis by using **bins**, please, follow this [vignette](https://fansalon.github.io/vignette_single-cell-nanoCT_bins.html).\
-[Here](https://fansalon.github.io/comparison_vignette_single-cell-nanoCT.html) you can also find an additional vignette where the analyses run by using bins and peaks on the same dataset are compared.
-
-The use of peaks or bins mostly depends on the workflow you are applying to your analysis. If in your analyses you need to integrate different datasets (ATAC-seq with nanoCT, or different nanoCT datasets), or different samples, then we suggest to use bins (bins are the same everywhere). A downside of using bins is that the signal is probably a bit less specific than when using peaks, and overall the clustering resolution could be a bit worse when using bins than peaks.
-
-
-Note how the dataset analysed in this vignette is composed by 2 biological replicates of the same sample. Often experiments are designed in order to have multiple samples and/or biological conditions requiring data integration, differential analysis, etc. These are not part of this vignette, but will be implemented in other vignettes in the future.
-
-
-
-
+## Pipeline scheme
+!["Flowchart diagram showing the Nanoscope-mx pipeline workflow. Starting with multiplexed FASTQ files at the top, the process flows downward through three main stages. First stage: demultiplexing of reads by modality barcodes. Second stage: parallel processing of bulk alignments and peak calling for each modality. Third stage: single-cell processing including Cell Ranger ATAC analysis, cell calling, and generation of count matrices. Arrows connect the stages indicating data flow. Technical steps include BAM file generation, MACS2 peak calling, and creation of bin and gene body matrices."](img/image.png)
