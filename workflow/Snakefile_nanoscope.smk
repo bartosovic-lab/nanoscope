@@ -56,8 +56,8 @@ rule split_R2:
     input:
         R2 = lambda wildcards: find_fastq_in_folder(path=config['fastq_path'], filters = [wildcards.lane,'R2']),
     output:
-        modality = '{sample}/fastq_split_R2/{prefix}_{number}_{lane}_R2_001_modality.fastq.gz',
-        singlecell = '{sample}/fastq_split_R2/{prefix}_{number}_{lane}_R2_001_singlecell.fastq.gz',
+        modality = temp('{sample}/fastq_split_R2/{prefix}_{number}_{lane}_R2_001_modality.fastq.gz'),
+        singlecell = temp('{sample}/fastq_split_R2/{prefix}_{number}_{lane}_R2_001_singlecell.fastq.gz'),
     params:
         outdir = '{sample}/fastq_split_R2/',
         script = workflow.basedir + '/scripts/process_R2_barcodes.py',
@@ -75,8 +75,8 @@ rule demultiplex:
         R3            = lambda wildcards: find_fastq_in_folder(path=config['fastq_path'], filters = [wildcards.lane, 'R3']),
         barcodes_table = '{sample}/general/{sample}_barcodes_table.txt',
     output:
-        output = expand('{{sample}}/fastq_debarcoded/barcode_{barcode}/{{prefix}}_{{number}}_{{lane}}_{read}_{{suffix}}', barcode = config['barcodes'].keys(), 
-                                                                                                                          read = ['R1','R2','R3']),
+        output = temp(expand('{{sample}}/fastq_debarcoded/barcode_{barcode}/{{prefix}}_{{number}}_{{lane}}_{read}_{{suffix}}', barcode = config['barcodes'].keys(), 
+                                                                                                                          read = ['R1','R2','R3'])),
     params:
         outdir   = '{sample}/fastq_demultiplexed/',
         log    = "{sample}/fastq_debarcoded/{sample}_{lane}_log.txt",
@@ -224,8 +224,8 @@ rule possort_noLA_bam_file:
     input:
         bam = '{sample}/{modality}_{barcode}/cellranger/outs/namesorted_noLA_duplicates_bam.bam',
     output:
-        bam   = '{sample}/{modality}_{barcode}/cellranger/outs/possorted_noLA_duplicates_bam.bam',
-        index = '{sample}/{modality}_{barcode}/cellranger/outs/possorted_noLA_duplicates_bam.bam.bai',
+        bam   = temp('{sample}/{modality}_{barcode}/cellranger/outs/possorted_noLA_duplicates_bam.bam'),
+        index = temp('{sample}/{modality}_{barcode}/cellranger/outs/possorted_noLA_duplicates_bam.bam.bai'),
     conda: '../envs/nanoscope_general.yaml'
     threads: 8
     resources:

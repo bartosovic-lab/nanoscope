@@ -68,10 +68,6 @@ def parse_fastq(path):
 
 
 def check_fastq(all_fastq_files):
-    if len(all_fastq_files) == 0:
-        sys.stderr.write('*** Error: Found 0 files in folder {}\n'.format(fastq_folder))
-        sys.stderr.write('*** Aborting now! \n')
-        raise Exception('No files found in fastq folder\n')
     for x in all_fastq_files:
         if not os.path.isfile(x):
             sys.stderr.write("*** Error: File {} does not exist\n".format(x))
@@ -90,6 +86,11 @@ def get_fastq_for_cellranger(fastq_folder,sample,modality,barcode):
     # sys.stderr.write('Looking for fastq files in folder: {}\n'.format(fastq_folder))
     all_fastq_files = glob.glob(fastq_folder,recursive=True)
     
+    if len(all_fastq_files) == 0:
+        sys.stderr.write('*** Error: Found 0 files in folder {}\n'.format(fastq_folder))
+        sys.stderr.write('*** Aborting now! \n')
+        raise Exception('No files found in fastq folder\n')
+
     # Check if there are any fastq files and if they exist 
     check_fastq(all_fastq_files)
     

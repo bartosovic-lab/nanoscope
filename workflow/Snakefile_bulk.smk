@@ -13,8 +13,8 @@ rule trim_trim_galore:
         fastq_R1 = '{sample}/fastq_debarcoded/barcode_{barcode}/{prefix}_{number}_{lane}_R1_{suffix}',
         fastq_R2 = '{sample}/fastq_debarcoded/barcode_{barcode}/{prefix}_{number}_{lane}_R3_{suffix}',
     output:
-        out_R1 = '{sample}/{modality}_{barcode}/fastq_trimmed/{prefix}_{number}_{lane}_R1_{suffix}',
-        out_R2 = '{sample}/{modality}_{barcode}/fastq_trimmed/{prefix}_{number}_{lane}_R3_{suffix}',
+        out_R1 = temp('{sample}/{modality}_{barcode}/fastq_trimmed/{prefix}_{number}_{lane}_R1_{suffix}'),
+        out_R2 = temp('{sample}/{modality}_{barcode}/fastq_trimmed/{prefix}_{number}_{lane}_R3_{suffix}'),
     params:
         outdir = str(Path('{sample}/{modality}_{barcode}/fastq_trimmed/{prefix}_{number}_{lane}_R1_{suffix}').parents[0]),
         # OUT_R1 = '{sample}_{lane}_val_1'
@@ -38,7 +38,7 @@ rule map_bwa:
         read2 = '{sample}/{modality}_{barcode}/fastq_trimmed/{prefix}_{number}_{lane}_R3_{suffix}',
         index = str(Path(config['general']['cellranger_ref'] + '/fasta/genome.fa').resolve()),
     output:
-        bam = '{sample}/{modality}_{barcode}/mapping_out/{prefix}_{number}_{lane}_{suffix}_mapped.bam',
+        bam = temp('{sample}/{modality}_{barcode}/mapping_out/{prefix}_{number}_{lane}_{suffix}_mapped.bam'),
     conda: "../envs/nanoscope_general.yaml"
     threads: 8
     resources:
@@ -56,8 +56,8 @@ rule bam_sort_and_index:
     input:
         '{sample}/{modality}_{barcode}/mapping_out/{prefix}_{number}_{lane}_{suffix}_mapped.bam',
     output:
-        bam_sorted = '{sample}/{modality}_{barcode}/mapping_out/{prefix}_{number}_{lane}_{suffix}_sorted.bam',
-        bam_index  = '{sample}/{modality}_{barcode}/mapping_out/{prefix}_{number}_{lane}_{suffix}_sorted.bam' + '.bai',
+        bam_sorted = temp('{sample}/{modality}_{barcode}/mapping_out/{prefix}_{number}_{lane}_{suffix}_sorted.bam'),
+        bam_index  = temp('{sample}/{modality}_{barcode}/mapping_out/{prefix}_{number}_{lane}_{suffix}_sorted.bam' + '.bai'),
     threads: 8
     conda: "../envs/nanoscope_general.yaml"
     resources:
@@ -69,7 +69,7 @@ rule merge_mapped:
   input:
     bam = lambda wildcards:merge_bam_inputs(config['fastq_path'],sample = wildcards.sample,modality=wildcards.modality,barcodes_dict = barcodes_dict)
   output:
-    bam = '{sample}/{modality}/mapping_out/{modality}_merged.bam'
+    bam = temp('{sample}/{modality}/mapping_out/{modality}_merged.bam')
   threads: 8
   conda: "../envs/nanoscope_general.yaml"
   resources:
