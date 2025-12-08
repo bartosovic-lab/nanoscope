@@ -5,26 +5,34 @@ import sys
 
 # configfile: workflow.basedir + '/../config/config.yaml'
 
-samples_list  = list(config['samples'].keys())
-print(samples_list)
+# samples_list  = list(config['samples'].keys())
+# print(samples_list)
 
-barcodes_dict = {sample: config['samples'][sample]['barcodes'] for sample in samples_list}
-print(barcodes_dict)
+# barcodes_dict = {sample: config['samples'][sample]['barcodes'] for sample in samples_list}
+# print(barcodes_dict)
 
-antibodies_list = list(set(itertools.chain(*[barcodes_dict[sample].keys() for sample in barcodes_dict.keys()])))
-print(antibodies_list)
+# antibodies_list = list(set(itertools.chain(*[barcodes_dict[sample].keys() for sample in barcodes_dict.keys()])))
+# print(antibodies_list)
 
 # Find combinations of modalities
 # These are only realistic combinations of modalities
-modalities_combinations =  [itertools.combinations(list(barcodes_dict[sample].keys()),i) for sample in samples_list for i in range(2,1+len(barcodes_dict[sample].keys()))]
-modalities_combinations = [list(x) for x in list(set(itertools.chain(*modalities_combinations)))]
-print(modalities_combinations)
+# modalities_combinations =  [itertools.combinations(list(barcodes_dict[sample].keys()),i) for sample in samples_list for i in range(2,1+len(barcodes_dict[sample].keys()))]
+# modalities_combinations = [list(x) for x in list(set(itertools.chain(*modalities_combinations)))]
+# print(modalities_combinations)
 
 # Define features
 features = ['peaks']
 bins = [5000,10000]
 
 print(features)
+
+
+
+def revcomp(seq: str) -> str:
+    """Return reverse complement of an A/C/G/T sequence."""
+    comp = str.maketrans("ACGTacgt", "TGCAtgca")
+    return seq.translate(comp)[::-1]
+
 
 def get_fastq_for_cellranger(fastq_folder,sample,modality,barcode):
     import glob
@@ -44,7 +52,7 @@ def get_fastq_for_cellranger(fastq_folder,sample,modality,barcode):
     for x in all_fastq_parsed:
         if x['read'] == 'I1':
             continue
-        result.append('{sample}/{modality}_{barcode}/fastq/barcode_{barcode}/{sample}_{number}_{lane}_{read}_{suffix}'.format(\
+        result.append('{sample}/debarcoded_fastq/barcode_{barcode}/{sample}_{number}_{lane}_{read}_{suffix}'.format(\
             sample=sample, modality=modality , barcode=barcode, seq_id=x['id'], number=x['number'], lane=x['lane'], suffix=x['suffix'], read = x['read']))
     return(result)
 

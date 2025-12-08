@@ -1,66 +1,148 @@
 include: 'Snakefile_prep.smk'
 
+import sys
+args = sys.argv
+config_path = args[args.index("--configfile") + 1]
+
+
 rule all_preprocess:
     input:
         cellranger=[
-            '{sample}/{modality}_{barcode}/cellranger/outs/possorted_bam.bam'.format(sample=sample,modality=modality,barcode=
-            barcodes_dict[sample][modality]) for sample in samples_list for modality in barcodes_dict[sample].keys()],
-        bigwig_all=[
-            '{sample}/{modality}_{barcode}/bigwig/all_reads.bw'.format(sample=sample,modality=modality,barcode=
-            barcodes_dict[sample][modality]) for sample in samples_list for modality in barcodes_dict[sample].keys()],
-        macs_broad=[
-            '{sample}/{modality}_{barcode}/peaks/macs_broad/{modality}_peaks.broadPeak'.format(sample=sample,modality=modality,barcode=
-            barcodes_dict[sample][modality]) for sample in samples_list for modality in barcodes_dict[sample].keys()],
-        peaks_overlap=[
-            '{sample}/{modality}_{barcode}/barcode_metrics/peaks_barcodes.txt'.format(sample=sample,modality=modality,barcode=
-            barcodes_dict[sample][modality]) for sample in samples_list for modality in barcodes_dict[sample].keys()],
-        barcodes_sum=[
-            '{sample}/{modality}_{barcode}/barcode_metrics/all_barcodes.txt'.format(sample=sample,modality=modality,barcode=
-            barcodes_dict[sample][modality]) for sample in samples_list for modality in barcodes_dict[sample].keys()],
-        cell_pick=[
-            '{sample}/{modality}_{barcode}/cell_picking/metadata.csv'.format(sample=sample,modality=modality,barcode=
-            barcodes_dict[sample][modality]) for sample in samples_list for modality in barcodes_dict[sample].keys()],
-        noLA_bam=[
-            '{sample}/{modality}_{barcode}/cellranger/outs/fragments_noLA_duplicates.tsv.gz'.format(sample=sample,modality=modality,barcode=
-            barcodes_dict[sample][modality]) for sample in samples_list for modality in barcodes_dict[sample].keys()],
-        cellranger_cleanup = [
-            '{sample}/{modality}_{barcode}/_clean_cellranger.out'.format(sample=sample,modality=modality,barcode=
-            barcodes_dict[sample][modality]) for sample in samples_list for modality in barcodes_dict[sample].keys()],
-        matrix_peaks = [
-            '{sample}/{modality}_{barcode}/matrix/matrix_peaks/'.format(sample=sample,modality=modality,barcode=
-            barcodes_dict[sample][modality]) for sample in samples_list for modality in barcodes_dict[sample].keys()],
-        matrix_bins = [
-            '{sample}/{modality}_{barcode}/matrix/matrix_bin_{binsize}/'.format(sample=sample,modality=modality,barcode=
-            barcodes_dict[sample][modality],binsize = binsize) for sample in samples_list for modality in barcodes_dict[sample].keys() for binsize in bins], 
-        matrix_genes = [
-            '{sample}/{modality}_{barcode}/matrix/matrix_genes/'.format(sample=sample,modality=modality,barcode=
-            barcodes_dict[sample][modality]) for sample in samples_list for modality in barcodes_dict[sample].keys()],
+            '{sample}/{modality}_{barcode}/cellranger/outs/possorted_bam.bam'.format(sample=config['sample_name'],modality = m, barcode = b) for m,b in config['barcodes'].items()],
+        # bigwig_all=[
+        #     '{sample}/{modality}_{barcode}/bigwig/all_reads.bw'.format(sample=sample,modality=modality,barcode=
+        #     barcodes_dict[sample][modality]) for sample in samples_list for modality in barcodes_dict[sample].keys()],
+        # macs_broad=[
+        #     '{sample}/{modality}_{barcode}/peaks/macs_broad/{modality}_peaks.broadPeak'.format(sample=sample,modality=modality,barcode=
+        #     barcodes_dict[sample][modality]) for sample in samples_list for modality in barcodes_dict[sample].keys()],
+        # peaks_overlap=[
+        #     '{sample}/{modality}_{barcode}/barcode_metrics/peaks_barcodes.txt'.format(sample=sample,modality=modality,barcode=
+        #     barcodes_dict[sample][modality]) for sample in samples_list for modality in barcodes_dict[sample].keys()],
+        # barcodes_sum=[
+        #     '{sample}/{modality}_{barcode}/barcode_metrics/all_barcodes.txt'.format(sample=sample,modality=modality,barcode=
+        #     barcodes_dict[sample][modality]) for sample in samples_list for modality in barcodes_dict[sample].keys()],
+        # cell_pick=[
+        #     '{sample}/{modality}_{barcode}/cell_picking/metadata.csv'.format(sample=sample,modality=modality,barcode=
+        #     barcodes_dict[sample][modality]) for sample in samples_list for modality in barcodes_dict[sample].keys()],
+        # noLA_bam=[
+        #     '{sample}/{modality}_{barcode}/cellranger/outs/fragments_noLA_duplicates.tsv.gz'.format(sample=sample,modality=modality,barcode=
+        #     barcodes_dict[sample][modality]) for sample in samples_list for modality in barcodes_dict[sample].keys()],
+        # cellranger_cleanup = [
+        #     '{sample}/{modality}_{barcode}/_clean_cellranger.out'.format(sample=sample,modality=modality,barcode=
+        #     barcodes_dict[sample][modality]) for sample in samples_list for modality in barcodes_dict[sample].keys()],
+        # matrix_peaks = [
+        #     '{sample}/{modality}_{barcode}/matrix/matrix_peaks/'.format(sample=sample,modality=modality,barcode=
+        #     barcodes_dict[sample][modality]) for sample in samples_list for modality in barcodes_dict[sample].keys()],
+        # matrix_bins = [
+        #     '{sample}/{modality}_{barcode}/matrix/matrix_bin_{binsize}/'.format(sample=sample,modality=modality,barcode=
+        #     barcodes_dict[sample][modality],binsize = binsize) for sample in samples_list for modality in barcodes_dict[sample].keys() for binsize in bins], 
+        # matrix_genes = [
+        #     '{sample}/{modality}_{barcode}/matrix/matrix_genes/'.format(sample=sample,modality=modality,barcode=
+        #     barcodes_dict[sample][modality]) for sample in samples_list for modality in barcodes_dict[sample].keys()],
         
         
 
-
-rule demultiplex:
+rule split_R2:
     input:
-        script=workflow.basedir + '/scripts/debarcode.py',
-        fastq=lambda wildcards: glob.glob(config['samples'][wildcards.sample]['fastq_path'] + '/**/*{lane}*R[123]*.fastq.gz'.format(lane=wildcards.lane),recursive=True)
+        fastq=lambda wildcards: glob.glob(config['fastq_path'] + '/**/*{lane}*R[123]*.fastq.gz'.format(lane=wildcards.lane),recursive=True)
     output:
-        '{sample}/{modality}_{barcode}/fastq/barcode_{barcode}/{sample}_{number}_{lane}_R1_{suffix}',
-        '{sample}/{modality}_{barcode}/fastq/barcode_{barcode}/{sample}_{number}_{lane}_R2_{suffix}',
-        '{sample}/{modality}_{barcode}/fastq/barcode_{barcode}/{sample}_{number}_{lane}_R3_{suffix}',
-    params:
-        nbarcodes=lambda wildcards: len(config['samples'][wildcards.sample]['barcodes']),
-        out_folder=lambda wildcards: '{sample}/{modality}_{barcode}/fastq/'.format(sample=wildcards.sample,modality=wildcards.modality,barcode=wildcards.barcode),
+        '{sample}/debarcoded_fastq_temp/ATAC/{sample}_{number}_{lane}_R1_{suffix}',
+        '{sample}/debarcoded_fastq_temp/ATAC/{sample}_{number}_{lane}_R2_{suffix}',
+        '{sample}/debarcoded_fastq_temp/ATAC/{sample}_{number}_{lane}_R3_{suffix}',
+        '{sample}/debarcoded_fastq_temp/nonATAC/{sample}_{number}_{lane}_R1_{suffix}',
+        '{sample}/debarcoded_fastq_temp/nonATAC/{sample}_{number}_{lane}_R2_{suffix}',
+        '{sample}/debarcoded_fastq_temp/nonATAC/{sample}_{number}_{lane}_R3_{suffix}',
+        '{sample}/debarcoded_fastq_temp/nonATAC/{sample}_{number}_{lane}_R2_{suffix}_modality.gz',
+        '{sample}/debarcoded_fastq_temp/noMatch/{sample}_{number}_{lane}_R1_{suffix}',
+        '{sample}/debarcoded_fastq_temp/noMatch/{sample}_{number}_{lane}_R2_{suffix}',
+        '{sample}/debarcoded_fastq_temp/noMatch/{sample}_{number}_{lane}_R3_{suffix}',
     threads: 1
     resources:
         mem_mb = 8000,
-        runtime = 480 # 8 hours should be enough for most reasonable single-cell data, if the command timeouts, increase this value
+        runtime = 480
+    params:
+        script = workflow.basedir + '/scripts/split_ATAC.py',
     conda: '../envs/nanoscope_general.yaml'
     shell:
-        "python3 {input.script} -i {input.fastq} -o {params.out_folder} --single_cell --barcode {wildcards.barcode} --name {wildcards.sample} 2>&1"
+        """
+        mkdir -p {wildcards.sample}/debarcoded_fastq_temp/;
+        cd {wildcards.sample}/debarcoded_fastq_temp/;
+        python3 {params.script} -i {input.fastq} --ATAC ATAC --nonATAC nonATAC --noMatch noMatch
+        """
+
+rule move_ATAC:
+    input:
+        R1 = '{sample}/debarcoded_fastq_temp/ATAC/{sample}_{number}_{lane}_R1_{suffix}',
+        R2 = '{sample}/debarcoded_fastq_temp/ATAC/{sample}_{number}_{lane}_R2_{suffix}',
+        R3 = '{sample}/debarcoded_fastq_temp/ATAC/{sample}_{number}_{lane}_R3_{suffix}',
+    output:
+        R1 = '{sample}/debarcoded_fastq/barcode_MeA/{sample}_{number}_{lane}_R1_{suffix}',
+        R2 = '{sample}/debarcoded_fastq/barcode_MeA/{sample}_{number}_{lane}_R2_{suffix}',
+        R3 = '{sample}/debarcoded_fastq/barcode_MeA/{sample}_{number}_{lane}_R3_{suffix}',
+    shell:
+        "mv {input.R1} {output.R1}; mv {input.R2} {output.R2}; mv {input.R3} {output.R3}"
+
+rule config2barcodes:
+    input:
+        script=workflow.basedir + '/scripts/fastq_multx_barcodes_from_config.py',
+    output:
+        '{sample}/debarcoded_fastq_temp/{sample}_{lane}_barcodes.txt',
+    params:
+        config = config_path,
+    threads: 1
+    resources:
+        mem_mb = 2000,
+    conda: '../envs/nanoscope_general.yaml'
+    shell:
+        """
+        python3 {input.script} --config {params.config} --output {output} --reverse-complement
+        """
+
+rule debarcode_fastq_multx:
+    input:
+        barcodes      = '{sample}/debarcoded_fastq_temp/{sample}_{lane}_barcodes.txt',
+        R1            = '{sample}/debarcoded_fastq_temp/nonATAC/{sample}_{number}_{lane}_R1_{suffix}',
+        R2_singlecell = '{sample}/debarcoded_fastq_temp/nonATAC/{sample}_{number}_{lane}_R2_{suffix}',
+        R3            = '{sample}/debarcoded_fastq_temp/nonATAC/{sample}_{number}_{lane}_R3_{suffix}',
+        R2_modality   = '{sample}/debarcoded_fastq_temp/nonATAC/{sample}_{number}_{lane}_R2_{suffix}_modality.gz',
+    output: 
+        R1  = expand('{{sample}}/debarcoded_fastq_temp/{{lane}}/barcode_{barcode}/{{sample}}_{{number}}_{{lane}}_{read}_{{suffix}}',barcode = [b for b in config['barcodes'].values() if b != 'MeA'], read=['R1','R2','R3'] ),
+        #
+    threads: 1
+    params: 
+        all_barcodes = [b for b in config['barcodes'].values() if b != 'MeA'],
+        log = '{sample}/debarcoded_fastq/{sample}_{number}_{lane}_{suffix}_debarcode.log',
+    conda: "../envs/nanoscope_general.yaml"
+    shell:
+        """
+        for b in {params.all_barcodes}; do
+          mkdir -p {wildcards.sample}/debarcoded_fastq_temp/{wildcards.lane}/barcode_$b/;
+          done;
+        mkdir -p {wildcards.sample}/debarcoded_fastq_temp/{wildcards.lane}/barcode_unmatched/; 
+        fastq-multx {input.barcodes} {input.R2_modality} {input.R1} {input.R2_singlecell} {input.R3} \
+        -o {wildcards.sample}/debarcoded_fastq_temp/{wildcards.lane}/barcode_%/{wildcards.sample}_{wildcards.number}_{wildcards.lane}_modality_{wildcards.suffix} \
+        {wildcards.sample}/debarcoded_fastq_temp/{wildcards.lane}/barcode_%/{wildcards.sample}_{wildcards.number}_{wildcards.lane}_R1_{wildcards.suffix} \
+        {wildcards.sample}/debarcoded_fastq_temp/{wildcards.lane}/barcode_%/{wildcards.sample}_{wildcards.number}_{wildcards.lane}_R2_{wildcards.suffix} \
+        {wildcards.sample}/debarcoded_fastq_temp/{wildcards.lane}/barcode_%/{wildcards.sample}_{wildcards.number}_{wildcards.lane}_R3_{wildcards.suffix} &> {params.log} ;
+        """
+
+rule move_nano_CT:
+    input:
+        R1            = '{sample}/debarcoded_fastq_temp/{lane}/barcode_{barcode}/{sample}_{number}_{lane}_R1_{suffix}',
+        R2            = '{sample}/debarcoded_fastq_temp/{lane}/barcode_{barcode}/{sample}_{number}_{lane}_R2_{suffix}',
+        R3            = '{sample}/debarcoded_fastq_temp/{lane}/barcode_{barcode}/{sample}_{number}_{lane}_R3_{suffix}',
+    output:
+        R1 = '{sample}/debarcoded_fastq/barcode_{barcode}/{sample}_{number}_{lane}_R1_{suffix}',
+        R2 = '{sample}/debarcoded_fastq/barcode_{barcode}/{sample}_{number}_{lane}_R2_{suffix}',
+        R3 = '{sample}/debarcoded_fastq/barcode_{barcode}/{sample}_{number}_{lane}_R3_{suffix}',
+    threads: 1
+    shell:
+        "mv {input.R1} {output.R1}; mv {input.R2} {output.R2}; mv {input.R3} {output.R3}"
+      
 
 rule run_cellranger:
     input:
-        lambda wildcards: get_fastq_for_cellranger(config['samples'][wildcards.sample]['fastq_path'],sample=wildcards.sample,modality=wildcards.modality,barcode=wildcards.barcode)
+        lambda wildcards: get_fastq_for_cellranger(config['fastq_path'], wildcards.sample, wildcards.modality, wildcards.barcode)
     output:
         bam='{sample}/{modality}_{barcode}/cellranger/outs/possorted_bam.bam',
         frag='{sample}/{modality}_{barcode}/cellranger/outs/fragments.tsv.gz',
@@ -69,13 +151,18 @@ rule run_cellranger:
     params:
         cellranger_software=config['general']['cellranger_software'],
         cellranger_ref=config['general']['cellranger_ref'],
-        fastq_folder=lambda wildcards: os.getcwd() + '/{sample}/{modality}_{barcode}/fastq/barcode_{barcode}/'.format(sample=wildcards.sample,modality=wildcards.modality,barcode=wildcards.barcode)
+        fastq_folder=lambda wildcards: os.getcwd() + '/{sample}/debarcoded_fastq/barcode_{barcode}'.format(sample=wildcards.sample,modality=wildcards.modality,barcode=wildcards.barcode)
     threads: 20
     resources:
         mem_mb = 32000
     shell:
+        # Clean up the temp debarcoded fastq folder
+        'rm -rf {wildcards.sample}/debarcoded_fastq_temp/; '
+        # Clean up previous cellranger run
         'rm -rf {wildcards.sample}/{wildcards.modality}_{wildcards.barcode}/cellranger/; '
+        # Cd into the folder
         'cd {wildcards.sample}/{wildcards.modality}_{wildcards.barcode}/; '
+        # Rum cellranger 
         '{params.cellranger_software} count --id cellranger --reference {params.cellranger_ref} --fastqs {params.fastq_folder}'
 
 rule cellranger_bam_to_namesorted:
@@ -249,10 +336,7 @@ rule clean_cellranger_output:
 
 rule get_cells:
     input:
-        lambda wildcards: ['{sample}/{modality}_{barcode}/cell_picking/metadata.csv'.format(sample = wildcards.sample, 
-                                                                                            modality = modality, 
-                                                                                            barcode = barcodes_dict[wildcards.sample][modality]) 
-            for modality in barcodes_dict[wildcards.sample].keys()]
+        lambda wildcards: ['{sample}/{modality}_{barcode}/cell_picking/metadata.csv'.format(sample = wildcards.sample, modality = m, barcode = b) for m,b in config['barcodes'].items()],
     output:
         cells = '{sample}/all_cells.txt'
     params:
