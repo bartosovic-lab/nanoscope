@@ -34,7 +34,7 @@ class bcdCT:
 
 
         self.autodetect_barcodes(args)
-        self.prep_out_filenames()
+        self.prep_out_filenames(args)
 
     def detect_input(self,input):
         Error_message="*** Error: Wrong input files specified. The input must be either folder with _R1_*.fastq.gz _R2_*.fastq.gz _R3_*.fastq.gz files or paths to the files themselves ***" +\
@@ -55,11 +55,13 @@ class bcdCT:
                 log(Error_message)
                 sys.exit(1)
             if not sum([x.endswith('.fastq.gz') or x.endswith('.fq.gz') for x in self.input_files]) == len(self.input_files):
-                sys.exit(1)
                 log(Error_message)
+                sys.exit(1)
+                
         else:
-            sys.exit(1)
             log(Error_message)
+            sys.exit(1)
+            
 
     def detect_reads(self):
         Error_message="*** Error: Please specify exactly one _R1_ _R2_ and _R3_ file or folder with exactly one of each files ***" + \
@@ -81,7 +83,7 @@ class bcdCT:
         in_stack = {x: stack.enter_context(FastxFile(self.path_in[x],'r')) for x in ['R1','R2','R3']}
         return in_stack
 
-    def prep_out_filenames(self):
+    def prep_out_filenames(self, args):
         self.path_out = {barcode: {} for barcode in self.picked_barcodes}
         self.path_out  = {barcode: {read: "{0}/barcode_{1}/{2}".format(self.out_prefix,barcode,os.path.basename(self.path_in[read])) for read in self.out_reads} for barcode in self.picked_barcodes}
         # If args.name is specified, replace the sample_id prefix with the one specified in args.name
@@ -125,18 +127,24 @@ class bcdCT:
             n += 1
             if n == 100000:
                 break
-            if MeA_hit:
-                barcodes['MeA'] += 1
-            elif not hit or hit == 'Multiple':
+            if MeA_hit is not None and hit is not None:
+                barcodes['ambiguous_spacer_MeA'] += 1
+                continue
+            if MeA_hit is None and hit is None:
                 barcodes['no_spacer'] += 1
                 continue
-            else:
+            if MeA_hit is not None:
+                barcodes['MeA'] += 1
+                continue
+            if hit is not None:
                 hit = int(hit)
                 read_barcode = get_read_barcode(read2, hit)
-                try:
-                    barcodes[read_barcode] += 1
-                except KeyError:
-                    barcodes[read_barcode] = 1
+                barcodes[read_barcode] += 1
+                continue
+            else:
+                barcodes['unknown'] += 1
+                
+
 
         top_barcodes = sorted(barcodes, key=barcodes.get, reverse=True)[:args.Nbarcodes]
         picked_barcodes = {key: barcodes[key] for key in top_barcodes}
@@ -211,13 +219,28 @@ def main(args):
             spacer_hit = find_seq(pattern=args.pattern,DNA_string=read2.sequence,nmismatch=2)
             MeA_hit    = find_seq(pattern = args.no_barcode_seq, DNA_string=read2.sequence, nmismatch=2)
             
-            if not spacer_hit and MeA_hit:
-                read_barcode = get_read_barcode(read2, MeA_hit)                                               # Returns only barcode e.g. ACTGACTG
+            if MeA_hit is not None and spacer_hit is not None:
+                # Both MeA and spacer hit - ambiguous
+                statistics["ambiguous_spacer_MeA"] += 1
+                continue
+            
+            if spacer_hit is None and MeA_hit is None:
+                statistics["no_spacer_found"] += 1
+                # No hit, no spacer not nothing found
+                if args.report_no_hit:
+                    hit_barcode = 'no_spacer'
+                else:
+                    continue        
+
+            if MeA_hit is not None:
+                # MeA hit 
                 hit_barcode  = 'MeA'
                 if exp.single_cell:
-                    read2 = extract_cell_barcode(read2, MeA_hit-16)     # The cell barcode is 16bp long and is positioned before the MeA spacer
+                    # read2 = extract_cell_barcode(read2, MeA_hit-16)     # The cell barcode is 16bp long and is positioned before the MeA spacer
+                    read2 = extract_cell_barcode(read2, 0)     # The cell barcode is 16bp long and is positioned before the MeA spacer
 
-            elif spacer_hit:
+            if spacer_hit is not None and MeA_hit is None:
+                # Only if not MeA and spacer hit - mutually exclusive with MeA
                 read_barcode = get_read_barcode(read2, spacer_hit)                                               # Returns only barcode e.g. ACTGACTG
                 read_barcode_distance = {barcode: Levenshtein.distance(read_barcode,barcode) for barcode in exp.picked_barcodes}
                 if sum([x <= int(args.mismatch) for x in read_barcode_distance.values()]) == 0:
@@ -234,13 +257,7 @@ def main(args):
                 if exp.single_cell:
                     read2 = extract_cell_barcode(read2, spacer_hit + len(args.pattern))     # The cell barcode is 16bp long and is positioned after the spacer
             
-            elif not spacer_hit and not MeA_hit:
-                statistics["no_spacer_found"] += 1
-                # No hit, no spacer not nothing found
-                if args.report_no_hit:
-                    hit_barcode = 'no_spacer'
-                else:
-                    continue        
+            
             
             # Now continue in the loop
             if len(read2.sequence) < 16:
