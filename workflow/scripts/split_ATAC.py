@@ -66,8 +66,8 @@ with pysam.FastxFile(input_dict['R1']) as R1_file, \
      smart_open(f"{args.noMatch}/{os.path.basename(input_dict['R3'])}", "wt") as noMatch_R3_file:
     for R1_read, R2_read, R3_read in zip(R1_file, R2_file, R3_file):
         n += 1
-        if n >= n_final:
-            break
+        # if n >= n_final:
+        #     break
         match_ATAC   = ATAC_pattern.search(R2_read.sequence)
         match_nanoCT = nanoCT_pattern.search(R2_read.sequence)
         if (match_nanoCT and match_ATAC) or (not match_nanoCT and not match_ATAC):

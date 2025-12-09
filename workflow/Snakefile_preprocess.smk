@@ -9,36 +9,26 @@ rule all_preprocess:
     input:
         cellranger=[
             '{sample}/{modality}_{barcode}/cellranger/outs/possorted_bam.bam'.format(sample=config['sample_name'],modality = m, barcode = b) for m,b in config['barcodes'].items()],
-        # bigwig_all=[
-        #     '{sample}/{modality}_{barcode}/bigwig/all_reads.bw'.format(sample=sample,modality=modality,barcode=
-        #     barcodes_dict[sample][modality]) for sample in samples_list for modality in barcodes_dict[sample].keys()],
-        # macs_broad=[
-        #     '{sample}/{modality}_{barcode}/peaks/macs_broad/{modality}_peaks.broadPeak'.format(sample=sample,modality=modality,barcode=
-        #     barcodes_dict[sample][modality]) for sample in samples_list for modality in barcodes_dict[sample].keys()],
-        # peaks_overlap=[
-        #     '{sample}/{modality}_{barcode}/barcode_metrics/peaks_barcodes.txt'.format(sample=sample,modality=modality,barcode=
-        #     barcodes_dict[sample][modality]) for sample in samples_list for modality in barcodes_dict[sample].keys()],
-        # barcodes_sum=[
-        #     '{sample}/{modality}_{barcode}/barcode_metrics/all_barcodes.txt'.format(sample=sample,modality=modality,barcode=
-        #     barcodes_dict[sample][modality]) for sample in samples_list for modality in barcodes_dict[sample].keys()],
-        # cell_pick=[
-        #     '{sample}/{modality}_{barcode}/cell_picking/metadata.csv'.format(sample=sample,modality=modality,barcode=
-        #     barcodes_dict[sample][modality]) for sample in samples_list for modality in barcodes_dict[sample].keys()],
-        # noLA_bam=[
-        #     '{sample}/{modality}_{barcode}/cellranger/outs/fragments_noLA_duplicates.tsv.gz'.format(sample=sample,modality=modality,barcode=
-        #     barcodes_dict[sample][modality]) for sample in samples_list for modality in barcodes_dict[sample].keys()],
-        # cellranger_cleanup = [
-        #     '{sample}/{modality}_{barcode}/_clean_cellranger.out'.format(sample=sample,modality=modality,barcode=
-        #     barcodes_dict[sample][modality]) for sample in samples_list for modality in barcodes_dict[sample].keys()],
-        # matrix_peaks = [
-        #     '{sample}/{modality}_{barcode}/matrix/matrix_peaks/'.format(sample=sample,modality=modality,barcode=
-        #     barcodes_dict[sample][modality]) for sample in samples_list for modality in barcodes_dict[sample].keys()],
-        # matrix_bins = [
-        #     '{sample}/{modality}_{barcode}/matrix/matrix_bin_{binsize}/'.format(sample=sample,modality=modality,barcode=
-        #     barcodes_dict[sample][modality],binsize = binsize) for sample in samples_list for modality in barcodes_dict[sample].keys() for binsize in bins], 
-        # matrix_genes = [
-        #     '{sample}/{modality}_{barcode}/matrix/matrix_genes/'.format(sample=sample,modality=modality,barcode=
-        #     barcodes_dict[sample][modality]) for sample in samples_list for modality in barcodes_dict[sample].keys()],
+        bigwig_all=[
+            '{sample}/{modality}_{barcode}/bigwig/all_reads.bw'.format(sample=config['sample_name'],modality = m, barcode = b) for m,b in config['barcodes'].items()],
+        macs_broad=[
+            '{sample}/{modality}_{barcode}/peaks/macs_broad/{modality}_peaks.broadPeak'.format(sample=config['sample_name'],modality = m, barcode = b) for m,b in config['barcodes'].items()],
+        peaks_overlap=[
+            '{sample}/{modality}_{barcode}/barcode_metrics/peaks_barcodes.txt'.format(sample=config['sample_name'],modality = m, barcode = b) for m,b in config['barcodes'].items()],
+        barcodes_sum=[
+            '{sample}/{modality}_{barcode}/barcode_metrics/all_barcodes.txt'.format(sample=config['sample_name'],modality = m, barcode = b) for m,b in config['barcodes'].items()],
+        cell_pick=[
+            '{sample}/{modality}_{barcode}/cell_picking/metadata.csv'.format(sample=config['sample_name'],modality = m, barcode = b) for m,b in config['barcodes'].items()],
+        noLA_bam=[
+            '{sample}/{modality}_{barcode}/cellranger/outs/fragments_noLA_duplicates.tsv.gz'.format(sample=config['sample_name'],modality = m, barcode = b) for m,b in config['barcodes'].items()],
+        cellranger_cleanup = [
+            '{sample}/{modality}_{barcode}/_clean_cellranger.out'.format(sample=config['sample_name'],modality = m, barcode = b) for m,b in config['barcodes'].items()],
+        matrix_peaks = [
+            '{sample}/{modality}_{barcode}/matrix/matrix_peaks/'.format(sample=config['sample_name'],modality = m, barcode = b) for m,b in config['barcodes'].items()],
+        matrix_bins = [
+            '{sample}/{modality}_{barcode}/matrix/matrix_bin_{binsize}/'.format(sample=config['sample_name'],modality = m, barcode = b, binsize = binsize) for m,b in config['barcodes'].items() for binsize in bins], 
+        matrix_genes = [
+            '{sample}/{modality}_{barcode}/matrix/matrix_genes/'.format(sample=config['sample_name'],modality = m, barcode = b) for m,b in config['barcodes'].items()],
         
         
 
@@ -46,16 +36,16 @@ rule split_R2:
     input:
         fastq=lambda wildcards: glob.glob(config['fastq_path'] + '/**/*{lane}*R[123]*.fastq.gz'.format(lane=wildcards.lane),recursive=True)
     output:
-        '{sample}/debarcoded_fastq_temp/ATAC/{sample}_{number}_{lane}_R1_{suffix}',
-        '{sample}/debarcoded_fastq_temp/ATAC/{sample}_{number}_{lane}_R2_{suffix}',
-        '{sample}/debarcoded_fastq_temp/ATAC/{sample}_{number}_{lane}_R3_{suffix}',
-        '{sample}/debarcoded_fastq_temp/nonATAC/{sample}_{number}_{lane}_R1_{suffix}',
-        '{sample}/debarcoded_fastq_temp/nonATAC/{sample}_{number}_{lane}_R2_{suffix}',
-        '{sample}/debarcoded_fastq_temp/nonATAC/{sample}_{number}_{lane}_R3_{suffix}',
-        '{sample}/debarcoded_fastq_temp/nonATAC/{sample}_{number}_{lane}_R2_{suffix}_modality.gz',
-        '{sample}/debarcoded_fastq_temp/noMatch/{sample}_{number}_{lane}_R1_{suffix}',
-        '{sample}/debarcoded_fastq_temp/noMatch/{sample}_{number}_{lane}_R2_{suffix}',
-        '{sample}/debarcoded_fastq_temp/noMatch/{sample}_{number}_{lane}_R3_{suffix}',
+        '{sample}/debarcoded_fastq_temp/ATAC/{s}_{number}_{lane}_R1_{suffix}',
+        '{sample}/debarcoded_fastq_temp/ATAC/{s}_{number}_{lane}_R2_{suffix}',
+        '{sample}/debarcoded_fastq_temp/ATAC/{s}_{number}_{lane}_R3_{suffix}',
+        '{sample}/debarcoded_fastq_temp/nonATAC/{s}_{number}_{lane}_R1_{suffix}',
+        '{sample}/debarcoded_fastq_temp/nonATAC/{s}_{number}_{lane}_R2_{suffix}',
+        '{sample}/debarcoded_fastq_temp/nonATAC/{s}_{number}_{lane}_R3_{suffix}',
+        '{sample}/debarcoded_fastq_temp/nonATAC/{s}_{number}_{lane}_R2_{suffix}_modality.gz',
+        '{sample}/debarcoded_fastq_temp/noMatch/{s}_{number}_{lane}_R1_{suffix}',
+        '{sample}/debarcoded_fastq_temp/noMatch/{s}_{number}_{lane}_R2_{suffix}',
+        '{sample}/debarcoded_fastq_temp/noMatch/{s}_{number}_{lane}_R3_{suffix}',
     threads: 1
     resources:
         mem_mb = 8000,
@@ -72,21 +62,27 @@ rule split_R2:
 
 rule move_ATAC:
     input:
-        R1 = '{sample}/debarcoded_fastq_temp/ATAC/{sample}_{number}_{lane}_R1_{suffix}',
-        R2 = '{sample}/debarcoded_fastq_temp/ATAC/{sample}_{number}_{lane}_R2_{suffix}',
-        R3 = '{sample}/debarcoded_fastq_temp/ATAC/{sample}_{number}_{lane}_R3_{suffix}',
+        R1 = '{sample}/debarcoded_fastq_temp/ATAC/{s}_{number}_{lane}_R1_{suffix}',
+        R2 = '{sample}/debarcoded_fastq_temp/ATAC/{s}_{number}_{lane}_R2_{suffix}',
+        R3 = '{sample}/debarcoded_fastq_temp/ATAC/{s}_{number}_{lane}_R3_{suffix}',
     output:
-        R1 = '{sample}/debarcoded_fastq/barcode_MeA/{sample}_{number}_{lane}_R1_{suffix}',
-        R2 = '{sample}/debarcoded_fastq/barcode_MeA/{sample}_{number}_{lane}_R2_{suffix}',
-        R3 = '{sample}/debarcoded_fastq/barcode_MeA/{sample}_{number}_{lane}_R3_{suffix}',
+        R1 = '{sample}/debarcoded_fastq/barcode_MeA/{s}_{number}_{lane}_R1_{suffix}',
+        R2 = '{sample}/debarcoded_fastq/barcode_MeA/{s}_{number}_{lane}_R2_{suffix}',
+        R3 = '{sample}/debarcoded_fastq/barcode_MeA/{s}_{number}_{lane}_R3_{suffix}',
+    params:
+        # absolute path to inputs to avoid broken links
+        R1 = lambda wildcards: os.path.abspath('{sample}/debarcoded_fastq_temp/ATAC/{s}_{number}_{lane}_R1_{suffix}'.format(sample=wildcards.sample,s=wildcards.s,number=wildcards.number,lane=wildcards.lane,suffix=wildcards.suffix)),
+        R2 = lambda wildcards: os.path.abspath('{sample}/debarcoded_fastq_temp/ATAC/{s}_{number}_{lane}_R2_{suffix}'.format(sample=wildcards.sample,s=wildcards.s,number=wildcards.number,lane=wildcards.lane,suffix=wildcards.suffix)),
+        R3 = lambda wildcards: os.path.abspath('{sample}/debarcoded_fastq_temp/ATAC/{s}_{number}_{lane}_R3_{suffix}'.format(sample=wildcards.sample,s=wildcards.s,number=wildcards.number,lane=wildcards.lane,suffix=wildcards.suffix)),
+    threads: 1  
     shell:
-        "mv {input.R1} {output.R1}; mv {input.R2} {output.R2}; mv {input.R3} {output.R3}"
+        "ln -s  {params.R1} {output.R1}; ln -s  {params.R2} {output.R2}; ln -s  {params.R3} {output.R3}"
 
 rule config2barcodes:
     input:
         script=workflow.basedir + '/scripts/fastq_multx_barcodes_from_config.py',
     output:
-        '{sample}/debarcoded_fastq_temp/{sample}_{lane}_barcodes.txt',
+        '{sample}/debarcoded_fastq_temp/{s}_{lane}_barcodes.txt',
     params:
         config = config_path,
     threads: 1
@@ -100,18 +96,18 @@ rule config2barcodes:
 
 rule debarcode_fastq_multx:
     input:
-        barcodes      = '{sample}/debarcoded_fastq_temp/{sample}_{lane}_barcodes.txt',
-        R1            = '{sample}/debarcoded_fastq_temp/nonATAC/{sample}_{number}_{lane}_R1_{suffix}',
-        R2_singlecell = '{sample}/debarcoded_fastq_temp/nonATAC/{sample}_{number}_{lane}_R2_{suffix}',
-        R3            = '{sample}/debarcoded_fastq_temp/nonATAC/{sample}_{number}_{lane}_R3_{suffix}',
-        R2_modality   = '{sample}/debarcoded_fastq_temp/nonATAC/{sample}_{number}_{lane}_R2_{suffix}_modality.gz',
+        barcodes      = '{sample}/debarcoded_fastq_temp/{s}_{lane}_barcodes.txt',
+        R1            = '{sample}/debarcoded_fastq_temp/nonATAC/{s}_{number}_{lane}_R1_{suffix}',
+        R2_singlecell = '{sample}/debarcoded_fastq_temp/nonATAC/{s}_{number}_{lane}_R2_{suffix}',
+        R3            = '{sample}/debarcoded_fastq_temp/nonATAC/{s}_{number}_{lane}_R3_{suffix}',
+        R2_modality   = '{sample}/debarcoded_fastq_temp/nonATAC/{s}_{number}_{lane}_R2_{suffix}_modality.gz',
     output: 
-        R1  = expand('{{sample}}/debarcoded_fastq_temp/{{lane}}/barcode_{barcode}/{{sample}}_{{number}}_{{lane}}_{read}_{{suffix}}',barcode = [b for b in config['barcodes'].values() if b != 'MeA'], read=['R1','R2','R3'] ),
+        R1  = expand('{{sample}}/debarcoded_fastq_temp/{{lane}}/barcode_{barcode}/{{s}}_{{number}}_{{lane}}_{read}_{{suffix}}',barcode = [b for b in config['barcodes'].values() if b != 'MeA'], read=['R1','R2','R3'] ),
         #
     threads: 1
     params: 
         all_barcodes = [b for b in config['barcodes'].values() if b != 'MeA'],
-        log = '{sample}/debarcoded_fastq/{sample}_{number}_{lane}_{suffix}_debarcode.log',
+        log = '{sample}/debarcoded_fastq/{s}_{number}_{lane}_{suffix}_debarcode.log',
     conda: "../envs/nanoscope_general.yaml"
     shell:
         """
@@ -120,24 +116,29 @@ rule debarcode_fastq_multx:
           done;
         mkdir -p {wildcards.sample}/debarcoded_fastq_temp/{wildcards.lane}/barcode_unmatched/; 
         fastq-multx {input.barcodes} {input.R2_modality} {input.R1} {input.R2_singlecell} {input.R3} \
-        -o {wildcards.sample}/debarcoded_fastq_temp/{wildcards.lane}/barcode_%/{wildcards.sample}_{wildcards.number}_{wildcards.lane}_modality_{wildcards.suffix} \
-        {wildcards.sample}/debarcoded_fastq_temp/{wildcards.lane}/barcode_%/{wildcards.sample}_{wildcards.number}_{wildcards.lane}_R1_{wildcards.suffix} \
-        {wildcards.sample}/debarcoded_fastq_temp/{wildcards.lane}/barcode_%/{wildcards.sample}_{wildcards.number}_{wildcards.lane}_R2_{wildcards.suffix} \
-        {wildcards.sample}/debarcoded_fastq_temp/{wildcards.lane}/barcode_%/{wildcards.sample}_{wildcards.number}_{wildcards.lane}_R3_{wildcards.suffix} &> {params.log} ;
+        -o {wildcards.sample}/debarcoded_fastq_temp/{wildcards.lane}/barcode_%/{wildcards.s}_{wildcards.number}_{wildcards.lane}_modality_{wildcards.suffix} \
+        {wildcards.sample}/debarcoded_fastq_temp/{wildcards.lane}/barcode_%/{wildcards.s}_{wildcards.number}_{wildcards.lane}_R1_{wildcards.suffix} \
+        {wildcards.sample}/debarcoded_fastq_temp/{wildcards.lane}/barcode_%/{wildcards.s}_{wildcards.number}_{wildcards.lane}_R2_{wildcards.suffix} \
+        {wildcards.sample}/debarcoded_fastq_temp/{wildcards.lane}/barcode_%/{wildcards.s}_{wildcards.number}_{wildcards.lane}_R3_{wildcards.suffix} &> {params.log} ;
         """
 
 rule move_nano_CT:
     input:
-        R1            = '{sample}/debarcoded_fastq_temp/{lane}/barcode_{barcode}/{sample}_{number}_{lane}_R1_{suffix}',
-        R2            = '{sample}/debarcoded_fastq_temp/{lane}/barcode_{barcode}/{sample}_{number}_{lane}_R2_{suffix}',
-        R3            = '{sample}/debarcoded_fastq_temp/{lane}/barcode_{barcode}/{sample}_{number}_{lane}_R3_{suffix}',
+        R1            = '{sample}/debarcoded_fastq_temp/{lane}/barcode_{barcode}/{s}_{number}_{lane}_R1_{suffix}',
+        R2            = '{sample}/debarcoded_fastq_temp/{lane}/barcode_{barcode}/{s}_{number}_{lane}_R2_{suffix}',
+        R3            = '{sample}/debarcoded_fastq_temp/{lane}/barcode_{barcode}/{s}_{number}_{lane}_R3_{suffix}',
     output:
-        R1 = '{sample}/debarcoded_fastq/barcode_{barcode}/{sample}_{number}_{lane}_R1_{suffix}',
-        R2 = '{sample}/debarcoded_fastq/barcode_{barcode}/{sample}_{number}_{lane}_R2_{suffix}',
-        R3 = '{sample}/debarcoded_fastq/barcode_{barcode}/{sample}_{number}_{lane}_R3_{suffix}',
+        R1 = '{sample}/debarcoded_fastq/barcode_{barcode}/{s}_{number}_{lane}_R1_{suffix}',
+        R2 = '{sample}/debarcoded_fastq/barcode_{barcode}/{s}_{number}_{lane}_R2_{suffix}',
+        R3 = '{sample}/debarcoded_fastq/barcode_{barcode}/{s}_{number}_{lane}_R3_{suffix}',
+    params:
+        # absolute path to inputs to avoid broken links
+        R1 = lambda wildcards: os.path.abspath('{sample}/debarcoded_fastq_temp/{lane}/barcode_{barcode}/{s}_{number}_{lane}_R1_{suffix}'.format(sample=wildcards.sample,lane=wildcards.lane,barcode=wildcards.barcode,s=wildcards.s,number=wildcards.number,suffix=wildcards.suffix)),
+        R2 = lambda wildcards: os.path.abspath('{sample}/debarcoded_fastq_temp/{lane}/barcode_{barcode}/{s}_{number}_{lane}_R2_{suffix}'.format(sample=wildcards.sample,lane=wildcards.lane,barcode=wildcards.barcode,s=wildcards.s,number=wildcards.number,suffix=wildcards.suffix)),
+        R3 = lambda wildcards: os.path.abspath('{sample}/debarcoded_fastq_temp/{lane}/barcode_{barcode}/{s}_{number}_{lane}_R3_{suffix}'.format(sample=wildcards.sample,lane=wildcards.lane,barcode=wildcards.barcode,s=wildcards.s,number=wildcards.number,suffix=wildcards.suffix)),
     threads: 1
     shell:
-        "mv {input.R1} {output.R1}; mv {input.R2} {output.R2}; mv {input.R3} {output.R3}"
+        "ln -s  {params.R1}  {output.R1}; ln -s  {params.R2} {output.R2}; ln -s  {params.R3} {output.R3}"
       
 
 rule run_cellranger:
