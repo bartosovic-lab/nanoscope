@@ -44,8 +44,8 @@ def get_fastq_for_cellranger(fastq_folder,sample,modality,barcode):
     for x in all_fastq_parsed:
         if x['read'] == 'I1':
             continue
-        result.append('{sample}/{modality}_{barcode}/fastq/barcode_{barcode}/{sample}_{number}_{lane}_{read}_{suffix}'.format(\
-            sample=sample, modality=modality , barcode=barcode, seq_id=x['id'], number=x['number'], lane=x['lane'], suffix=x['suffix'], read = x['read']))
+        result.append('{sample}/{modality}_{barcode}/fastq/barcode_{barcode}/{name}_{number}_{lane}_{read}_{suffix}'.format(\
+            sample=sample, modality=modality , barcode=barcode, name=x['name'], number=x['number'], lane=x['lane'], suffix=x['suffix'], read = x['read']))
     return(result)
 
 def check_fastq(all_fastq_files):
@@ -65,6 +65,7 @@ def parse_fastq(path):
     import re
     result = {}
     fastq = os.path.basename(path)
+    result['name']   = re.split('_S[0-9]+_',fastq)[0].strip("_")
     result['number'] = re.findall('_S[0-9]+_', fastq)[0].strip("_")
     result['lane']   = re.findall('_L[0-9]+_', fastq)[0].strip("_")
     result['read']   = re.findall('_[RI][0-9]+_', fastq)[0].strip("_")
