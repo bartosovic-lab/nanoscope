@@ -56,7 +56,7 @@ rule demultiplex:
         runtime = 480 # 8 hours should be enough for most reasonable single-cell data, if the command timeouts, increase this value
     conda: '../envs/nanoscope_general.yaml'
     shell:
-        "python3 {input.script} -i {input.fastq} -o {params.out_folder} --single_cell --barcode {wildcards.barcode} --name {wildcards.sample} 2>&1"
+        "python3 {input.script} -i {input.fastq} -o {params.out_folder} --single_cell --barcode {wildcards.barcode} --name {wildcards.s} 2>&1"
 
 rule run_cellranger:
     input:
