@@ -115,17 +115,32 @@ metadata$passedMB <- metadata.pick$pass_model
 ################ Cell picking scatterplot nreads ~ percent in peaks
 dir.create(args$out_prefix,recursive=TRUE)
 
+safe_density2d <- function(p, color = "black") {
+  tryCatch(
+    {
+      p2 <- p + geom_density2d(col = color)
+      ggplot_build(p2)
+      p2
+    },
+    error = function(e) {
+      message("Skipping geom_density2d(): ", conditionMessage(e))
+      p
+    }
+  )
+}
+
 p1 <- ggplot(data = metadata,aes(x=log10(all_unique_MB),y=peak_ratio_MB)) +
   geom_point(aes(col=is__cell_barcode),size=0.1) +
   # scale_color_manual(values=c("black","gold"),labels=c(paste("TRUE",sum(as.numeric(as.character(metadata$is__cell_barcode)))),"FALSE")) +
-  theme(legend.position="bottom",text=element_text(size=26)) +
-  geom_density2d(col='black')
+  theme(legend.position="bottom",text=element_text(size=26)) 
 
 p2 <- ggplot(data = metadata,aes(x=log10(passed_filters),y=peak_region_fragments/passed_filters)) +
   geom_point(aes(col=is__cell_barcode),size=0.1) +
   # scale_color_manual(values=c("black","gold"),labels=c(paste("TRUE",sum(as.numeric(as.character(metadata$is__cell_barcode)))),NA)) +
-  theme(legend.position="bottom",text=element_text(size=26)) +
-  geom_density2d(col='black')
+  theme(legend.position="bottom",text=element_text(size=26)) 
+
+p1 <- safe_density2d(p1)
+p2 <- safe_density2d(p2)
 
 ggsave(plot = p1+p2,
        filename=paste0(args$out_prefix,'cells_10x.png'),width = 20,height = 10,units = 'in')
@@ -136,14 +151,15 @@ p1 <- ggplot(data = metadata,aes(x=log10(all_unique_MB),y=peak_ratio_MB)) +
      # geom_hline(yintercept = c(cutoff_peak_percentage_high,cutoff_peak_percentage_low)) +
      # geom_vline(xintercept = c(cutoff_reads_min,cutoff_reads_max)) +
      # scale_color_manual(values=c("black","gold"),labels=c(paste("TRUE",sum(metadata$passedMB)),"FALSE")) +
-      theme(legend.position="bottom",text=element_text(size=26)) +
-      geom_density2d(col='black')
+      theme(legend.position="bottom",text=element_text(size=26)) # + geom_density2d(col='black')
   
 p2 <- ggplot(data = metadata,aes(x=log10(passed_filters),y=peak_region_fragments/passed_filters)) +
       geom_point(aes(col=passedMB),size=0.1) +
      # scale_color_manual(values=c("black","gold")) +
-      theme(legend.position="bottom",text=element_text(size=26)) +
-      geom_density2d(col='black')
+      theme(legend.position="bottom",text=element_text(size=26)) # + geom_density2d(col='black')
+
+p1 <- safe_density2d(p1)
+p2 <- safe_density2d(p2)
 
 ggsave(plot = p1+p2,
        filename=paste0(args$out_prefix,'cells_picked.png'),width = 20,height = 10,units = 'in')
