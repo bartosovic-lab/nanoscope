@@ -5,6 +5,10 @@ library(funr)
 library(patchwork)
 library(mclust)
 library(rtracklayer)
+library(ggrepel)
+library(scales)
+
+
 
 
 # Source aux functions
@@ -129,34 +133,139 @@ safe_density2d <- function(p, color = "black") {
   )
 }
 
-p1 <- ggplot(data = metadata,aes(x=log10(all_unique_MB),y=peak_ratio_MB)) +
-  geom_point(aes(col=is__cell_barcode),size=0.1) +
-  # scale_color_manual(values=c("black","gold"),labels=c(paste("TRUE",sum(as.numeric(as.character(metadata$is__cell_barcode)))),"FALSE")) +
-  theme(legend.position="bottom",text=element_text(size=26)) 
+label_df <- metadata %>%
+  filter(!is.na(class)) %>%
+  group_by(class) %>%
+  summarise(
+    n_cells = n(),
+    mean_fragments = mean(all_unique_MB, na.rm = TRUE),
+    mean_frip = mean(peak_ratio_MB, na.rm = TRUE),
+    x = mean(log10(all_unique_MB), na.rm = TRUE),
+    y = mean(peak_ratio_MB, na.rm = TRUE),
+    pass = unique(passedMB)[1],
+    .groups = "drop"
+  ) %>%
+  mutate(
+    label = paste0(
+      "cluster ", class,
+      "\nstatus: ", ifelse(pass, "passed cell", "empty droplets"),
+      "\nN = ", n_cells,
+      "\nmean fragments = ", round(mean_fragments, 0),
+      "\nmean FRiP = ", round(mean_frip, 3)
+    )
+  )
 
-p2 <- ggplot(data = metadata,aes(x=log10(passed_filters),y=peak_region_fragments/passed_filters)) +
-  geom_point(aes(col=is__cell_barcode),size=0.1) +
-  # scale_color_manual(values=c("black","gold"),labels=c(paste("TRUE",sum(as.numeric(as.character(metadata$is__cell_barcode)))),NA)) +
-  theme(legend.position="bottom",text=element_text(size=26)) 
+# same palette for points and passed labels
+class_levels <- sort(unique(na.omit(metadata$class)))
+class_cols <- setNames(hue_pal()(length(class_levels)), class_levels)
+
+# passed labels keep class color, failed labels become grey
+label_df$label_color <- ifelse(
+  label_df$pass,
+  class_cols[as.character(label_df$class)],
+  "grey55"
+)
+
+p0 <- ggplot(data = metadata) +
+  geom_point(
+    aes(x = log10(all_unique_MB), y = peak_ratio_MB, color = factor(class)),
+    size = 0.5, alpha = 0.2
+  ) +
+  geom_label_repel(
+    data = label_df,
+    aes(x = x, y = y, label = label),
+    inherit.aes = FALSE,
+    color = label_df$label_color,
+    fill = alpha("white", 0.85),
+    size = 3,
+    label.size = 0.25,
+    box.padding = 0.5,
+    point.padding = 0.5,
+    force = 2,
+    max.overlaps = Inf,
+    segment.color = label_df$label_color
+  ) +
+  scale_color_manual(values = class_cols, name = "class") +
+  labs(
+    x = "log10(all_unique_MB)",
+    y = "FRiP"
+  ) +
+  theme_bw()
+
+ggsave(
+  plot = p0,
+  filename = paste0(args$out_prefix, "cells_clustering_for_picking.png"),
+  width = 14, height = 14, units = "in"
+)
+
+n_picked <- sum(as.numeric(as.character(metadata$is__cell_barcode)), na.rm = TRUE)
+
+cellranger_label <- paste0("Picked: ", n_picked, " cells")
+
+p1 <- ggplot(data = metadata, aes(x = log10(all_unique_MB), y = peak_ratio_MB)) +
+  geom_point(aes(col = is__cell_barcode), size = 0.1) +
+  annotate(
+    "label",
+    x = Inf, y = Inf,
+    label = cellranger_label,
+    hjust = 1.05, vjust = 1.1,
+    size = 6
+  ) +
+  labs(title = "Default Cell Ranger cell picking") +
+  theme(
+    legend.position = "bottom",
+    text = element_text(size = 26),
+    plot.title = element_text(hjust = 0.5, face = "bold")
+  )
+
+p2 <- ggplot(data = metadata, aes(x = log10(passed_filters), y = peak_region_fragments / passed_filters)) +
+  geom_point(aes(col = is__cell_barcode), size = 0.1) +
+  annotate(
+    "label",
+    x = Inf, y = Inf,
+    label = cellranger_label,
+    hjust = 1.05, vjust = 1.1,
+    size = 6
+  ) +
+  theme(
+    legend.position = "bottom",
+    text = element_text(size = 26),
+    plot.title = element_text(hjust = 0.5, face = "bold")
+  )
 
 p1 <- safe_density2d(p1)
 p2 <- safe_density2d(p2)
 
-ggsave(plot = p1+p2,
-       filename=paste0(args$out_prefix,'cells_10x.png'),width = 20,height = 10,units = 'in')
+ggsave(
+  plot = p1 + p2,
+  filename = paste0(args$out_prefix, "cells_10x.png"),
+  width = 20, height = 10, units = "in"
+)
+n_picked <- sum(metadata$passedMB, na.rm = TRUE)
+label_text <- paste0("Picked: ", n_picked, " cells")
 
+p1 <- ggplot(data = metadata, aes(x = log10(all_unique_MB), y = peak_ratio_MB)) +
+  geom_point(aes(col = passedMB), size = 0.1) +
+  annotate(
+    "label",
+    x = Inf, y = Inf,
+    label = label_text,
+    hjust = 1.05, vjust = 1.1,
+    size = 6
+  ) +
+  labs(title = "Nanoscope cell picking") +
+  theme(legend.position = "bottom", text = element_text(size = 26))
 
-p1 <- ggplot(data = metadata,aes(x=log10(all_unique_MB),y=peak_ratio_MB)) +
-      geom_point(aes(col=passedMB),size=0.1) +
-     # geom_hline(yintercept = c(cutoff_peak_percentage_high,cutoff_peak_percentage_low)) +
-     # geom_vline(xintercept = c(cutoff_reads_min,cutoff_reads_max)) +
-     # scale_color_manual(values=c("black","gold"),labels=c(paste("TRUE",sum(metadata$passedMB)),"FALSE")) +
-      theme(legend.position="bottom",text=element_text(size=26)) # + geom_density2d(col='black')
-  
-p2 <- ggplot(data = metadata,aes(x=log10(passed_filters),y=peak_region_fragments/passed_filters)) +
-      geom_point(aes(col=passedMB),size=0.1) +
-     # scale_color_manual(values=c("black","gold")) +
-      theme(legend.position="bottom",text=element_text(size=26)) # + geom_density2d(col='black')
+p2 <- ggplot(data = metadata, aes(x = log10(passed_filters), y = peak_region_fragments / passed_filters)) +
+  geom_point(aes(col = passedMB), size = 0.1) +
+  annotate(
+    "label",
+    x = Inf, y = Inf,
+    label = label_text,
+    hjust = 1.05, vjust = 1.1,
+    size = 6
+  ) +
+  theme(legend.position = "bottom", text = element_text(size = 26))
 
 p1 <- safe_density2d(p1)
 p2 <- safe_density2d(p2)
