@@ -127,7 +127,7 @@ class bcdCT:
                 break
             if MeA_hit:
                 barcodes['MeA'] += 1
-            elif not hit or hit == 'Multiple':
+            elif hit is None or hit == 'Multiple':
                 barcodes['no_spacer'] += 1
                 continue
             else:
@@ -211,7 +211,7 @@ def main(args):
             spacer_hit = find_seq(pattern=args.pattern,DNA_string=read2.sequence,nmismatch=2)
             MeA_hit    = find_seq(pattern = args.no_barcode_seq, DNA_string=read2.sequence, nmismatch=2)
             
-            if not spacer_hit and MeA_hit:
+            if spacer_hit is None and MeA_hit:
                 read_barcode = get_read_barcode(read2, MeA_hit)                                               # Returns only barcode e.g. ACTGACTG
                 hit_barcode  = 'MeA'
                 if exp.single_cell:
@@ -234,7 +234,7 @@ def main(args):
                 if exp.single_cell:
                     read2 = extract_cell_barcode(read2, spacer_hit + len(args.pattern))     # The cell barcode is 16bp long and is positioned after the spacer
             
-            elif not spacer_hit and not MeA_hit:
+            elif spacer_hit is None and MeA_hit is None:
                 statistics["no_spacer_found"] += 1
                 # No hit, no spacer not nothing found
                 if args.report_no_hit:
