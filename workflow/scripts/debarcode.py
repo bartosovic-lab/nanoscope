@@ -116,7 +116,7 @@ class bcdCT:
             log(Error_message)
             sys.exit(1)
 
-        self.lane = self.lane[0].split("/")[-1]
+        self.lane = self.lane[0]
 
     def create_out_handles(self,stack):
         for bcd in self.picked_barcodes:
