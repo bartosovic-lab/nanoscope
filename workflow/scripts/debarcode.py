@@ -211,13 +211,13 @@ def main(args):
             spacer_hit = find_seq(pattern=args.pattern,DNA_string=read2.sequence,nmismatch=2)
             MeA_hit    = find_seq(pattern = args.no_barcode_seq, DNA_string=read2.sequence, nmismatch=2)
             
-            if spacer_hit is None and MeA_hit:
+            if spacer_hit is None and MeA_hit is not None:
                 read_barcode = get_read_barcode(read2, MeA_hit)                                               # Returns only barcode e.g. ACTGACTG
                 hit_barcode  = 'MeA'
                 if exp.single_cell:
                     read2 = extract_cell_barcode(read2, MeA_hit-16)     # The cell barcode is 16bp long and is positioned before the MeA spacer
 
-            elif spacer_hit:
+            elif spacer_hit is not None:
                 read_barcode = get_read_barcode(read2, spacer_hit)                                               # Returns only barcode e.g. ACTGACTG
                 read_barcode_distance = {barcode: Levenshtein.distance(read_barcode,barcode) for barcode in exp.picked_barcodes}
                 if sum([x <= int(args.mismatch) for x in read_barcode_distance.values()]) == 0:
