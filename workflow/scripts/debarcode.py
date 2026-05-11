@@ -109,7 +109,7 @@ class bcdCT:
     def autodetect_lane(self):
         Error_message = "*** Error: Prefix for R1 R2 R3 files not the same. Please use the same prefix for all the files or specify experiment name ***"
 
-        l = compile('S[0-9]_(.*)_R[0-9]')
+        l = compile('S[0-9]+_(.*)_R[0-9]')
         self.lane = [l.findall(str(x)) for x in self.path_in.values()][0]
 
         if len(list(set(self.lane))) > 1:
