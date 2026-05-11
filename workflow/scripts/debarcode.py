@@ -3,6 +3,7 @@ import argparse
 from glob import glob
 import sys
 from re import split
+from re import compile
 import regex
 import gzip
 from contextlib import ExitStack
@@ -32,7 +33,7 @@ class bcdCT:
         else:
             self.autodetect_name()
 
-
+        self.autodetect_lane()
         self.autodetect_barcodes(args)
         self.prep_out_filenames()
 
@@ -104,6 +105,18 @@ class bcdCT:
             sys.exit(1)
 
         self.name = self.name[0].split("/")[-1]
+
+    def autodetect_lane(self):
+        Error_message = "*** Error: Prefix for R1 R2 R3 files not the same. Please use the same prefix for all the files or specify experiment name ***"
+
+        l = compile('S[0-9]+_(.*)_R[0-9]')
+        self.lane = [l.findall(str(x)) for x in self.path_in.values()][0]
+
+        if len(list(set(self.lane))) > 1:
+            log(Error_message)
+            sys.exit(1)
+
+        self.lane = self.lane[0]
 
     def create_out_handles(self,stack):
         for bcd in self.picked_barcodes:
@@ -260,7 +273,7 @@ def main(args):
 
 
     # Write the statistics file
-    with open("{0}/{1}_statistics.yaml".format(exp.out_prefix,exp.name), 'w') as f:
+    with open("{0}/{1}_{2}_statistics.yaml".format(exp.out_prefix,exp.name,exp.lane), 'w') as f:
         yaml.dump(statistics, f)
 
 
